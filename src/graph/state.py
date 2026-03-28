@@ -32,8 +32,8 @@ class EvaluationRubric(BaseModel):
     score: float = Field(
         ge=0.0, 
         le=10.0, 
-        description="Score from 0.0 to 10.0 based on security and system architecture quality"
+        description="Score from 0.0 to 10.0 based on REAL-WORLD viability and architecture quality"
     )
     reasoning: str = Field(description="Brief justification for the score")
-    critique_points: List[str] = Field(description="List of vulnerabilities or areas to improve (if any)")
-    is_passed: bool = Field(description="Passed evaluation? (True when score >= 9.5)")
+    critique_points: List[str] = Field(description="List of vulnerabilities, issues, or areas to significantly improve")
+    is_passed: bool = Field(description="Passed evaluation? (True ONLY when score == 10.0 - must be PERFECT). 9.5 is NOT passing.")

@@ -158,10 +158,10 @@ def evaluator_node(state: GraphState):
     
     Loop Prevention - Now tracks score and feedback history for convergence detection
     
-    Evaluation criteria:
-    - Security (40%): Architecture properly addresses vulnerabilities
-    - Feasibility (30%): Design is realistic for the stated requirements
-    - Cost-Effectiveness (30%): Recommends practical solutions within budget constraints
+    Evaluation criteria - STRICT REAL-WORLD FOCUS:
+    - Security (40%): Will vulnerabilities ACTUALLY be mitigated in production?
+    - Feasibility (30%): Can this ACTUALLY be built and maintained with today's budget/team?
+    - Cost-Effectiveness (30%): Does it work in the REAL WORLD within the constraints?
     """
     messages = state.get("messages", [])
     revision_count = state.get("revision_count", 0)
@@ -172,29 +172,51 @@ def evaluator_node(state: GraphState):
     
     parser = JsonOutputParser(pydantic_object=EvaluationRubric)
     
-    sys_msg = SystemMessage(content=f"""You are a Pragmatic Principal Architect evaluating system designs.
-Evaluate the architecture with BALANCED strictness. Stop expecting perfection - focus on:
+    sys_msg = SystemMessage(content=f"""You are an UNCOMPROMISING Principal Architect evaluating system designs.
+Stop grading on theory - grade on REALITY. Be STRICT because real systems fail in production.
 
-1. SECURITY (40%): Does it address major vulnerabilities? Are mitigations practical?
-2. FEASIBILITY (30%): Is the design realistic? Can it actually be built?
-3. COST-EFFECTIVENESS (30%): Does it respect budget constraints? Are solutions pragmatic?
+EVALUATION CRITERIA (Real-World Viability):
 
-Your passing standard:
-- Score >= 9.5 means: SECURE + FEASIBLE + BUDGET-CONSCIOUS (passes)
-- Score >= 7.0 means: ACCEPTABLE for MVP deployment
-- Score < 7.0 means: NEEDS SIGNIFICANT REVISION
+1. SECURITY (40%): 
+   - Does it ACTUALLY address vulnerabilities? (Not just acknowledge them)
+   - Are mitigations REALISTIC given the budget and team?
+   - Will this SURVIVE penetration testing?
+   - Any hand-waving or theoretical compliance? DEDUCT HEAVILY.
 
-Grade DOWN if:
-- Over-engineering (recommending $1M solutions when $10K alternatives exist)
-- Ignoring budget constraints mentioned in requirements
-- Recommending expensive enterprise licenses without exploring open-source
-- Security theater (complex but ineffective recommendations)
+2. FEASIBILITY (30%): 
+   - Can a small team ACTUALLY BUILD this with $available?
+   - Is the stack reasonable for maintenance (not 7+ unfamiliar technologies)?
+   - Are infrastructure needs realistic (not "99.99999% uptime on ฿1000/month")?
+   - Is there a clear path from design to running code?
 
-Grade UP if:
-- Pragmatic cloud-native approach
-- Staged implementation (MVP first)
-- Clear cost/benefit analysis
-- Leveraging managed services
+3. COST-EFFECTIVENESS (30%): 
+   - Does it WORK within the stated monthly budget?
+   - Are you using $100k solutions when $10k alternatives exist? MAJOR DEDUCTION.
+   - Is the budget even ACKNOWLEDGED in the design?
+
+YOUR GRADING STANDARD - BE HARD:
+- Score 10.0 = PERFECT: Every detail is sound, realistic, vetted, and production-ready
+- Score 9.5-9.9 = EXCELLENT but needs polish (missing details, nice-to-haves)
+- Score 9.0-9.4 = VERY GOOD but has tradeoffs (one area could be stronger)
+- Score 8.0-8.9 = GOOD: Viable MVP but needs scrutiny before production
+- Score < 8.0 = UNACCEPTABLE: Fix before proceeding
+
+KEY GRADING RULES:
+❌ DEDUCT HEAVILY for:
+   - Over-engineering (luxury components when MVP needs simplicity)
+   - Ignoring stated budget constraints
+   - Theoretical security without real implementation
+   - Unmaintainable architecture (too many moving parts)
+   - "We'll handle X later" (red flag)
+   
+✅ AWARD for:
+   - Pragmatic staging (MVP → v2 → enterprise)
+   - Clear budget/cost analysis per component
+   - Choosing boring, proven tech
+   - Small team feasibility
+   - Honest about limitations
+
+Remember: 10.0 is RARE. 9.5 should NOT exist (either it's perfect 10.0 or it needs work).
 
 {parser.get_format_instructions()}""")
     
@@ -239,14 +261,14 @@ def route_to_next(state: GraphState):
     Loop Prevention - Enhanced routing logic with convergence detection.
     
     Stops iteration if:
-    - System has passed (score >= 9.5)
+    - System has passed (score == 10.0 ONLY)
     - Architecture has converged (>= 90% similarity to previous)
     - Feedback is being repeated (>= 85% similarity to previous)
     - Score shows no improvement for 2+ consecutive rounds
     - Max revisions reached (3)
     """
     if state["is_passed"]:
-        print("\n✅ [ROUTING] System PASSED evaluation (score >= 9.5)")
+        print("\n✅ [ROUTING] System PASSED evaluation (PERFECT score = 10.0)")
         return END
     
     # Loop Prevention - Check indicators before attempting another iteration

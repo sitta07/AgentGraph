@@ -19,7 +19,7 @@ from main import build_graph
 # UI SETUP: Configure Streamlit page
 # ==========================================
 st.set_page_config(page_title="AgentGraph Consultant", layout="wide", page_icon="🔥")
-st.title("🔥 AgentGraph: Senior AI Architecture Consultant")
+st.title("AgentGraph: AI Architecture Consultant")
 st.markdown("Multi-Agent system for real-time architecture design and security evaluation")
 
 # ==========================================

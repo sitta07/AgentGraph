@@ -57,8 +57,15 @@ if __name__ == "__main__":
         "total_cost_thb": 0.0
     }
     
+    # langsmith config - Separate conversation sessions and tag runs for better filtering
+    config = {
+        "configurable": {"thread_id": "run-001"}, # แยก session การคุย
+        "tags": ["v1.0-baseline", "budget-5000"]  # แปะ tag ไว้ฟิลเตอร์ใน LangSmith
+    }
+
+
     # Stream graph execution with detailed logs
-    for output in app.stream(initial_state, stream_mode="updates"):
+    for output in app.stream(initial_state, config=config, stream_mode="updates"):
         for node_name, state_update in output.items():
             
             # Display agent messages

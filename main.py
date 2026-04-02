@@ -1,4 +1,5 @@
 import os
+import uuid
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph
 from src.utils.diagram_generator import extract_and_save_diagram
@@ -59,8 +60,8 @@ if __name__ == "__main__":
     
     # langsmith config - Separate conversation sessions and tag runs for better filtering
     config = {
-        "configurable": {"thread_id": "run-001"}, # แยก session การคุย
-        "tags": ["v1.0-baseline", "budget-5000"]  # แปะ tag ไว้ฟิลเตอร์ใน LangSmith
+        "configurable": {"thread_id": f"run-{uuid.uuid4().hex[:8]}"},  # Dynamic unique session ID
+        "tags": ["v1.0-baseline", "budget-5000"]  # Tag for filtering in LangSmith
     }
 
 

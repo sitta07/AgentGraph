@@ -5,76 +5,174 @@ import re
 from dotenv import load_dotenv
 
 # ==========================================
+# CUSTOM CSS - Minimal Aesthetic Design
+# ==========================================
+st.markdown("""
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    .stApp {background-color: #fafafa;}
+    
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
+    
+    html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    h1 {font-weight: 600 !important; color: #1a1a1a !important; letter-spacing: -0.02em !important;}
+    h2, h3 {font-weight: 500 !important; color: #333 !important;}
+    
+    div[data-testid="stVerticalBlock"] > div {
+        background-color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    
+    section[data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e8e8e8;
+    }
+    
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    div[data-testid="stChatMessage"] {
+        background-color: white;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==========================================
 # SETUP: Load Environment Variables
 # ==========================================
 load_dotenv()
 if not os.getenv("NOVITA_API_KEY"):
-    st.error("🚨 NOVITA_API_KEY not found in .env file!")
+    st.error("NOVITA_API_KEY not found in .env file!")
     st.stop()
 
-# Import graph system
 from main import build_graph
 
 # ==========================================
 # UI SETUP: Configure Streamlit page
 # ==========================================
-st.set_page_config(page_title="AgentGraph Consultant", layout="wide", page_icon="🔥")
-st.title("AgentGraph: AI Architecture Consultant")
-st.markdown("Multi-Agent system for real-time architecture design and security evaluation")
+st.set_page_config(
+    page_title="AgentGraph",
+    layout="wide",
+    page_icon="◆",
+    initial_sidebar_state="expanded"
+)
 
 # ==========================================
 # SIDEBAR: Configuration & User Input
 # ==========================================
 with st.sidebar:
-    st.header("⚙️ Configuration")
+    st.markdown("## ⚙️ Configuration")
     
-    # System Requirements Input
-    st.markdown("**📝 Define System Requirements:**")
+    st.markdown("### 📝 System Requirements")
     user_req = st.text_area(
-        "Enter system details", 
-        value="Design a RAG (Retrieval-Augmented Generation) chatbot system for a corporate environment supporting 1,000 concurrent users with monthly cost estimation in Thai Baht",
-        height=150
+        "Define your system",
+        value="Design a RAG chatbot system for a corporate environment supporting 1,000 concurrent users with monthly cost estimation in Thai Baht",
+        height=120,
+        label_visibility="collapsed",
+        placeholder="Describe your system requirements..."
     )
     
-    st.markdown("---")
+    st.divider()
     
-    # System Design Budget - Reference only for architect
-    st.markdown("**💰 Monthly Operating Budget (THB):**")
-    st.markdown("*Reference budget for architect to consider when designing the system*")
+    st.markdown("### 💰 Monthly Budget (THB)")
     user_monthly_budget_thb = st.number_input(
-        "Enter your monthly operating budget in Thai Baht (฿)",
+        "Operating budget",
         min_value=0.0,
-        value=5000.0,
+        value=float(os.getenv("DEFAULT_BUDGET_THB", 5000.0)),
         step=1000.0,
-        help="This budget is passed to architect to design cost-effective solutions. Not deducted from iterations."
+        label_visibility="collapsed",
+        help="Reference budget for architect to design cost-effective solutions"
     )
     
-    st.info(
-        f"**Budget Information:**\n\n"
-        f"• Architect will design system for: ฿{user_monthly_budget_thb:.2f}/month\n"
-        f"• System design iterations: Unlimited (no cost per iteration)\n"
-        f"• Focus: Cost-effective, practical solutions within budget"
-    )
+    st.markdown(f"""
+    <div style="background: #f5f5f5; border-radius: 8px; padding: 12px; font-size: 0.9rem; color: #555;">
+        <strong>Budget Reference</strong><br>
+        ฿{user_monthly_budget_thb:,.2f}/month<br>
+        <span style="font-size: 0.8rem; color: #888;">Cost-effective design target</span>
+    </div>
+    """, unsafe_allow_html=True)
     
-    st.markdown("---")
+    st.divider()
     
-    # Execute Button
-    start_btn = st.button("🚀 Start Simulation", type="primary", use_container_width=True)
+    start_btn = st.button("▶ Start Design Session", type="primary", use_container_width=True)
     
-    st.markdown("---")
+    st.divider()
     
-    st.markdown("**Agents in System:**")
-    st.markdown("- 🏗️ **Architect**: Design system, estimate costs, create diagrams")
-    st.markdown("- 🛡️ **Security**: Identify vulnerabilities and propose mitigations")
-    st.markdown("- ⚖️ **Evaluator**: Score architecture (target >= 9.5/10)")
+    st.markdown("### 🤖 Agents")
+    agent_cols = st.columns(3)
+    with agent_cols[0]:
+        st.markdown("<div style='text-align: center;'><span style='font-size: 1.5rem;'>🏗️</span><br><small>Architect</small></div>", unsafe_allow_html=True)
+    with agent_cols[1]:
+        st.markdown("<div style='text-align: center;'><span style='font-size: 1.5rem;'>🛡️</span><br><small>Security</small></div>", unsafe_allow_html=True)
+    with agent_cols[2]:
+        st.markdown("<div style='text-align: center;'><span style='font-size: 1.5rem;'>⚖️</span><br><small>Evaluator</small></div>", unsafe_allow_html=True)
+
+# ==========================================
+# MAIN CONTENT AREA
+# ==========================================
+
+# Professional Empty State (shown before execution)
+if not start_btn:
+    st.markdown("""
+    <div style="text-align: center; padding: 4rem 2rem; color: #666;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">◆</div>
+        <h1 style="font-weight: 300; margin-bottom: 0.5rem;">AgentGraph</h1>
+        <p style="font-size: 1.1rem; color: #888; max-width: 500px; margin: 0 auto;">
+            AI-powered multi-agent system for real-time architecture design, 
+            security evaluation, and cost optimization.
+        </p>
+        <div style="margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 12px; display: inline-block; text-align: left;">
+            <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                <strong>How it works:</strong><br><br>
+                1. Define your system requirements and budget<br>
+                2. Architect agent designs your system with Mermaid diagrams<br>
+                3. Security agent identifies vulnerabilities<br>
+                4. Evaluator scores the design (target: ≥9.5/10)<br>
+                5. Iterate until approved or max revisions reached
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # EXECUTION: Main logic when start button is clicked
 # ==========================================
 if start_btn:
+    # Header for active session
+    col_header1, col_header2 = st.columns([3, 1])
+    with col_header1:
+        st.markdown("## Design Session Active")
+    with col_header2:
+        st.markdown(f"<div style='text-align: right; color: #888; font-size: 0.9rem;'>Budget: ฿{user_monthly_budget_thb:,.0f}/month</div>", unsafe_allow_html=True)
+    
+    st.divider()
+    
     app_graph = build_graph()
     
-    # Initialize state - pass budget to architect but no cost tracking per iteration
+    # Initialize state
     initial_state = {
         "messages": [],
         "user_requirements": user_req,
@@ -83,22 +181,22 @@ if start_btn:
         "is_passed": False,
         "evaluation_score": 0.0,
         "is_mermaid_valid": True,
-        # Loop Prevention - History tracking fields
         "history_outputs": [],
         "history_scores": [],
         "history_feedback": [],
         "stop_reason": "",
-        # Budget context (for architect reference only - no cost deduction)
         "budget_context": user_monthly_budget_thb
     }
     
     # Create container for chat-like UI display
     chat_container = st.container()
     
-    # Track iterations (no cost tracking)
+    # Track iterations
     iterations_completed = 0
+    final_score = 0.0
+    final_passed = False
     
-    with st.spinner("🧠 Agents starting... Designing your system"):
+    with st.spinner("Agents collaborating on your architecture..."):
         # Stream graph updates in real-time
         for output in app_graph.stream(initial_state, stream_mode="updates"):
             for node_name, state_update in output.items():
@@ -112,30 +210,35 @@ if start_btn:
                         iterations_completed += 1
                         
                         with chat_container.chat_message("assistant", avatar="🏗️"):
-                            col1, col2 = st.columns([3, 1])
-                            with col1:
-                                st.markdown("**[Architect] System Design:**")
-                            with col2:
-                                st.metric("Iteration", f"#{iterations_completed}", label_visibility="collapsed")
+                            # Header row with iteration number
+                            header_cols = st.columns([4, 1])
+                            with header_cols[0]:
+                                st.markdown("**Architect** — System Design")
+                            with header_cols[1]:
+                                st.markdown(f"<div style='text-align: right; color: #666; font-size: 0.85rem;'>Iteration #{iterations_completed}</div>", unsafe_allow_html=True)
                             
-                            # Display message safely (prevent Streamlit from rendering Mermaid)
-                            safe_msg = latest_msg.replace("```mermaid", "```text")
-                            st.markdown(safe_msg)
+                            st.divider()
+                            
+                            # Main content in expander for cleanliness
+                            with st.expander("View architecture details", expanded=True):
+                                # Display message safely (prevent Streamlit from rendering Mermaid)
+                                safe_msg = latest_msg.replace("```mermaid", "```text")
+                                st.markdown(safe_msg)
                             
                             # Extract and render Mermaid diagrams
                             matches = re.findall(r"```mermaid\n(.*?)\n```", latest_msg, re.DOTALL)
                             if matches:
-                                st.info(f"🎨 Rendering {len(matches)} architecture diagram(s)")
+                                st.markdown(f"<small style='color: #888;'>📊 Rendering {len(matches)} architecture diagram(s)</small>", unsafe_allow_html=True)
                                 for idx, m_code in enumerate(matches):
                                     html_code = f"""
-                                    <div id="graph-{idx}" style="display: flex; justify-content: center; background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px;">
+                                    <div id="graph-{idx}" style="display: flex; justify-content: center; background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e8e8e8; margin-bottom: 10px;">
                                         <div class="mermaid" style="display:none;">
                                             {m_code}
                                         </div>
                                     </div>
                                     <script type="module">
                                         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                                        mermaid.initialize({{ startOnLoad: false, theme: 'default', securityLevel: 'loose' }});
+                                        mermaid.initialize({{ startOnLoad: false, theme: 'default', securityLevel: 'strict' }});
                                         
                                         async function renderGraph() {{
                                             const container = document.getElementById('graph-{idx}');
@@ -147,50 +250,95 @@ if start_btn:
                                                 container.innerHTML = svg;
                                             }} catch (error) {{
                                                 console.error('Mermaid render error:', error);
-                                                container.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">⚠️ Diagram code has syntax errors but system continues<br><small>(' + error.message + ')</small></div>';
+                                                container.innerHTML = '<div style="color: #d73a49; text-align: center; padding: 20px;">⚠️ Diagram syntax error — system continues<br><small>(' + error.message + ')</small></div>';
                                             }}
                                         }}
                                         renderGraph();
                                     </script>
                                     """
                                     components.html(html_code, height=550, scrolling=True)
+                            
+                            st.divider()
                     
                     # Security Node
                     elif node_name == "security":
                         with chat_container.chat_message("assistant", avatar="🛡️"):
-                            st.markdown("**[Security] Vulnerability Assessment:**")
-                            st.markdown(latest_msg)
+                            st.markdown("**Security** — Vulnerability Assessment")
+                            st.divider()
+                            
+                            # Use expander to keep UI clean
+                            with st.expander("View security analysis", expanded=False):
+                                st.markdown(latest_msg)
+                            
+                            st.divider()
 
                 # Evaluator Node
                 if node_name == "evaluator":
+                    score = state_update.get('evaluation_score', 0)
+                    is_passed = state_update.get('is_passed', False)
+                    feedback = state_update.get('feedback', '')
+                    
+                    final_score = score
+                    final_passed = is_passed
+                    
                     with chat_container.chat_message("assistant", avatar="⚖️"):
-                        score = state_update.get('evaluation_score', 0)
+                        st.markdown("**Evaluator** — Design Review")
+                        st.divider()
                         
-                        # Display score
-                        st.subheader(f"📊 Evaluation Score: {score:.2f}/10.0")
+                        # Score metrics in columns
+                        metric_cols = st.columns(3)
+                        with metric_cols[0]:
+                            st.metric("Score", f"{score:.2f}/10.0", 
+                                     delta="PASSED" if is_passed else "NEEDS WORK",
+                                     delta_color="normal" if is_passed else "inverse")
+                        with metric_cols[1]:
+                            st.metric("Iteration", f"#{iterations_completed}/3")
+                        with metric_cols[2]:
+                            status = "✓ Approved" if is_passed else "↻ Revision"
+                            st.metric("Status", status)
                         
-                        st.write("**Feedback:**")
-                        feedback = state_update.get('feedback', '')
+                        # Feedback in expander if present
                         if feedback:
-                            st.error(feedback)
+                            with st.expander("View detailed feedback", expanded=not is_passed):
+                                if is_passed:
+                                    st.success(feedback)
+                                else:
+                                    st.warning(feedback)
                         
-                        # Check if passed evaluation
-                        is_passed = state_update.get('is_passed', False)
+                        # Pass/fail notification
                         if is_passed:
-                            st.success("✅ System PASSED evaluation! Architecture approved!")
+                            st.success("🎉 Architecture approved! The design meets all criteria.")
                             st.balloons()
                         else:
-                            st.warning("🔄 Score below 9.5. Returning to Architect for design revision...")
+                            st.info("ℹ️ Score below threshold. Returning to Architect for refinement...")
+                        
+                        st.divider()
     
-    # Final Summary
-    st.markdown("---")
-    st.subheader("📋 Design Summary")
+    # Final Summary Section
+    st.markdown("## 📋 Session Summary")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Total Iterations", iterations_completed)
-    with col2:
-        st.metric("Budget Reference", f"฿{user_monthly_budget_thb:.0f}/month")
+    summary_cols = st.columns(4)
+    with summary_cols[0]:
+        st.metric("Iterations", iterations_completed)
+    with summary_cols[1]:
+        st.metric("Final Score", f"{final_score:.2f}")
+    with summary_cols[2]:
+        status_text = "Approved" if final_passed else "Pending"
+        st.metric("Status", status_text)
+    with summary_cols[3]:
+        st.metric("Budget Used", f"฿{user_monthly_budget_thb:,.0f}")
     
-    st.write(f"**Design completed** with {iterations_completed} architecture iteration(s)")
-    st.write(f"**Budget used as reference:** ฿{user_monthly_budget_thb:.2f}/month for cost-conscious design")
+    st.markdown(f"""
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; margin-top: 1rem; border-left: 4px solid {'#28a745' if final_passed else '#ffc107'};">
+        <strong style="color: {'#28a745' if final_passed else '#856404'};">
+            {'✓ Design Approved' if final_passed else '⚠ Design Requires Additional Work'}
+        </strong>
+        <p style="margin: 0.5rem 0 0 0; color: #666;">
+            Completed {iterations_completed} iteration(s) with a final score of {final_score:.2f}/10.0. 
+            Budget reference: ฿{user_monthly_budget_thb:,.2f}/month.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.divider()
+    st.markdown("<div style='text-align: center; color: #888; font-size: 0.85rem;'>AgentGraph — Multi-Agent Architecture Design System</div>", unsafe_allow_html=True)

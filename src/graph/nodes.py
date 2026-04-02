@@ -1,9 +1,12 @@
+import json
 import os
 import re
+from typing import Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langgraph.graph import END
+from pydantic import ValidationError
 from src.graph.state import GraphState, EvaluationRubric
 from src.utils.convergence_utils import should_stop_iteration  # Loop Prevention
 from langsmith import Client
@@ -14,30 +17,29 @@ api_key = os.getenv("NOVITA_API_KEY")
 if not api_key:
     raise ValueError("Missing NOVITA_API_KEY in environment variables.")
 
-# Using Llama 70B for intelligence at scale
+# Using configurable LLM settings with environment fallbacks
 llm = ChatOpenAI(
     api_key=api_key,
-    base_url="https://api.novita.ai/v3/openai",
-    model="meta-llama/llama-3.3-70b-instruct",
-    temperature=0.2
+    base_url=os.getenv("LLM_BASE_URL", "https://api.novita.ai/v3/openai"),
+    model=os.getenv("MODEL_NAME", "meta-llama/llama-3.3-70b-instruct"),
+    temperature=float(os.getenv("MODEL_TEMPERATURE", 0.2))
 )
 
 # ==========================================
 # Agent Nodes
 # ==========================================
-def architect_node(state: GraphState):
+def architect_node(state: GraphState) -> Dict[str, Any]:
     messages = state.get("messages", [])
     feedback = state.get("feedback", "")
     # Get user requirements (use Default if not provided)
-    requirements = state.get("user_requirements", "A highly scalable and secure E-commerce checkout system.")
-    budget_context = state.get("budget_context", 5000.0)  # Get monthly budget context
+    requirements = state.get("user_requirements", os.getenv("DEFAULT_REQUIREMENTS", "A highly scalable and secure E-commerce checkout system."))
+    budget_context = state.get("budget_context", float(os.getenv("DEFAULT_BUDGET_THB", 5000.0)))  # Get monthly budget context
     
-    # 1. ดึง System Prompt ที่เราเพิ่งเซฟไว้จาก LangSmith Hub!
-    # (เปลี่ยน 'sittasahathum' เป็นชื่อ username ของเปาใน LangSmith นะครับ)
+    # 1. Pull System Prompt from LangSmith Hub!
     client = Client()
-    prompt_template = client.pull_prompt("agentgraph-architect")
+    prompt_template = client.pull_prompt(os.getenv("LANGSMITH_PROMPT_NAME", "agentgraph-architect"))
 
-    # 2. ยัดตัวแปรเข้าไป (ตรงนี้เราค่อยมาใส่ .2f ในโค้ด Python)
+    # 2. Inject variables (we'll handle .2f formatting in Python code)
     formatted_system_prompt = prompt_template.invoke({
         "budget_context": f"{budget_context:.2f}",
         "requirements": requirements
@@ -56,7 +58,7 @@ YOUR TASK:
 2. DO NOT make minor tweaks - make FUNDAMENTAL CHANGES based on the feedback
 3. If told to remove a component, REMOVE IT and show the cost savings
 4. If told to simplify, CHOOSE FEWER TECHNOLOGIES and show the tradeoff
-5. If over-budget, ELIMINATE features until it fits ฿{budget_context:.2f}/month
+5. If over-budget, ELIMINATE features until it fits ${budget_context:.2f}/month
 
 REMEMBER:
 - MVP-FIRST thinking: 80% of users first, not 100% of use cases
@@ -70,19 +72,19 @@ Redesign the architecture NOW based on this feedback."""
 Remember: Start with MVP-FIRST thinking:
 - 80% of users, 20% of features
 - Small team feasibility (3-5 engineers)
-- Cost-conscious design for ฿{budget_context:.2f}/month
+- Cost-conscious design for ${budget_context:.2f}/month
 - Clear path to Phase 2 when resources grow
 
 CRITICAL - Mermaid Diagram Rules:
 - Node IDs MUST be ASCII-only (no Thai, no emojis, no special chars)
-- Use labels with double quotes for Thai: `NodeID["Thai Label สำคัญ"]`
-- Example: `AuthService["การตรวจสอบสิทธิ"]` NOT `การตรวจสอบสิทธิ["Auth"]`"""
+- Use labels with double quotes for display text: `NodeID["Important Label"]`
+- Example: `AuthService["Authentication Service"]` NOT `Auth["AuthService"]`"""
 
     final_messages = formatted_system_prompt.to_messages() + messages + [HumanMessage(content=human_prompt_text)]
     
     response = llm.invoke(final_messages)
     
-    # Track output สำหรับ Loop Prevention
+    # Track output for Loop Prevention
     history_outputs = state.get("history_outputs", [])
     history_outputs.append(response.content)
         
@@ -92,7 +94,7 @@ CRITICAL - Mermaid Diagram Rules:
     }
 
 
-def mermaid_validator_node(state: GraphState):
+def mermaid_validator_node(state: GraphState) -> Dict[str, Any]:
     """
     Validate and intercept AI Mermaid syntax errors before downstream processing
     """
@@ -123,7 +125,7 @@ def mermaid_validator_node(state: GraphState):
             try:
                 node_id.encode('ascii')
             except UnicodeEncodeError:
-                errors.append(f"- FATAL: Node ID '{node_id}' contains non-ASCII characters. Node IDs must be ASCII-only (use labels for Thai). Example: NodeID[\"Thai Label สำคัญ\"] NOT สำคัญ[...]")
+                errors.append(f"- FATAL: Node ID '{node_id}' contains non-ASCII characters. Node IDs must be ASCII-only (use labels for display text). Example: NodeID[\"Important Label\"] NOT NonASCII[...]")
         
         # 3. Catch syntax mixing errors
         if code_lower.startswith("graph") or code_lower.startswith("flowchart"):
@@ -149,11 +151,17 @@ def mermaid_validator_node(state: GraphState):
     return {"is_mermaid_valid": True}
 
 
-def security_node(state: GraphState):
+def security_node(state: GraphState) -> Dict[str, Any]:
     messages = state.get("messages", [])
-    budget_context = state.get("budget_context", 5000.0)
+    budget_context = state.get("budget_context", float(os.getenv("DEFAULT_BUDGET_THB", 5000.0)))
     
     sys_msg = SystemMessage(content=f"""You are a Senior Application Security Engineer AND a pragmatic cost adviser.
+
+⚠️ CRITICAL INSTRUCTION - DO NOT HALLUCINATE:
+1. You MUST analyze the CURRENT iteration of the architecture provided in the conversation.
+2. Review the conversation history. If the Architect has already addressed previous feedback (e.g., added Auth0, implemented AWS S3 encryption), DO NOT repeat the old critique.
+3. Acknowledge the fixes made in the current version and focus ONLY on new or remaining unresolved issues.
+4. If a vulnerability was marked as fixed but the implementation is incomplete, say WHAT specifically is still missing rather than repeating the original issue.
 
 MONTHLY BUDGET: ฿{budget_context:.2f}
 
@@ -169,7 +177,7 @@ Review the architecture provided by the Architect. Your role is to:
    - Name SPECIFIC tools/approaches (e.g., "use AWS WAF instead of expensive Cloudflare")
 
 3. RECOGNIZE BUDGET CONSTRAINTS
-   - Some enterprise solutions are TOO EXPENSIVE (e.g., ฿50k/month compliance audits for a ฿5k/month system)
+   - Some enterprise solutions are TOO EXPENSIVE (e.g., ฿1.7M/month compliance audits for a ฿170k/month system)
    - Recommend realistic alternatives (e.g., "self-audit checklist instead of 3rd party audit")
    - State clearly: "MVP Security = PHASE 1" / "Enterprise Security = PHASE 2"
 
@@ -198,7 +206,7 @@ Provide actionable mitigation strategies that are:
     return {"messages": [response]}
 
 
-def evaluator_node(state: GraphState):
+def evaluator_node(state: GraphState) -> Dict[str, Any]:
     """
     Use JsonOutputParser to enforce structured evaluation responses
     
@@ -211,7 +219,7 @@ def evaluator_node(state: GraphState):
     """
     messages = state.get("messages", [])
     revision_count = state.get("revision_count", 0)
-    budget_context = state.get("budget_context", 5000.0)
+    budget_context = state.get("budget_context", float(os.getenv("DEFAULT_BUDGET_THB", 5000.0)))
     
     # Loop Prevention - Initialize history tracking
     history_scores = state.get("history_scores", [])
@@ -237,6 +245,13 @@ YOUR TASK: Compare the current design with the previous one. Did the Architect a
     sys_msg = SystemMessage(content=f"""You are an UNCOMPROMISING Principal Architect evaluating system designs.
 Stop grading on theory - grade on REALITY. Be STRICT because real systems fail in production.
 
+⚠️ CRITICAL INSTRUCTION - DO NOT HALLUCINATE:
+1. You MUST analyze the CURRENT iteration of the architecture provided in the conversation history.
+2. Review the full conversation. If the Architect has already addressed previous feedback (e.g., added Auth0, fixed the authentication flow, implemented encryption), DO NOT repeat the old critique.
+3. Acknowledge the fixes made in the current version and focus ONLY on new or remaining unresolved issues.
+4. If a fix was attempted but is incomplete, specify EXACTLY what is still missing rather than restating the original problem.
+5. Example of GOOD feedback: "You added Auth0 - GOOD! BUT the DoctorPortal still connects directly to Storage bypassing the auth gateway. Fix the flow."
+
 USER'S MONTHLY OPERATING BUDGET: ฿{budget_context:.2f}
 
 {previous_feedback_context}
@@ -250,14 +265,14 @@ EVALUATION CRITERIA (Real-World Viability):
    - Any hand-waving or theoretical compliance? DEDUCT HEAVILY.
 
 2. FEASIBILITY (30%): 
-   - Can a small team ACTUALLY BUILD this with $available?
+   - Can a small team ACTUALLY BUILD this with the available budget?
    - Is the stack reasonable for maintenance (not 7+ unfamiliar technologies)?
-   - Are infrastructure needs realistic (not "99.99999% uptime on ฿1000/month")?
+   - Are infrastructure needs realistic (not "99.99999% uptime on ฿34,000/month")?
    - Is there a clear path from design to running code?
 
 3. COST-EFFECTIVENESS (30%): 
    - Does it WORK within the stated monthly budget (฿{budget_context:.2f})?
-   - Are you using $100k solutions when $10k alternatives exist? MAJOR DEDUCTION.
+   - Are you using ฿3.4M solutions when ฿340k alternatives exist? MAJOR DEDUCTION.
    - Is the budget even ACKNOWLEDGED in the design?
 
 YOUR GRADING STANDARD - BE HARD:
@@ -278,7 +293,7 @@ When score hasn't improved or is still <= 8.9:
 
 ✅ EXAMPLE OF GOOD FEEDBACK:
 ❌ BAD: "Missing authentication"
-✅ GOOD: "You added 'AuthenticatedAPIGateway' using Auth0. GOOD! BUT: (1) DoctorPortal connects directly to Storage without going through auth gateway - flow is wrong. (2) Auth0 free tier only supports 10k users - if you exceed, costs jump to ฿500/month. Need to plan for this or limit MVP to 5k users."
+✅ GOOD: "You added 'AuthenticatedAPIGateway' using Auth0. GOOD! BUT: (1) DoctorPortal connects directly to Storage without going through auth gateway - flow is wrong. (2) Auth0 free tier only supports 10k users - if you exceed, costs jump to ฿17,000/month. Need to plan for this or limit MVP to 5k users."
 
 KEY GRADING RULES:
 ❌ DEDUCT HEAVILY for:
@@ -307,15 +322,22 @@ If score hasn't improved from last round: YOUR FEEDBACK was either unclear or th
     try:
         # Use Parser to extract JSON from LLM response
         eval_dict = parser.invoke(response)
-        is_passed = eval_dict.get("is_passed", False)
         score = eval_dict.get("score", 0.0)
         feedback_str = "\n".join(eval_dict.get("critique_points", []))
-    except Exception as e:
-        print(f"\n⚠️  [Evaluator] LLM returned invalid JSON! ({e})")
+        # Override LLM's is_passed - we accept score >= 9.5 as passing
+        is_passed = score >= 9.5
+    except (json.JSONDecodeError, ValidationError) as e:
+        print(f"\n⚠️  [Evaluator] LLM returned invalid JSON! ({type(e).__name__}: {e})")
         # Fallback when Model returns malformed JSON
         is_passed = False
         score = 0.0
         feedback_str = "CRITICAL ERROR: Evaluator output was not valid JSON. Architect, please refine the design while adhering strictly to guidelines."
+    except Exception as e:
+        # Log unexpected errors but don't crash
+        print(f"\n🔥 [Evaluator] Unexpected error during evaluation: {type(e).__name__}: {e}")
+        is_passed = False
+        score = 0.0
+        feedback_str = f"SYSTEM ERROR: Evaluation failed due to {type(e).__name__}. Architect, please retry with a cleaner design."
     
     # Loop Prevention - Track score and feedback for convergence detection
     history_scores.append(score)
@@ -333,24 +355,24 @@ If score hasn't improved from last round: YOUR FEEDBACK was either unclear or th
 # ==========================================
 # Edge Routing Logic
 # ==========================================
-def route_after_architect(state: GraphState):
+def route_after_architect(state: GraphState) -> str:
     if state.get("is_mermaid_valid"):
         return "security"
     return "architect"
 
-def route_to_next(state: GraphState):
+def route_to_next(state: GraphState) -> str:
     """
     Loop Prevention - Enhanced routing logic with convergence detection.
     
     Stops iteration if:
-    - System has passed (score == 10.0 ONLY)
+    - System has passed (score >= 9.5)
     - Architecture has converged (>= 90% similarity to previous)
     - Feedback is being repeated (>= 85% similarity to previous)
     - Score shows no improvement for 2+ consecutive rounds
     - Max revisions reached (3)
     """
     if state["is_passed"]:
-        print("\n✅ [ROUTING] System PASSED evaluation (PERFECT score = 10.0)")
+        print(f"\n✅ [ROUTING] System PASSED evaluation (score >= 9.5)")
         return END
     
     # Loop Prevention - Check indicators before attempting another iteration

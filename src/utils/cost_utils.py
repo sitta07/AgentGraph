@@ -7,7 +7,7 @@ Estimates real costs for:
 3. Cost per design revision
 
 NOTE: Budget is allocated for SYSTEM DESIGN ITERATIONS only.
-Each iteration (Architect review + Security review + Evaluation) costs ฿3 for architect design work.
+Each iteration (Architect review + Security review + Evaluation) costs ฿100 for architect design work.
 """
 
 from typing import Optional

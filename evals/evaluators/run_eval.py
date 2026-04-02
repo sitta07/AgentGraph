@@ -6,7 +6,7 @@ from langsmith.evaluation import evaluate
 
 load_dotenv()
 
-# 💡 Trick ของ Senior: จัดการ Path เพื่อให้ import ไฟล์จากโฟลเดอร์นอก (src, main) ได้
+# 💡 Senior Trick: Manage path to import files from parent folders (src, main)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from main import build_graph
 
@@ -16,12 +16,12 @@ client = Client()
 app = build_graph()
 
 # ==========================================
-# 1. Target Function (ตัวแทนผู้เข้าสอบ)
+# 1. Target Function (Candidate)
 # ==========================================
 def predict_architecture(inputs: dict):
     """
-    ฟังก์ชันนี้จะรับ 'โจทย์' จาก Dataset (เช่น requirements, budget)
-    แล้วส่งไปให้ AgentGraph ของเราคิดคำตอบ
+    This function receives 'problems' from the Dataset (e.g., requirements, budget)
+    and sends them to our AgentGraph to generate answers.
     """
     initial_state = {
         "messages": [],
@@ -37,10 +37,10 @@ def predict_architecture(inputs: dict):
         "stop_reason": "",
     }
     
-    # สั่ง invoke() กราฟจะรันจนกว่าจะถึงจุด END
+    # Invoke the graph - it will run until reaching END
     final_state = app.invoke(initial_state)
     
-    # คืนค่าเฉพาะ "ผลลัพธ์" ที่เราต้องการให้กรรมการตรวจ
+    # Return only the "results" we want evaluators to check
     return {
         "score": final_state.get("evaluation_score", 0.0),
         "is_passed": final_state.get("is_passed", False),
@@ -49,20 +49,20 @@ def predict_architecture(inputs: dict):
     }
 
 # ==========================================
-# 2. Custom Evaluators (กรรมการคุมสอบ)
+# 2. Custom Evaluators (Examiners)
 # ==========================================
 def check_pass_status(run, example):
-    """กรรมการคนที่ 1: ตรวจว่ารันจบรอบนี้ ระบบให้ผ่านไหม (is_passed == True)"""
+    """Evaluator #1: Check if the run completed with system passed (is_passed == True)"""
     result = run.outputs.get("is_passed", False)
     score = run.outputs.get("score", 0.0)
     return {
-        "key": "System_Passed", # ชื่อวิชาที่สอบ
-        "score": 1.0 if result else 0.0, # 1.0 คือเต็ม, 0.0 คือตก
+        "key": "System_Passed",  # Subject name
+        "score": 1.0 if result else 0.0,  # 1.0 = pass, 0.0 = fail
         "comment": f"Final AI Score: {score}/10.0"
     }
 
 def check_mermaid_syntax(run, example):
-    """กรรมการคนที่ 2: ตรวจว่า Mermaid Render ติด 100% ไหม"""
+    """Evaluator #2: Check if Mermaid renders successfully 100%"""
     result = run.outputs.get("is_mermaid_valid", False)
     return {
         "key": "Valid_Mermaid",
@@ -70,9 +70,9 @@ def check_mermaid_syntax(run, example):
     }
 
 def check_efficiency(run, example):
-    """กรรมการคนที่ 3: ตรวจความเทพ ถ้ารันรอบเดียวผ่าน เอาคะแนนเต็มไปเลย"""
+    """Evaluator #3: Check efficiency - if passes in one round, full score"""
     revisions = run.outputs.get("revision_count", 0)
-    # ถ้าแก้ 1 รอบได้ 1.0 | ถ้าแก้ 2 รอบได้ 0.5 | ถ้าแก้ 3 รอบได้ 0.33
+    # If 1 revision = 1.0 | If 2 revisions = 0.5 | If 3 revisions = 0.33
     efficiency_score = 1.0 / max(1, revisions) 
     return {
         "key": "Revision_Efficiency",
@@ -81,21 +81,21 @@ def check_efficiency(run, example):
     }
 
 # ==========================================
-# 3. Execution (เปิดสนามสอบ)
+# 3. Execution (Open Exam)
 # ==========================================
 if __name__ == "__main__":
     print("🚀 Starting Automated Evaluation for AgentGraph...")
     
-    # ชื่อ Dataset บน LangSmith ที่เราต้องไปสร้างเตรียมไว้
+    # Dataset name on LangSmith that we need to create in advance
     DATASET_NAME = "AgentGraph-Test-Cases" 
     
     try:
-        # สั่งรันการประเมินผล!
+        # Run the evaluation!
         experiment_results = evaluate(
-            predict_architecture,       # สิ่งที่จะเทสต์
-            data=DATASET_NAME,          # ชุดข้อสอบ
-            evaluators=[check_pass_status, check_mermaid_syntax, check_efficiency], # กรรมการทั้ง 3 คน
-            experiment_prefix="eval-llama3.3-", # ชื่อ Prefix ในตารางผลสอบ
+            predict_architecture,       # Test target
+            data=DATASET_NAME,          # Test dataset
+            evaluators=[check_pass_status, check_mermaid_syntax, check_efficiency], # All 3 evaluators
+            experiment_prefix="eval-llama3.3-", # Prefix in results table
             metadata={"version": "1.0", "framework": "langgraph"}
         )
         print("✅ Evaluation completed! Go check the detailed results on LangSmith UI.")

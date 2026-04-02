@@ -8,7 +8,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from src.prompts import FINAL_SESSION_SUMMARY_PROMPT
 
 # ==========================================
-# CUSTOM CSS - Minimal Aesthetic Design
+# CUSTOM CSS - High Contrast & Vibrant Dashboard
 # ==========================================
 st.markdown("""
 <style>
@@ -16,49 +16,95 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    .stApp {background-color: #fafafa;}
+    .stApp {background-color: #f8fafc;}
     
     .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
         max-width: 1200px;
     }
     
     html, body, [class*="css"] {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        color: #0f172a;
     }
     
-    h1 {font-weight: 600 !important; color: #1a1a1a !important; letter-spacing: -0.02em !important;}
-    h2, h3 {font-weight: 500 !important; color: #333 !important;}
+    /* High Contrast Typography */
+    h1 {font-weight: 700 !important; color: #0f172a !important; letter-spacing: -0.02em !important;}
+    h2 {font-weight: 600 !important; color: #1e293b !important; margin-top: 1rem !important; margin-bottom: 0.75rem !important;}
+    h3 {font-weight: 600 !important; color: #334155 !important;}
     
+    p, li, .stMarkdown {color: #1e293b !important; font-size: 0.95rem !important; line-height: 1.6 !important;}
+    
+    /* Tighter Layout */
     div[data-testid="stVerticalBlock"] > div {
         background-color: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    
+    /* Agent Container Styles with Color Coding */
+    .architect-container {
+        border-left: 4px solid #3b82f6 !important;
+        background-color: #eff6ff !important;
+    }
+    
+    .security-container {
+        border-left: 4px solid #ef4444 !important;
+        background-color: #fef2f2 !important;
+    }
+    
+    .evaluator-container {
+        border-left: 4px solid #8b5cf6 !important;
+        background-color: #f5f3ff !important;
     }
     
     section[data-testid="stSidebar"] {
         background-color: #ffffff;
-        border-right: 1px solid #e8e8e8;
+        border-right: 1px solid #e2e8f0;
     }
     
     .stButton > button {
-        border-radius: 8px;
-        font-weight: 500;
+        border-radius: 6px;
+        font-weight: 600;
         transition: all 0.2s ease;
     }
     
     .stButton > button:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
     
+    /* Chat Message Styling */
     div[data-testid="stChatMessage"] {
         background-color: white;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    
+    /* Better Blockquotes */
+    blockquote {
+        border-left: 3px solid #cbd5e1 !important;
+        padding-left: 1rem !important;
+        margin: 0.5rem 0 !important;
+        color: #334155 !important;
+    }
+    
+    /* Metrics Styling */
+    div[data-testid="stMetric"] {
+        background: white;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Success/Warning/Info boxes */
+    .stSuccess, .stWarning, .stInfo {
+        border-radius: 6px !important;
+        padding: 0.75rem 1rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -215,69 +261,72 @@ if start_btn:
                         iterations_completed += 1
                         
                         with chat_container.chat_message("assistant", avatar="🏗️"):
-                            # Header row with iteration number
-                            header_cols = st.columns([4, 1])
-                            with header_cols[0]:
-                                st.markdown("**Architect** — System Design")
-                            with header_cols[1]:
-                                st.markdown(f"<div style='text-align: right; color: #666; font-size: 0.85rem;'>Iteration #{iterations_completed}</div>", unsafe_allow_html=True)
-                            
-                            st.divider()
-                            
-                            # Main content in expander for cleanliness
-                            with st.expander("View architecture details", expanded=True):
-                                # Strip Mermaid code blocks completely - only show English description
+                            with st.container(border=True):
+                                st.markdown('<div class="architect-container">', unsafe_allow_html=True)
+                                
+                                # Header row with iteration number
+                                header_cols = st.columns([4, 1])
+                                with header_cols[0]:
+                                    st.markdown("**Architect** — System Design")
+                                with header_cols[1]:
+                                    st.markdown(f"<div style='text-align: right; color: #3b82f6; font-size: 0.85rem; font-weight: 600;'>Iteration #{iterations_completed}</div>", unsafe_allow_html=True)
+                                
+                                # Architecture Description - fully visible
+                                st.markdown("**Architecture Description**")
                                 clean_text = re.sub(r"```mermaid.*?```", "", latest_msg, flags=re.DOTALL)
-                                # Clean up any extra whitespace from the removal
                                 clean_text = re.sub(r"\n{3,}", "\n\n", clean_text.strip())
-                                st.markdown(clean_text)
-                            
-                            # Extract and render Mermaid diagrams
-                            matches = re.findall(r"```mermaid\n(.*?)\n```", latest_msg, re.DOTALL)
-                            if matches:
-                                st.markdown(f"<small style='color: #888;'>📊 Rendering {len(matches)} architecture diagram(s)</small>", unsafe_allow_html=True)
-                                for idx, m_code in enumerate(matches):
-                                    html_code = f"""
-                                    <div id="graph-{idx}" style="display: flex; justify-content: center; background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e8e8e8; margin-bottom: 10px;">
-                                        <div class="mermaid" style="display:none;">
-                                            {m_code}
+                                st.markdown(f"> {clean_text.replace(chr(10), chr(10)+'> ')}")
+                                
+                                st.write("")
+                                
+                                # Architecture Diagrams - fully visible
+                                matches = re.findall(r"```mermaid\n(.*?)\n```", latest_msg, re.DOTALL)
+                                if matches:
+                                    st.markdown("**Architecture Diagram**")
+                                    for idx, m_code in enumerate(matches):
+                                        html_code = f"""
+                                        <div id="graph-{iterations_completed}-{idx}" style="display: flex; justify-content: center; background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+                                            <div class="mermaid" style="display:none;">
+                                                {m_code}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <script type="module">
-                                        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                                        mermaid.initialize({{ startOnLoad: false, theme: 'default', securityLevel: 'strict' }});
-                                        
-                                        async function renderGraph() {{
-                                            const container = document.getElementById('graph-{idx}');
-                                            const codeElement = container.querySelector('.mermaid');
-                                            const code = codeElement.textContent.trim();
+                                        <script type="module">
+                                            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                                            mermaid.initialize({{ startOnLoad: false, theme: 'default', securityLevel: 'strict' }});
                                             
-                                            try {{
-                                                const {{ svg }} = await mermaid.render('mermaid-svg-{idx}', code);
-                                                container.innerHTML = svg;
-                                            }} catch (error) {{
-                                                console.error('Mermaid render error:', error);
-                                                container.innerHTML = '<div style="color: #d73a49; text-align: center; padding: 20px;">⚠️ Diagram syntax error — system continues<br><small>(' + error.message + ')</small></div>';
+                                            async function renderGraph() {{
+                                                const container = document.getElementById('graph-{iterations_completed}-{idx}');
+                                                const codeElement = container.querySelector('.mermaid');
+                                                const code = codeElement.textContent.trim();
+                                                
+                                                try {{
+                                                    const {{ svg }} = await mermaid.render('mermaid-svg-{iterations_completed}-{idx}', code);
+                                                    container.innerHTML = svg;
+                                                }} catch (error) {{
+                                                    console.error('Mermaid render error:', error);
+                                                    container.innerHTML = '<div style="color: #d73a49; text-align: center; padding: 20px;">Diagram syntax error — system continues<br><small>(' + error.message + ')</small></div>';
+                                                }}
                                             }}
-                                        }}
-                                        renderGraph();
-                                    </script>
-                                    """
-                                    components.html(html_code, height=550, scrolling=True)
-                            
-                            st.divider()
+                                            renderGraph();
+                                        </script>
+                                        """
+                                        components.html(html_code, height=550, scrolling=True)
+                                
+                                st.markdown('</div>', unsafe_allow_html=True)
                     
                     # Security Node
                     elif node_name == "security":
                         with chat_container.chat_message("assistant", avatar="🛡️"):
-                            st.markdown("**Security** — Vulnerability Assessment")
-                            st.divider()
-                            
-                            # Use expander to keep UI clean
-                            with st.expander("View security analysis", expanded=False):
-                                st.markdown(latest_msg)
-                            
-                            st.divider()
+                            with st.container(border=True):
+                                st.markdown('<div class="security-container">', unsafe_allow_html=True)
+                                
+                                st.markdown("**Security** — Vulnerability Assessment")
+                                
+                                # Security Analysis - fully visible
+                                st.markdown("**Security Analysis**")
+                                st.markdown(f"> {latest_msg.replace(chr(10), chr(10)+'> ')}")
+                                
+                                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Evaluator Node
                 if node_name == "evaluator":
@@ -289,37 +338,40 @@ if start_btn:
                     final_passed = is_passed
                     
                     with chat_container.chat_message("assistant", avatar="⚖️"):
-                        st.markdown("**Evaluator** — Design Review")
-                        st.divider()
-                        
-                        # Score metrics in columns
-                        metric_cols = st.columns(3)
-                        with metric_cols[0]:
-                            st.metric("Score", f"{score:.2f}/10.0", 
-                                     delta="PASSED" if is_passed else "NEEDS WORK",
-                                     delta_color="normal" if is_passed else "inverse")
-                        with metric_cols[1]:
-                            st.metric("Iteration", f"#{iterations_completed}/3")
-                        with metric_cols[2]:
-                            status = "✓ Approved" if is_passed else "↻ Revision"
-                            st.metric("Status", status)
-                        
-                        # Feedback in expander if present
-                        if feedback:
-                            with st.expander("View detailed feedback", expanded=not is_passed):
+                        with st.container(border=True):
+                            st.markdown('<div class="evaluator-container">', unsafe_allow_html=True)
+                            
+                            st.markdown("**Evaluator** — Design Review")
+                            
+                            # Score metrics in columns
+                            metric_cols = st.columns(3)
+                            with metric_cols[0]:
+                                st.metric("Score", f"{score:.2f}/10.0", 
+                                         delta="PASSED" if is_passed else "NEEDS WORK",
+                                         delta_color="normal" if is_passed else "inverse")
+                            with metric_cols[1]:
+                                st.metric("Iteration", f"#{iterations_completed}/3")
+                            with metric_cols[2]:
+                                status = "Approved" if is_passed else "Revision"
+                                st.metric("Status", status)
+                            
+                            # Feedback - fully visible
+                            if feedback:
+                                st.markdown("**Detailed Feedback**")
                                 if is_passed:
-                                    st.success(feedback)
+                                    st.success(f"> {feedback.replace(chr(10), chr(10)+'> ')}")
                                 else:
-                                    st.warning(feedback)
-                        
-                        # Pass/fail notification
-                        if is_passed:
-                            st.success("🎉 Architecture approved! The design meets all criteria.")
-                            st.balloons()
-                        else:
-                            st.info("ℹ️ Score below threshold. Returning to Architect for refinement...")
-                        
-                        st.divider()
+                                    st.warning(f"> {feedback.replace(chr(10), chr(10)+'> ')}")
+                                st.write("")
+                            
+                            # Pass/fail notification
+                            if is_passed:
+                                st.success("Architecture approved! The design meets all criteria.")
+                                st.balloons()
+                            else:
+                                st.info("Score below threshold. Returning to Architect for refinement...")
+                            
+                            st.markdown('</div>', unsafe_allow_html=True)
     
     st.divider()
     
@@ -350,10 +402,15 @@ if start_btn:
         except Exception as e:
             final_summary = f"Could not generate detailed summary: {str(e)}"
     
-    # Display final summary in expander
-    with st.expander("📋 Detailed Session Flow Summary", expanded=False):
-        st.markdown("### Complete Design Session Narrative")
+    st.divider()
+    
+    # Display final summary - fully visible in clean container
+    st.markdown("## 📋 Detailed Session Flow Summary")
+    with st.container(border=True):
         st.markdown(final_summary)
+    
+    st.write("")
+    st.divider()
     
     # Final Summary Section
     st.markdown("## 📋 Session Summary")

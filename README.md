@@ -14,7 +14,7 @@
 A multi-agent system for real-time system design, security evaluation, and architecture optimization using **Meta Llama 3.3 70B** and **LangGraph**. Generates Mermaid diagrams, identifies vulnerabilities, and iteratively improves designs for cost-effectiveness and security.
 
 > [!NOTE]
-> 🚧 **Learning Project**: This repository is an active learning playground for mastering advanced Agentic AI patterns. It serves as a hands-on exploration of:
+> **Learning Project**: This repository is an active learning playground for mastering advanced Agentic AI patterns. It serves as a hands-on exploration of:
 > - **LangGraph** — Multi-agent orchestration and state management
 > - **LangSmith** — LLM observability, tracing, and prompt management
 >
@@ -24,26 +24,26 @@ A multi-agent system for real-time system design, security evaluation, and archi
 
 ## Features
 
-### 🤖 Multi-Agent System
+### Multi-Agent System
 - **4 Specialized Agents** working in a coordinated loop:
   - **Architect** — Generates system architecture with cost estimates
   - **Security** — Identifies vulnerabilities and mitigation strategies
   - **Evaluator** — Scores designs on security (40%), feasibility (30%), cost-effectiveness (30%)
   - **Mermaid Validator** — Ensures diagram syntax correctness
 
-### 🎨 Professional UI/UX
+### Professional UI/UX
 - **Minimal Aesthetic Streamlit UI** — Clean, modern interface with real-time agent outputs
 - **Vertical Mermaid Diagrams** — `graph TD` layout for better readability (prevents horizontal compression)
 - **Executive Session Summary** — AI-generated chronological narrative of the entire design session
 
-### 🛡️ Engineering Best Practices
+### Engineering Best Practices
 - **Prompt Registry Pattern** — Clean separation of prompt logic from agent implementation (`src/prompts/`)
 - **Dynamic LangSmith Tracing** — Runtime-configurable with dynamic UUIDs for each session
 - **Loop Prevention** — Convergence detection via similarity tracking, feedback deduplication, and score stagnation detection
 - **Robust Error Handling** — Specific exception handling for JSON parsing and validation errors
 - **Full English Localization** — Professional English throughout (no mixed languages)
 
-### 💰 Cost-Conscious Design
+### Cost-Conscious Design
 - Budget-aware architecture recommendations in **Thai Baht (฿)**
 - Pragmatic MVP-first approach (80% users, 20% features)
 - Small team feasibility assessment (3-5 engineers)

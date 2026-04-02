@@ -162,7 +162,7 @@ Areas for contribution:
 
 ## License
 
-MIT License (2026) — See [LICENSE](LICENSE) file for details.
+MIT License (2026) — See [LICENSE](LICENSE) file for details
 
 ---
 

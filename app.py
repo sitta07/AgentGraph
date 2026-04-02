@@ -3,6 +3,9 @@ import streamlit.components.v1 as components
 import os
 import re
 from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage
+from src.prompts import FINAL_SESSION_SUMMARY_PROMPT
 
 # ==========================================
 # CUSTOM CSS - Minimal Aesthetic Design
@@ -195,6 +198,7 @@ if start_btn:
     iterations_completed = 0
     final_score = 0.0
     final_passed = False
+    session_messages = []  # Collect all messages for final summary
     
     with st.spinner("Agents collaborating on your architecture..."):
         # Stream graph updates in real-time
@@ -204,6 +208,7 @@ if start_btn:
                 # Display agent messages
                 if "messages" in state_update and len(state_update["messages"]) > 0:
                     latest_msg = state_update["messages"][-1].content
+                    session_messages.append(latest_msg)  # Collect for final summary
                     
                     # Architect Node
                     if node_name == "architect":
@@ -221,9 +226,11 @@ if start_btn:
                             
                             # Main content in expander for cleanliness
                             with st.expander("View architecture details", expanded=True):
-                                # Display message safely (prevent Streamlit from rendering Mermaid)
-                                safe_msg = latest_msg.replace("```mermaid", "```text")
-                                st.markdown(safe_msg)
+                                # Strip Mermaid code blocks completely - only show English description
+                                clean_text = re.sub(r"```mermaid.*?```", "", latest_msg, flags=re.DOTALL)
+                                # Clean up any extra whitespace from the removal
+                                clean_text = re.sub(r"\n{3,}", "\n\n", clean_text.strip())
+                                st.markdown(clean_text)
                             
                             # Extract and render Mermaid diagrams
                             matches = re.findall(r"```mermaid\n(.*?)\n```", latest_msg, re.DOTALL)
@@ -313,6 +320,40 @@ if start_btn:
                             st.info("ℹ️ Score below threshold. Returning to Architect for refinement...")
                         
                         st.divider()
+    
+    st.divider()
+    
+    # Generate and display final session flow summary
+    with st.spinner("Generating detailed session summary..."):
+        # Initialize LLM for summary generation
+        summary_llm = ChatOpenAI(
+            api_key=os.getenv("NOVITA_API_KEY"),
+            base_url=os.getenv("LLM_BASE_URL", "https://api.novita.ai/v3/openai"),
+            model=os.getenv("MODEL_NAME", "meta-llama/llama-3.3-70b-instruct"),
+            temperature=0.3
+        )
+        
+        # Build conversation history text
+        conversation_history = "\n\n".join([
+            f"Message {i+1}:\n{msg}" for i, msg in enumerate(session_messages)
+        ])
+        
+        # Call LLM with summary prompt
+        summary_messages = [
+            SystemMessage(content=FINAL_SESSION_SUMMARY_PROMPT),
+            HumanMessage(content=f"CONVERSATION HISTORY:\n\n{conversation_history}")
+        ]
+        
+        try:
+            summary_response = summary_llm.invoke(summary_messages)
+            final_summary = summary_response.content
+        except Exception as e:
+            final_summary = f"Could not generate detailed summary: {str(e)}"
+    
+    # Display final summary in expander
+    with st.expander("📋 Detailed Session Flow Summary", expanded=False):
+        st.markdown("### Complete Design Session Narrative")
+        st.markdown(final_summary)
     
     # Final Summary Section
     st.markdown("## 📋 Session Summary")

@@ -8,7 +8,14 @@ from langchain_core.output_parsers import JsonOutputParser
 from langgraph.graph import END
 from pydantic import ValidationError
 from src.graph.state import GraphState, EvaluationRubric
-from src.utils.convergence_utils import should_stop_iteration  # Loop Prevention
+from src.utils.convergence_utils import should_stop_iteration
+from src.prompts import (
+    ARCHITECT_REVISION_HUMAN_PROMPT_TEMPLATE,
+    ARCHITECT_INITIAL_HUMAN_PROMPT_TEMPLATE,
+    SECURITY_SYSTEM_PROMPT_TEMPLATE,
+    PREVIOUS_FEEDBACK_CONTEXT_TEMPLATE,
+    EVALUATOR_SYSTEM_PROMPT_TEMPLATE,
+)
 from langsmith import Client
 # ==========================================
 # LLM Initialization
@@ -48,37 +55,15 @@ def architect_node(state: GraphState) -> Dict[str, Any]:
         
     if feedback:
         current_score = state.get("evaluation_score", 0.0)
-        human_prompt_text = f"""⚠️ REVISION REQUIRED - Current Score: {current_score:.1f}/10.0
-
-FEEDBACK FROM EVALUATOR:
-{feedback}
-
-YOUR TASK:
-1. Read the feedback CAREFULLY - it tells you EXACTLY what to fix
-2. DO NOT make minor tweaks - make FUNDAMENTAL CHANGES based on the feedback
-3. If told to remove a component, REMOVE IT and show the cost savings
-4. If told to simplify, CHOOSE FEWER TECHNOLOGIES and show the tradeoff
-5. If over-budget, ELIMINATE features until it fits ${budget_context:.2f}/month
-
-REMEMBER:
-- MVP-FIRST thinking: 80% of users first, not 100% of use cases
-- Small team (3-5 engineers): Can they actually build this?
-- Budget is real: Every ฿ spent on infrastructure is ฿ NOT spent on other priorities
-
-Redesign the architecture NOW based on this feedback."""
+        human_prompt_text = ARCHITECT_REVISION_HUMAN_PROMPT_TEMPLATE.format(
+            current_score=current_score,
+            feedback=feedback,
+            budget_context=budget_context
+        )
     else:
-        human_prompt_text = f"""Please provide the initial cost-effective system architecture diagram for MVP deployment.
-
-Remember: Start with MVP-FIRST thinking:
-- 80% of users, 20% of features
-- Small team feasibility (3-5 engineers)
-- Cost-conscious design for ${budget_context:.2f}/month
-- Clear path to Phase 2 when resources grow
-
-CRITICAL - Mermaid Diagram Rules:
-- Node IDs MUST be ASCII-only (no Thai, no emojis, no special chars)
-- Use labels with double quotes for display text: `NodeID["Important Label"]`
-- Example: `AuthService["Authentication Service"]` NOT `Auth["AuthService"]`"""
+        human_prompt_text = ARCHITECT_INITIAL_HUMAN_PROMPT_TEMPLATE.format(
+            budget_context=budget_context
+        )
 
     final_messages = formatted_system_prompt.to_messages() + messages + [HumanMessage(content=human_prompt_text)]
     
@@ -155,52 +140,7 @@ def security_node(state: GraphState) -> Dict[str, Any]:
     messages = state.get("messages", [])
     budget_context = state.get("budget_context", float(os.getenv("DEFAULT_BUDGET_THB", 5000.0)))
     
-    sys_msg = SystemMessage(content=f"""You are a Senior Application Security Engineer AND a pragmatic cost adviser.
-
-⚠️ CRITICAL INSTRUCTION - DO NOT HALLUCINATE:
-1. You MUST analyze the CURRENT iteration of the architecture provided in the conversation.
-2. Review the conversation history. If the Architect has already addressed previous feedback (e.g., added Auth0, implemented AWS S3 encryption), DO NOT repeat the old critique.
-3. Acknowledge the fixes made in the current version and focus ONLY on new or remaining unresolved issues.
-4. If a vulnerability was marked as fixed but the implementation is incomplete, say WHAT specifically is still missing rather than repeating the original issue.
-
-MONTHLY BUDGET: ฿{budget_context:.2f}
-
-Review the architecture provided by the Architect. Your role is to:
-
-1. IDENTIFY SPECIFIC VULNERABILITIES (name them: IDOR, SQL Injection, Missing Auth, Cleartext, etc.)
-   - Quote EXACTLY where in the architecture the vulnerability exists
-   - Rate severity (CRITICAL, HIGH, MEDIUM, LOW)
-
-2. PROVIDE PRACTICAL, COST-EFFECTIVE MITIGATION STRATEGIES
-   - MVP Security: What's the minimum needed to be production-safe? (CRITICAL fixes only)
-   - Phase 2 Security: What can wait for later? (MEDIUM + LOW, nice-to-haves)
-   - Name SPECIFIC tools/approaches (e.g., "use AWS WAF instead of expensive Cloudflare")
-
-3. RECOGNIZE BUDGET CONSTRAINTS
-   - Some enterprise solutions are TOO EXPENSIVE (e.g., ฿1.7M/month compliance audits for a ฿170k/month system)
-   - Recommend realistic alternatives (e.g., "self-audit checklist instead of 3rd party audit")
-   - State clearly: "MVP Security = PHASE 1" / "Enterprise Security = PHASE 2"
-
-4. BALANCE: Security ≠ Perfection
-   - An MVP can accept technical debt and accept certain risks
-   - Document KNOWN RISKS explicitly (e.g., "No encryption at rest for MVP, plan for Phase 2")
-   - Be realistic about team capacity (small teams use managed services, not custom security)
-
-EXAMPLES OF MVP vs ENTERPRISE THINKING:
-❌ MVP: "Implement OAuth2 with self-managed Keycloak on premise" 
-✅ MVP: "Use Auth0 free tier (10k users/month)"
-
-❌ MVP: "Full compliance with HIPAA, SOC2, PCI-DSS, GDPR"
-✅ MVP: "HIPAA-compliant cloud hosting + documentation for Phase 2 audits"
-
-❌ MVP: "Custom encryption key management service"
-✅ MVP: "Use AWS KMS (managed, tested, secure)"
-
-Provide actionable mitigation strategies that are:
-- Implementable within ฿{budget_context:.2f}/month
-- Using available cloud services and open-source tools
-- Clearly phased (MVP security first, then enhance in Phase 2)
-""")
+    sys_msg = SystemMessage(content=SECURITY_SYSTEM_PROMPT_TEMPLATE.format(budget_context=budget_context))
     
     response = llm.invoke([sys_msg] + messages)
     return {"messages": [response]}
@@ -232,90 +172,16 @@ def evaluator_node(state: GraphState) -> Dict[str, Any]:
     if len(history_feedback) > 0:
         previous_score = history_scores[-1] if history_scores else 0.0
         previous_feedback = history_feedback[-1] if history_feedback else ""
-        previous_feedback_context = f"""
-PREVIOUS ITERATION FEEDBACK (Score: {previous_score:.1f}/10.0):
-{previous_feedback}
-
-YOUR TASK: Compare the current design with the previous one. Did the Architect address the issues?
-- If yes: Acknowledge the improvements, but identify WHAT'S STILL MISSING or incomplete
-- If no: Be EVEN MORE DIRECTIVE - tell architect EXACTLY what architectural changes to make
-- If score hasn't improved: The feedback must be MORE SPECIFIC about WHY and what to change fundamentally
-"""
+        previous_feedback_context = PREVIOUS_FEEDBACK_CONTEXT_TEMPLATE.format(
+            previous_score=previous_score,
+            previous_feedback=previous_feedback
+        )
     
-    sys_msg = SystemMessage(content=f"""You are an UNCOMPROMISING Principal Architect evaluating system designs.
-Stop grading on theory - grade on REALITY. Be STRICT because real systems fail in production.
-
-⚠️ CRITICAL INSTRUCTION - DO NOT HALLUCINATE:
-1. You MUST analyze the CURRENT iteration of the architecture provided in the conversation history.
-2. Review the full conversation. If the Architect has already addressed previous feedback (e.g., added Auth0, fixed the authentication flow, implemented encryption), DO NOT repeat the old critique.
-3. Acknowledge the fixes made in the current version and focus ONLY on new or remaining unresolved issues.
-4. If a fix was attempted but is incomplete, specify EXACTLY what is still missing rather than restating the original problem.
-5. Example of GOOD feedback: "You added Auth0 - GOOD! BUT the DoctorPortal still connects directly to Storage bypassing the auth gateway. Fix the flow."
-
-USER'S MONTHLY OPERATING BUDGET: ฿{budget_context:.2f}
-
-{previous_feedback_context}
-
-EVALUATION CRITERIA (Real-World Viability):
-
-1. SECURITY (40%): 
-   - Does it ACTUALLY address vulnerabilities? (Not just acknowledge them)
-   - Are mitigations REALISTIC given the budget and team?
-   - Will this SURVIVE penetration testing?
-   - Any hand-waving or theoretical compliance? DEDUCT HEAVILY.
-
-2. FEASIBILITY (30%): 
-   - Can a small team ACTUALLY BUILD this with the available budget?
-   - Is the stack reasonable for maintenance (not 7+ unfamiliar technologies)?
-   - Are infrastructure needs realistic (not "99.99999% uptime on ฿34,000/month")?
-   - Is there a clear path from design to running code?
-
-3. COST-EFFECTIVENESS (30%): 
-   - Does it WORK within the stated monthly budget (฿{budget_context:.2f})?
-   - Are you using ฿3.4M solutions when ฿340k alternatives exist? MAJOR DEDUCTION.
-   - Is the budget even ACKNOWLEDGED in the design?
-
-YOUR GRADING STANDARD - BE HARD:
-- Score 10.0 = PERFECT: Every detail is sound, realistic, vetted, and production-ready
-- Score 9.5-9.9 = EXCELLENT but needs polish (missing details, nice-to-haves)
-- Score 9.0-9.4 = VERY GOOD but has tradeoffs (one area could be stronger)
-- Score 8.0-8.9 = GOOD: Viable MVP but needs scrutiny before production
-- Score < 8.0 = UNACCEPTABLE: Fix before proceeding
-
-⚡ CRITICAL FEEDBACK RULES - BE DIRECTIVE & RECOGNIZE PROGRESS:
-When score hasn't improved or is still <= 8.9:
-1. If architect ADDED features/components: Say "GOOD - you added X! BUT it's incomplete because Y, Z"
-2. Name SPECIFICALLY what's missing or broken (not "Missing authentication" if they added AuthGateway - say "Auth0 is unsecured OR flow doesn't route through it OR...")
-3. If no progress: Be BRUTALLY SPECIFIC: "Your design has fundamental flaws. Here's what to DELETE (X), what to REPLACE (Y with Z), and why"
-4. Quote SPECIFIC nodes from the diagram that prove the problem
-5. If over-budget: Show exact numbers. "Current: ฿X, Budget: ฿Y, need to cut/replace these N components"
-6. Never repeat the exact same feedback twice - it means the architect didn't understand. Rephrase and be MORE SPECIFIC
-
-✅ EXAMPLE OF GOOD FEEDBACK:
-❌ BAD: "Missing authentication"
-✅ GOOD: "You added 'AuthenticatedAPIGateway' using Auth0. GOOD! BUT: (1) DoctorPortal connects directly to Storage without going through auth gateway - flow is wrong. (2) Auth0 free tier only supports 10k users - if you exceed, costs jump to ฿17,000/month. Need to plan for this or limit MVP to 5k users."
-
-KEY GRADING RULES:
-❌ DEDUCT HEAVILY for:
-   - Over-engineering (luxury components when MVP needs simplicity)
-   - Ignoring stated budget constraints
-   - Theoretical security without real implementation
-   - Unmaintainable architecture (too many moving parts)
-   - "We'll handle X later" (red flag)
-   - **Components added but not properly integrated in the flow**
-   
-✅ AWARD for:
-   - Pragmatic staging (MVP → v2 → enterprise)
-   - Clear budget/cost analysis per component
-   - Choosing boring, proven tech
-   - Small team feasibility
-   - Honest about limitations
-   - **Proper flow/integration between components**
-
-Remember: 10.0 is RARE. 9.5 should NOT exist (either it's perfect 10.0 or it needs work).
-If score hasn't improved from last round: YOUR FEEDBACK was either unclear or the architect didn't understand. Make it MORE SPECIFIC.
-
-{parser.get_format_instructions()}""")
+    sys_msg = SystemMessage(content=EVALUATOR_SYSTEM_PROMPT_TEMPLATE.format(
+        budget_context=budget_context,
+        previous_feedback_context=previous_feedback_context,
+        parser_instructions=parser.get_format_instructions()
+    ))
     
     response = llm.invoke([sys_msg] + messages)
     

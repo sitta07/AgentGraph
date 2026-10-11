@@ -95,7 +95,7 @@ class Session:
             "sizes": {p: w.net.populations[p].n for p in w._node_order},
             "layout": {"nodes": lay["nodes"], "edges": lay["edges"],
                        "matrix": lay["matrix"]},
-            "state": w._frame(w.last_action, w.last_scores, 0.0, 0.0),
+            "state": w._frame(),
         }
 
 
@@ -140,8 +140,7 @@ def place_food(body: dict | None = None):
         SESSION.world.place_food_ahead()
     else:
         SESSION.world.place_food(float(body.get("x", 0.5)), float(body.get("y", 0.5)))
-    return {"food": SESSION.world._frame(SESSION.world.last_action,
-                                         SESSION.world.last_scores, 0.0, 0.0)["food"]}
+    return {"food": SESSION.world._frame()["food"]}
 
 
 @app.post("/api/deprive")

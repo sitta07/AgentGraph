@@ -1,92 +1,63 @@
 # NeuralMind — Implementation Status
 
-**Updated:** 2026-10-11
-**Branch:** `feat/neuralmind-core`
-**Current state:** Phases 0–6 substantially complete. All 15 acceptance criteria
-in the brief are met for the baseline platform. Remaining work is depth
-(more engines, larger networks, richer UI) rather than missing capability.
+**Updated:** 2026-10-12 · **Branch:** `feat/neuralmind-core` → merged to `main` via PR #1
 
-## 1. What works now (executed and tested this session)
-- **Neural core** (`neuralmind/core/`): vectorised LIF populations, current-based
-  synapses with one-step delay, pair-based STDP with optional eligibility traces,
-  `SpikingNetwork` orchestrator. NumPy-only, deterministic from a seed.
-- **Affect layer** (`neuralmind/affect/`): TD(0) `RewardPredictor` (RPE) and a
-  bounded `AffectState` (valence/arousal/threat/frustration/motivation).
-- **Experiments** (`neuralmind/experiments/`): `reward_learning` (baseline
-  ~0.5 → learned ~0.8–0.95), `threat_avoidance` (paired ≫ unpaired),
-  `pain_response` (monotonic dose-response + recovery), `forgetting`
-  (retroactive/catastrophic interference via synaptic scaling).
-- **Persistence** (`neuralmind/persistence/`): SQLite save/reload/list of runs.
-- **Knowledge** (`neuralmind/knowledge/`): stdlib TF-IDF document index with
-  traceable source citations (Subsystem B).
-- **Recorder + viewer** (`neuralmind/recorder.py`, `viz.py`): records real
-  simulation state and renders a dependency-free interactive HTML viewer
-  (spike raster, rates, affect, play/step/timeline). Verified in a browser.
-- **Benchmark** (`neuralmind/bench.py`): real runtime + peak-memory numbers.
-- **CLI** (`neuralmind/cli.py`): `list`, `run`, `runs`, `show`, `search`,
-  `visualize`. Fully offline.
+## 1. What works now (all executed and tested)
 
-## 2. Commands actually executed
-```
-git clone https://github.com/sitta07/AgentGraph.git
-git checkout -b feat/neuralmind-core
-python3 -m venv .venv && pip install numpy pytest     # numpy 2.5.4, pytest 9.1.1
-python -m pytest tests/ -q                             # 55 passed
-python -m neuralmind.cli run reward_learning --seed 0 --save
-python -m neuralmind.cli search "spike timing dependent plasticity"
-python -m neuralmind.cli visualize --steps 450 --seed 0 --out examples/neuralmind_viewer.html
-python -m neuralmind.bench --sizes 50 100 200 400 --steps 500
-```
-The viewer was opened and scrubbed in a real browser (Playwright) to confirm
-rendered values match the recorded simulation state.
+| Area | Module | Notes |
+|---|---|---|
+| Spiking core | `neuralmind/core/` | LIF populations, current-based synapses (1-step delay), pair STDP, eligibility traces, `clear_eligibility()`; NumPy-only, seeded |
+| Affect | `neuralmind/affect/` | TD(0) reward prediction error; bounded valence/arousal/threat/frustration/motivation |
+| Embodied world | `neuralmind/world.py` | 2D arena, 1–8 `Agent`s with their own brains sharing food & hazards; egocentric sensors → SNN → WTA action → physics → shaped reward → reward-modulated Hebbian learning; energy, hunger, starvation mode, place-food, day counter |
+| Backend | `neuralmind/server.py` | FastAPI: session, step, reset, config (clamped), train, compare, advance (N days + daily snapshots), place_food, deprive, save, runs |
+| Frontend | `neuralmind/webui/` | Pixel-art arena (Kenney CC0), multiple people with name tags/energy bars, click-to-select, Brain Scanner (3D, live spike glow), Agent Inspector, affect bars, day-by-day timeline, experiment controls, learning curve, trained-vs-untrained comparison |
+| Experiments (CLI) | `neuralmind/experiments/` | reward_learning, threat_avoidance, pain_response, forgetting |
+| Persistence / search | `persistence/`, `knowledge/` | SQLite runs; TF-IDF doc search with citations |
+| Tooling | `cli.py`, `bench.py`, `recorder.py`, `viz.py` | CLI, benchmark, 3D brain viewer export |
 
-## 3. Tests — 55 passing (~3 s)
-`test_neurons` (9), `test_plasticity` (4), `test_network` (7), `test_affect` (9),
-`test_experiments` (5), `test_experiments_extra` (5), `test_persistence` (4),
-`test_knowledge` (6), `test_bench` (2), `test_recorder_viz` (4).
+## 2. Tests — 85 passing (`python -m pytest tests/ -q`, ~20 s)
 
-## 4. Benchmarks / measurements (dev machine, Apple Silicon, Python 3.14)
-- Static recurrent net: ~18k–30k steps/s for n=50–400 (10% connectivity).
-- Plastic (STDP) net: ~6k–15k steps/s for n=50–200; peak memory < 1 MB.
-- Full test suite ~3 s.
+Neurons, plasticity, network, affect, experiments, persistence, knowledge,
+benchmark, recorder/viewer, world (sensing direction, action→movement, walls,
+energy, eating, network-chosen action, determinism, learning-beats-baseline,
+multi-agent draw-order invariance, shared food), server (session, causality,
+bounds, reproducibility, save, place_food, deprive, day/affect, multi-agent,
+advance/starvation snapshots). The browser UI was checked end-to-end manually
+with Playwright (play, step, train, compare, deprive, fast-forward, 5 agents).
 
-## 5. Research sources inspected
-`docs/research/RESEARCH_REPORT.md` (with an honesty note on inspection depth —
-web docs/metadata, not full clones), `REUSE_MATRIX.md`, `SCIENTIFIC_EVIDENCE.md`,
-`THIRD_PARTY_NOTICES.md`. Verified: TVB=GPLv3, Brian2=CeCILL-2.1, NEST=GPLv2+.
+## 3. Scientific results (measured, not asserted)
 
-## 6. Known limitations
-- Simplified LIF/point-neuron model; no morphology, no GPU, no large-scale
-  connectome yet. Big engines (TVB/Brian2/NEST) are reference-only.
-- Engine adapters (ADR-0004) are a defined seam, not yet implemented.
-- Affect variables are hand-tuned illustrative constructs, not calibrated.
-- `forgetting` shows near-catastrophic interference (documented, not a bug).
-- Viewer is a playback tool, not yet a live parameter-editing UI.
+- **Foraging learning:** agents trained 80 episodes on 3 training seeds, then
+  tested on 60 held-out worlds. Trained: 4.85 food/episode; untrained: 3.45.
+  The trained agent won in 36 of 60 worlds. Real but noisy.
+- **Learning curves** rise for every training seed (e.g. 0.6 → 6.3 food/episode).
+- **Starvation:** with food removed, energy falls monotonically per day and
+  hunger rises; sensory-population firing increases as the hunger sensor drives it.
+- **Reproducibility:** identical seed → identical episode (tested).
 
-## 7. Acceptance criteria — 15/15 met for the baseline
-- [x] 1 Clean install runs the basic simulation locally
-- [x] 2 Core requires no paid API key
-- [x] 3 State changes come from documented dynamics
-- [x] 4 Reproducible runs with fixed seeds
-- [x] 5 Learning measured against a baseline
-- [x] 6 Memory retrieval returns traceable source references (knowledge index)
-- [x] 7 Saved experiments reload and inspect
-- [x] 8 UI values reflect actual simulation state (recorder + viewer)
-- [x] 9 Numerical stability / invalid-parameter handling tested
-- [x] 10 Tests cover core equations and state transitions
-- [x] 11 Performance benchmarks report runtime and memory
-- [x] 12 Distinguishes evidence / hypothesis / abstraction
-- [x] 13 License and attribution satisfied
-- [x] 14 New user can run a documented experiment from the README alone
-- [x] 15 No fabricated results/validation claims
+## 4. Bugs found and fixed (selected)
 
-## 8. Next concrete tasks (depth, priority order)
-1. **Engine adapter** implementing the `SpikingNetwork` interface over Brian2
-   (optional dependency) to validate the core against a mature simulator.
-2. **Social-attachment experiment** (brief's Experiment 4) and a
-   **memory-under-stress** experiment (Experiment 5), both exploratory.
-3. **Ablation harness**: toggle mechanisms (WTA, eligibility, scaling) and
-   report their effect on each experiment's metric.
-4. **Live UI**: parameter editing + re-run from the browser (Subsystem C can
-   wire the existing LLM app to the simulation API).
-5. **Insect-connectome demo** using a public dataset (verify license first).
+| Bug | Fix |
+|---|---|
+| Pair STDP (a_minus > a_plus) net-depressed co-active pathways under sustained firing, **inverting** the learned food→turn map (trained < untrained) | Potentiation-only eligibility (reward-modulated Hebbian) + exploration noise |
+| Reward credited "forward" generically → agent ignored food direction | Alignment-based shaping |
+| `plastic` flag ignored at runtime (weights changed during "frozen" recall) | `learn()` respects `plastic` |
+| Canvas `fit()` multiplied height every frame → browser crash | idempotent sizing from CSS box |
+| Chart `line()` left `hi` undefined → blank learning curve | compute `lo`/`hi` independently |
+| SQLite connection used across server threads | `check_same_thread=False` |
+
+## 5. Known limitations
+
+- Agents cannot perceive one another; there is no social behaviour (anger,
+  communication, cooperation, fighting) yet.
+- Reward shaping is an engineering choice; learning gains vary per world.
+- Affect variables are hand-tuned model quantities, not calibrated or subjective.
+- Big simulators (TVB, Brian2, NEST) are reference-only (copyleft); no engine adapter yet.
+
+## 6. Next tasks
+
+1. **Social layer:** a social sensor (other agents nearby + their state), new
+   neural actions (attack / share / signal), and social reward terms. Then
+   measure whether aggression or cooperation emerges, against controls.
+2. Ablation harness (disable sensors/populations/learning; multi-seed).
+3. Engine adapter to validate the core against Brian2.

@@ -1,0 +1,19 @@
+{
+  "id": "D2_aggression_vs_neutral_marker",
+  "title": "Selection or drift? Aggression gene vs a neutral marker under scarcity",
+  "question": "Experiment D found a higher aggression gene under scarcity but no change in attack behaviour, and scarce worlds ran through ~2x more generations. Does the aggression gene rise beyond a neutral marker that is inherited and mutated identically but has no effect?",
+  "background": "A neutral marker is the standard control for genetic drift: it shares the aggression gene's inheritance, mutation and clipping but is never read by behaviour. Selection on aggression predicts aggression > marker. Pure drift predicts no systematic difference.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "ticks": 8000,
+  "base": {"viscous": true, "neutral_marker": true},
+  "conditions": {
+    "scarce":   {"config": {"n_food": 14}, "learning": true},
+    "abundant": {"config": {"n_food": 34}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H16", "statement": "Under scarcity the aggression gene exceeds the neutral marker (selection)", "metric": "aggr_excess", "a": "scarce", "b": 0, "direction": "greater"},
+    {"id": "H16b", "statement": "The aggression-minus-marker excess is larger under scarcity than abundance", "metric": "aggr_excess", "a": "scarce", "b": "abundant", "direction": "greater"},
+    {"id": "H16c", "statement": "The neutral marker itself is higher under scarcity (drift/clipping with more generations)", "metric": "neutral_gene", "a": "scarce", "b": "abundant", "direction": "greater"}
+  ]
+}

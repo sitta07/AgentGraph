@@ -91,6 +91,11 @@ class WorldConfig:
     r_hurt: float = 1.0            # penalty per food-unit of energy stolen from you
     aggression_gain: float = 1.0   # frustration -> current into 'attack' (nA)
     w_social_scale: float = 0.85   # initial input-weight scale for social actions
+    # Affect (and therefore the frustration->aggression drive) is computed from
+    # the RPE of the *primary* reward (eating, hazards, theft, being hurt), not
+    # from the learning-only shaping term. v1 (False) let shaping noise drive
+    # frustration, which a pilot study showed to be an artifact.
+    affect_from_primary: bool = True
     seed: int = 0
 
     def as_dict(self) -> dict:
@@ -123,6 +128,7 @@ class Agent:
         self.last_action = 1
         self.last_scores = np.zeros(3)
         self.predictor = RewardPredictor(alpha=0.2)
+        self.primary_predictor = RewardPredictor(alpha=0.2)
         self.affect = AffectState()
         self._prev_food_dist = self.cfg.sensor_range
         self._prev_align = 0.0
@@ -287,15 +293,18 @@ class Agent:
         self.pos = np.array([nx, ny])
 
     def learn_and_affect(self, reward: float, sensors: np.ndarray,
-                         in_hazard: bool, learning: bool, hurt: bool = False) -> float:
+                         in_hazard: bool, learning: bool, hurt: bool = False,
+                         primary: float | None = None) -> float:
         c = self.cfg
         rpe = self.predictor.update(reward)
+        affect_rpe = (self.primary_predictor.update(primary)
+                      if (c.affect_from_primary and primary is not None) else rpe)
         if learning:
             self.net.apply_reward(c.lr * rpe)
             if c.normalize:
                 self._normalize()
         self.net.clear_eligibility()
-        self.affect.update(rpe=rpe, threat_cue=float(max(sensors[3:6])),
+        self.affect.update(rpe=affect_rpe, threat_cue=float(max(sensors[3:6])),
                            pain=1.0 if (in_hazard or hurt) else 0.0,
                            reward_expectation=float(np.clip(self.predictor.value(), 0, 1)))
         return rpe
@@ -486,11 +495,12 @@ class World2D:
             shaped = 0.0 if eaten else c.r_approach * (ag._prev_food_dist - new_dist)
         ag._prev_food_dist = new_dist
         ag._prev_align = new_align
-        reward = (c.r_eat * eaten + shaped - c.r_hazard * (1.0 if in_hazard else 0.0)
-                  + social_r)
+        primary = c.r_eat * eaten - c.r_hazard * (1.0 if in_hazard else 0.0) + social_r
+        reward = primary + shaped
         ag.total_reward += reward
 
-        rpe = ag.learn_and_affect(reward, sensors, in_hazard, learning, hurt=hurt)
+        rpe = ag.learn_and_affect(reward, sensors, in_hazard, learning, hurt=hurt,
+                                  primary=primary)
         if ag.energy <= 0:
             ag.alive = False
         ag.last_action, ag.last_scores = action, scores

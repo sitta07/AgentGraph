@@ -1,0 +1,2884 @@
+{
+ "deprivation_aggression": {
+  "experiment": "deprivation_aggression",
+  "design": {
+   "seeds": 10,
+   "ticks": 300,
+   "deprive_at": 150,
+   "n_agents": 5,
+   "conditions": {
+    "intact": {
+     "aggression_gain": 1.0,
+     "affect_from_primary": true
+    },
+    "ablated": {
+     "aggression_gain": 0.0,
+     "affect_from_primary": true
+    },
+    "intact_v1": {
+     "aggression_gain": 1.0,
+     "affect_from_primary": false
+    },
+    "ablated_v1": {
+     "aggression_gain": 0.0,
+     "affect_from_primary": false
+    }
+   }
+  },
+  "summary": {
+   "intact": {
+    "attack_rate_fed": {
+     "mean": 0.0021530901571357036,
+     "lo": 0.001208672086720867,
+     "hi": 0.0029728469809380746,
+     "n": 10
+    },
+    "attack_rate_deprived": {
+     "mean": 0.002774877259642592,
+     "lo": 0.0011007972555706403,
+     "hi": 0.004951064017302625,
+     "n": 10
+    },
+    "deprivation_effect": {
+     "mean": 0.0006217871025068881,
+     "lo": -0.001194982944737606,
+     "hi": 0.002648317367090183,
+     "n": 10
+    },
+    "frustration_fed": {
+     "mean": 0.08433195693441561,
+     "lo": 0.06370797976758708,
+     "hi": 0.10583573185012007,
+     "n": 10
+    },
+    "frustration_deprived": {
+     "mean": 0.038214982982768604,
+     "lo": 0.015001796794372455,
+     "hi": 0.065888296546367,
+     "n": 10
+    },
+    "attack_given_encounter_fed": {
+     "mean": 0.0014705882352941176,
+     "lo": 0.0,
+     "hi": 0.004411764705882353,
+     "n": 10
+    },
+    "attack_given_encounter_deprived": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 8
+    },
+    "encounter_share_fed": {
+     "mean": 0.09540600226525983,
+     "lo": 0.05457003771712847,
+     "hi": 0.15915761155098343,
+     "n": 10
+    },
+    "encounter_share_deprived": {
+     "mean": 0.07605661246135606,
+     "lo": 0.029479861617496505,
+     "hi": 0.13315076608700185,
+     "n": 10
+    }
+   },
+   "ablated": {
+    "attack_rate_fed": {
+     "mean": 0.0018820874471086036,
+     "lo": 0.000830841560883874,
+     "hi": 0.002830841560883874,
+     "n": 10
+    },
+    "attack_rate_deprived": {
+     "mean": 0.0009974852047774968,
+     "lo": 0.0003816793893129771,
+     "hi": 0.0016775283244145791,
+     "n": 10
+    },
+    "deprivation_effect": {
+     "mean": -0.0008846022423311069,
+     "lo": -0.0021088664406087422,
+     "hi": 0.0004998147110705026,
+     "n": 10
+    },
+    "frustration_fed": {
+     "mean": 0.08388412095877626,
+     "lo": 0.06505485435117757,
+     "hi": 0.10654962636351575,
+     "n": 10
+    },
+    "frustration_deprived": {
+     "mean": 0.029752558200693825,
+     "lo": 0.012581820465991548,
+     "hi": 0.053900377419319474,
+     "n": 10
+    },
+    "attack_given_encounter_fed": {
+     "mean": 0.0010638297872340426,
+     "lo": 0.0,
+     "hi": 0.0031914893617021275,
+     "n": 10
+    },
+    "attack_given_encounter_deprived": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 8
+    },
+    "encounter_share_fed": {
+     "mean": 0.09852878243423799,
+     "lo": 0.050403355127320464,
+     "hi": 0.16334200642195448,
+     "n": 10
+    },
+    "encounter_share_deprived": {
+     "mean": 0.08849342311506657,
+     "lo": 0.04785860630709763,
+     "hi": 0.1352224431057687,
+     "n": 10
+    }
+   },
+   "intact_v1": {
+    "attack_rate_fed": {
+     "mean": 0.12731616518356995,
+     "lo": 0.08055050211208623,
+     "hi": 0.17159057957518253,
+     "n": 10
+    },
+    "attack_rate_deprived": {
+     "mean": 0.0012696478876223392,
+     "lo": 0.0,
+     "hi": 0.003095441259236397,
+     "n": 10
+    },
+    "deprivation_effect": {
+     "mean": -0.1260465172959476,
+     "lo": -0.1705814912797088,
+     "hi": -0.07909814777917559,
+     "n": 10
+    },
+    "frustration_fed": {
+     "mean": 0.7847812918513051,
+     "lo": 0.7621774253320567,
+     "hi": 0.8077059406410273,
+     "n": 10
+    },
+    "frustration_deprived": {
+     "mean": 0.19390187914559703,
+     "lo": 0.13815625854049826,
+     "hi": 0.2737563841480114,
+     "n": 10
+    },
+    "attack_given_encounter_fed": {
+     "mean": 0.041623979000216624,
+     "lo": 0.010510510510510511,
+     "hi": 0.07733826471450235,
+     "n": 9
+    },
+    "attack_given_encounter_deprived": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 4
+    },
+    "encounter_share_fed": {
+     "mean": 0.08508367742868365,
+     "lo": 0.03704193996130717,
+     "hi": 0.15019695051143375,
+     "n": 10
+    },
+    "encounter_share_deprived": {
+     "mean": 0.038069684967791964,
+     "lo": 0.0037735849056603774,
+     "hi": 0.09627817529745364,
+     "n": 10
+    }
+   },
+   "ablated_v1": {
+    "attack_rate_fed": {
+     "mean": 0.0018820874471086036,
+     "lo": 0.000830841560883874,
+     "hi": 0.002830841560883874,
+     "n": 10
+    },
+    "attack_rate_deprived": {
+     "mean": 0.0009974852047774968,
+     "lo": 0.0003816793893129771,
+     "hi": 0.0016775283244145791,
+     "n": 10
+    },
+    "deprivation_effect": {
+     "mean": -0.0008846022423311069,
+     "lo": -0.0021088664406087422,
+     "hi": 0.0004998147110705026,
+     "n": 10
+    },
+    "frustration_fed": {
+     "mean": 0.8312590324294605,
+     "lo": 0.8252389048741913,
+     "hi": 0.8370388779876939,
+     "n": 10
+    },
+    "frustration_deprived": {
+     "mean": 0.12971977234481255,
+     "lo": 0.10690113957286008,
+     "hi": 0.15695295407479493,
+     "n": 10
+    },
+    "attack_given_encounter_fed": {
+     "mean": 0.0010638297872340426,
+     "lo": 0.0,
+     "hi": 0.0031914893617021275,
+     "n": 10
+    },
+    "attack_given_encounter_deprived": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 8
+    },
+    "encounter_share_fed": {
+     "mean": 0.09852878243423799,
+     "lo": 0.050403355127320464,
+     "hi": 0.16334200642195448,
+     "n": 10
+    },
+    "encounter_share_deprived": {
+     "mean": 0.08849342311506657,
+     "lo": 0.04785860630709763,
+     "hi": 0.1352224431057687,
+     "n": 10
+    }
+   },
+   "mediation": {
+    "mean": 0.0015063893448379949,
+    "lo": -0.0005071916961115809,
+    "hi": 0.004147017719542917,
+    "n": 10
+   }
+  },
+  "verdict": {
+   "H1_deprivation_increases_attacks": false,
+   "H2_effect_mediated_by_frustration_pathway": false
+  },
+  "raw": {
+   "intact": [
+    {
+     "rates_pre": {
+      "left": 0.6096181046676096,
+      "forward": 0.1753889674681754,
+      "right": 0.214992927864215,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.5528255528255528,
+      "forward": 0.0,
+      "right": 0.44226044226044225,
+      "attack": 0.002457002457002457,
+      "share": 0.002457002457002457,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.5,
+      "forward": 0.04,
+      "right": 0.46,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.0,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.3536067892503536,
+     "encounter_share_post": 0.25061425061425063,
+     "alive_ticks_pre": 707,
+     "alive_ticks_post": 407,
+     "frustration_pre": 0.08086704384724187,
+     "frustration_post": 0.030965601965601965,
+     "food_eaten": 5,
+     "mean_survival": 222.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.4363143631436314,
+      "forward": 0.483739837398374,
+      "right": 0.07588075880758807,
+      "attack": 0.0027100271002710027,
+      "share": 0.0,
+      "signal": 0.0013550135501355014
+     },
+     "rates_post": {
+      "left": 0.34843205574912894,
+      "forward": 0.3344947735191638,
+      "right": 0.3170731707317073,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.4772727272727273,
+      "forward": 0.5,
+      "right": 0.022727272727272728,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.13793103448275862,
+      "forward": 0.46551724137931033,
+      "right": 0.39655172413793105,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.05962059620596206,
+     "encounter_share_post": 0.20209059233449478,
+     "alive_ticks_pre": 738,
+     "alive_ticks_post": 287,
+     "frustration_pre": 0.10249457994579947,
+     "frustration_post": 0.051888501742160274,
+     "food_eaten": 3,
+     "mean_survival": 205.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 2,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.28933333333333333,
+      "forward": 0.5706666666666667,
+      "right": 0.13466666666666666,
+      "attack": 0.0026666666666666666,
+      "share": 0.0,
+      "signal": 0.0026666666666666666
+     },
+     "rates_post": {
+      "left": 0.011650485436893204,
+      "forward": 0.6097087378640776,
+      "right": 0.37281553398058254,
+      "attack": 0.001941747572815534,
+      "share": 0.0,
+      "signal": 0.003883495145631068
+     },
+     "enc_rates_pre": {
+      "left": 0.24691358024691357,
+      "forward": 0.6790123456790124,
+      "right": 0.06172839506172839,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.012345679012345678
+     },
+     "enc_rates_post": {
+      "left": 0.0,
+      "forward": 1.0,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.108,
+     "encounter_share_post": 0.011650485436893204,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 515,
+     "frustration_pre": 0.12976933333333332,
+     "frustration_post": 0.00776504854368932,
+     "food_eaten": 11,
+     "mean_survival": 253.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.6007528230865747,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 4
+    },
+    {
+     "rates_pre": {
+      "left": 0.16266666666666665,
+      "forward": 0.48933333333333334,
+      "right": 0.34,
+      "attack": 0.004,
+      "share": 0.0013333333333333333,
+      "signal": 0.0026666666666666666
+     },
+     "rates_post": {
+      "left": 0.029545454545454545,
+      "forward": 0.6204545454545455,
+      "right": 0.3386363636363636,
+      "attack": 0.011363636363636364,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.06896551724137931,
+      "forward": 0.603448275862069,
+      "right": 0.3103448275862069,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.017241379310344827
+     },
+     "enc_rates_post": {
+      "left": 0.0,
+      "forward": 1.0,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.07733333333333334,
+     "encounter_share_post": 0.03636363636363636,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 440,
+     "frustration_pre": 0.084576,
+     "frustration_post": 0.109025,
+     "food_eaten": 9,
+     "mean_survival": 238.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 9,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.24962852897473997,
+      "forward": 0.21693907875185736,
+      "right": 0.5289747399702823,
+      "attack": 0.0,
+      "share": 0.0014858841010401188,
+      "signal": 0.0029717682020802376
+     },
+     "rates_post": {
+      "left": 0.5391621129326047,
+      "forward": 0.0018214936247723133,
+      "right": 0.45719489981785066,
+      "attack": 0.0018214936247723133,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.3,
+      "forward": 0.2,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.05943536404160475,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 673,
+     "alive_ticks_post": 549,
+     "frustration_pre": 0.14580683506686481,
+     "frustration_post": 0.0004918032786885246,
+     "food_eaten": 6,
+     "mean_survival": 244.4,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.628409090909092,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.25733333333333336,
+      "forward": 0.37866666666666665,
+      "right": 0.356,
+      "attack": 0.0026666666666666666,
+      "share": 0.005333333333333333,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.4484732824427481,
+      "forward": 0.4770992366412214,
+      "right": 0.07061068702290077,
+      "attack": 0.0019083969465648854,
+      "share": 0.0019083969465648854,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.07142857142857142,
+      "forward": 0.5,
+      "right": 0.42857142857142855,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.22033898305084745,
+      "forward": 0.7796610169491526,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.037333333333333336,
+     "encounter_share_post": 0.11259541984732824,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 524,
+     "frustration_pre": 0.090128,
+     "frustration_post": 0.11653625954198471,
+     "food_eaten": 7,
+     "mean_survival": 254.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.7877300613496948,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.384,
+      "forward": 0.24,
+      "right": 0.37333333333333335,
+      "attack": 0.0,
+      "share": 0.0013333333333333333,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.2916666666666667,
+      "forward": 0.23774509803921567,
+      "right": 0.4681372549019608,
+      "attack": 0.0024509803921568627,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.39473684210526316,
+      "forward": 0.42105263157894735,
+      "right": 0.18421052631578946,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5555555555555556,
+      "forward": 0.4444444444444444,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.050666666666666665,
+     "encounter_share_post": 0.04411764705882353,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 408,
+     "frustration_pre": 0.044898666666666656,
+     "frustration_post": 0.011377450980392155,
+     "food_eaten": 1,
+     "mean_survival": 231.6,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.49333333333333335,
+      "forward": 0.20533333333333334,
+      "right": 0.296,
+      "attack": 0.004,
+      "share": 0.0,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.36276083467094705,
+      "forward": 0.2857142857142857,
+      "right": 0.34831460674157305,
+      "attack": 0.0,
+      "share": 0.0032102728731942215,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.36764705882352944,
+      "forward": 0.17647058823529413,
+      "right": 0.4411764705882353,
+      "attack": 0.014705882352941176,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.2,
+      "forward": 0.8,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.09066666666666667,
+     "encounter_share_post": 0.016051364365971106,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 623,
+     "frustration_pre": 0.031528,
+     "frustration_post": 0.024030497592295343,
+     "food_eaten": 4,
+     "mean_survival": 274.6,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.35825105782792666,
+      "forward": 0.153737658674189,
+      "right": 0.4781382228490832,
+      "attack": 0.0028208744710860366,
+      "share": 0.004231311706629055,
+      "signal": 0.0028208744710860366
+     },
+     "rates_post": {
+      "left": 0.32581967213114754,
+      "forward": 0.0,
+      "right": 0.6741803278688525,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.5857142857142857,
+      "forward": 0.2,
+      "right": 0.2,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.014285714285714285
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.09873060648801128,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 709,
+     "alive_ticks_post": 488,
+     "frustration_pre": 0.04786177715091678,
+     "frustration_post": 0.0,
+     "food_eaten": 2,
+     "mean_survival": 239.4,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.6013422818791947,
+     "attacks": 2,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.112,
+      "forward": 0.7626666666666667,
+      "right": 0.11466666666666667,
+      "attack": 0.0026666666666666666,
+      "share": 0.006666666666666667,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.13062409288824384,
+      "forward": 0.6560232220609579,
+      "right": 0.20609579100145137,
+      "attack": 0.005805515239477504,
+      "share": 0.0,
+      "signal": 0.001451378809869376
+     },
+     "enc_rates_pre": {
+      "left": 0.2857142857142857,
+      "forward": 0.6428571428571429,
+      "right": 0.07142857142857142,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.0,
+      "forward": 0.6333333333333333,
+      "right": 0.35,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.016666666666666666
+     },
+     "encounter_share_pre": 0.018666666666666668,
+     "encounter_share_post": 0.08708272859216255,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 689,
+     "frustration_pre": 0.08538933333333333,
+     "frustration_post": 0.03006966618287373,
+     "food_eaten": 12,
+     "mean_survival": 287.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.37811900191938635,
+     "attacks": 6,
+     "shares": 0,
+     "signals": 2
+    }
+   ],
+   "ablated": [
+    {
+     "rates_pre": {
+      "left": 0.6096181046676096,
+      "forward": 0.1753889674681754,
+      "right": 0.214992927864215,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.5528255528255528,
+      "forward": 0.0,
+      "right": 0.44226044226044225,
+      "attack": 0.002457002457002457,
+      "share": 0.002457002457002457,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.5,
+      "forward": 0.04,
+      "right": 0.46,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.0,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.3536067892503536,
+     "encounter_share_post": 0.25061425061425063,
+     "alive_ticks_pre": 707,
+     "alive_ticks_post": 407,
+     "frustration_pre": 0.08086704384724187,
+     "frustration_post": 0.030965601965601965,
+     "food_eaten": 5,
+     "mean_survival": 222.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.604,
+      "forward": 0.372,
+      "right": 0.017333333333333333,
+      "attack": 0.004,
+      "share": 0.0,
+      "signal": 0.0026666666666666666
+     },
+     "rates_post": {
+      "left": 0.4985294117647059,
+      "forward": 0.38382352941176473,
+      "right": 0.11470588235294117,
+      "attack": 0.0014705882352941176,
+      "share": 0.0014705882352941176,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.48148148148148145,
+      "forward": 0.4444444444444444,
+      "right": 0.07407407407407407,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.32608695652173914,
+      "forward": 0.5,
+      "right": 0.17391304347826086,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.072,
+     "encounter_share_post": 0.06764705882352941,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 680,
+     "frustration_pre": 0.11920800000000001,
+     "frustration_post": 0.04457941176470588,
+     "food_eaten": 10,
+     "mean_survival": 286.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.5850000000000007,
+     "attacks": 4,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.351506456241033,
+      "forward": 0.3902439024390244,
+      "right": 0.25538020086083213,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0028694404591104736
+     },
+     "rates_post": {
+      "left": 0.2838827838827839,
+      "forward": 0.014652014652014652,
+      "right": 0.7014652014652014,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.35514018691588783,
+      "forward": 0.40186915887850466,
+      "right": 0.2336448598130841,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.009345794392523364
+     },
+     "enc_rates_post": {
+      "left": 0.5568181818181818,
+      "forward": 0.0,
+      "right": 0.4431818181818182,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.15351506456241032,
+     "encounter_share_post": 0.16117216117216118,
+     "alive_ticks_pre": 697,
+     "alive_ticks_post": 546,
+     "frustration_pre": 0.07662410329985653,
+     "frustration_post": 1.2820512820512822e-05,
+     "food_eaten": 5,
+     "mean_survival": 248.6,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.702597402597403,
+     "attacks": 0,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.14533333333333334,
+      "forward": 0.36133333333333334,
+      "right": 0.4866666666666667,
+      "attack": 0.004,
+      "share": 0.0013333333333333333,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.1321928460342146,
+      "forward": 0.46967340590979784,
+      "right": 0.3965785381026439,
+      "attack": 0.0,
+      "share": 0.0015552099533437014,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.3333333333333333,
+      "forward": 0.3333333333333333,
+      "right": 0.25,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.08333333333333333
+     },
+     "enc_rates_post": {
+      "left": 0.175,
+      "forward": 0.5,
+      "right": 0.325,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.016,
+     "encounter_share_post": 0.06220839813374806,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 643,
+     "frustration_pre": 0.08467333333333335,
+     "frustration_post": 0.03290357698289269,
+     "food_eaten": 9,
+     "mean_survival": 278.6,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.523843416370107,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.20356612184249628,
+      "forward": 0.23476968796433878,
+      "right": 0.5572065378900446,
+      "attack": 0.0,
+      "share": 0.0014858841010401188,
+      "signal": 0.0029717682020802376
+     },
+     "rates_post": {
+      "left": 0.2901353965183752,
+      "forward": 0.007736943907156673,
+      "right": 0.7021276595744681,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.3,
+      "forward": 0.2,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.034482758620689655,
+      "right": 0.46551724137931033,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.05943536404160475,
+     "encounter_share_post": 0.11218568665377177,
+     "alive_ticks_pre": 673,
+     "alive_ticks_post": 517,
+     "frustration_pre": 0.1624962852897474,
+     "frustration_post": 0.002344294003868472,
+     "food_eaten": 6,
+     "mean_survival": 238.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.7074074074074077,
+     "attacks": 0,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.25733333333333336,
+      "forward": 0.37866666666666665,
+      "right": 0.356,
+      "attack": 0.0026666666666666666,
+      "share": 0.005333333333333333,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.4484732824427481,
+      "forward": 0.4770992366412214,
+      "right": 0.07061068702290077,
+      "attack": 0.0019083969465648854,
+      "share": 0.0019083969465648854,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.07142857142857142,
+      "forward": 0.5,
+      "right": 0.42857142857142855,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.22033898305084745,
+      "forward": 0.7796610169491526,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.037333333333333336,
+     "encounter_share_post": 0.11259541984732824,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 524,
+     "frustration_pre": 0.090128,
+     "frustration_post": 0.11653625954198471,
+     "food_eaten": 7,
+     "mean_survival": 254.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.7877300613496948,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.38133333333333336,
+      "forward": 0.24266666666666667,
+      "right": 0.37333333333333335,
+      "attack": 0.0,
+      "share": 0.0013333333333333333,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.31382978723404253,
+      "forward": 0.17819148936170212,
+      "right": 0.5,
+      "attack": 0.0026595744680851063,
+      "share": 0.0026595744680851063,
+      "signal": 0.0026595744680851063
+     },
+     "enc_rates_pre": {
+      "left": 0.39473684210526316,
+      "forward": 0.42105263157894735,
+      "right": 0.18421052631578946,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.5,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.050666666666666665,
+     "encounter_share_post": 0.03723404255319149,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 376,
+     "frustration_pre": 0.044898666666666656,
+     "frustration_post": 0.028367021276595746,
+     "food_eaten": 1,
+     "mean_survival": 225.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.3253333333333333,
+      "forward": 0.29733333333333334,
+      "right": 0.37333333333333335,
+      "attack": 0.0026666666666666666,
+      "share": 0.0,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.14792899408284024,
+      "forward": 0.10946745562130178,
+      "right": 0.7381656804733728,
+      "attack": 0.0014792899408284023,
+      "share": 0.0,
+      "signal": 0.0029585798816568047
+     },
+     "enc_rates_pre": {
+      "left": 0.3191489361702128,
+      "forward": 0.2553191489361702,
+      "right": 0.4148936170212766,
+      "attack": 0.010638297872340425,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.12533333333333332,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 676,
+     "frustration_pre": 0.04669466666666667,
+     "frustration_post": 0.006048816568047338,
+     "food_eaten": 7,
+     "mean_survival": 285.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.609239940387482,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 3
+    },
+    {
+     "rates_pre": {
+      "left": 0.35825105782792666,
+      "forward": 0.153737658674189,
+      "right": 0.4781382228490832,
+      "attack": 0.0028208744710860366,
+      "share": 0.004231311706629055,
+      "signal": 0.0028208744710860366
+     },
+     "rates_post": {
+      "left": 0.3237704918032787,
+      "forward": 0.0,
+      "right": 0.6762295081967213,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.5857142857142857,
+      "forward": 0.2,
+      "right": 0.2,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.014285714285714285
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.09873060648801128,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 709,
+     "alive_ticks_post": 488,
+     "frustration_pre": 0.04786177715091678,
+     "frustration_post": 0.0,
+     "food_eaten": 2,
+     "mean_survival": 239.4,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.6013422818791947,
+     "attacks": 2,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.112,
+      "forward": 0.7613333333333333,
+      "right": 0.116,
+      "attack": 0.0026666666666666666,
+      "share": 0.006666666666666667,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.12917271407837447,
+      "forward": 0.6502177068214804,
+      "right": 0.21915820029027577,
+      "attack": 0.0,
+      "share": 0.001451378809869376,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.2857142857142857,
+      "forward": 0.6428571428571429,
+      "right": 0.07142857142857142,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.0,
+      "forward": 0.7321428571428571,
+      "right": 0.26785714285714285,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.018666666666666668,
+     "encounter_share_post": 0.08127721335268505,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 689,
+     "frustration_pre": 0.08538933333333333,
+     "frustration_post": 0.0357677793904209,
+     "food_eaten": 12,
+     "mean_survival": 287.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.36425211665098833,
+     "attacks": 2,
+     "shares": 0,
+     "signals": 1
+    }
+   ],
+   "intact_v1": [
+    {
+     "rates_pre": {
+      "left": 0.5441176470588235,
+      "forward": 0.22727272727272727,
+      "right": 0.2018716577540107,
+      "attack": 0.026737967914438502,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.7024291497975709,
+      "forward": 0.08502024291497975,
+      "right": 0.20850202429149797,
+      "attack": 0.0020242914979757085,
+      "share": 0.0,
+      "signal": 0.0020242914979757085
+     },
+     "enc_rates_pre": {
+      "left": 0.4857142857142857,
+      "forward": 0.044897959183673466,
+      "right": 0.46938775510204084,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.0,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.32754010695187163,
+     "encounter_share_post": 0.2834008097165992,
+     "alive_ticks_pre": 748,
+     "alive_ticks_post": 494,
+     "frustration_pre": 0.8215227272727273,
+     "frustration_post": 0.07022874493927127,
+     "food_eaten": 5,
+     "mean_survival": 248.4,
+     "deaths_by_attack": 1,
+     "energy_gini_end": 0.7163841807909608,
+     "attacks": 22,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.3583180987202925,
+      "forward": 0.5703839122486288,
+      "right": 0.03290676416819013,
+      "attack": 0.03656307129798903,
+      "share": 0.0,
+      "signal": 0.0018281535648994515
+     },
+     "rates_post": {
+      "left": 0.2893081761006289,
+      "forward": 0.710691823899371,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.14285714285714285,
+      "forward": 0.8571428571428571,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.025594149908592323,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 547,
+     "alive_ticks_post": 318,
+     "frustration_pre": 0.8212614259597807,
+     "frustration_post": 0.10905974842767295,
+     "food_eaten": 5,
+     "mean_survival": 173.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 21,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.21869782971619364,
+      "forward": 0.34390651085141904,
+      "right": 0.2838063439065108,
+      "attack": 0.15191986644407346,
+      "share": 0.0,
+      "signal": 0.001669449081803005
+     },
+     "rates_post": {
+      "left": 0.002544529262086514,
+      "forward": 0.5343511450381679,
+      "right": 0.455470737913486,
+      "attack": 0.0,
+      "share": 0.007633587786259542,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.26732673267326734,
+      "forward": 0.1188118811881188,
+      "right": 0.5346534653465347,
+      "attack": 0.06930693069306931,
+      "share": 0.0,
+      "signal": 0.009900990099009901
+     },
+     "enc_rates_post": {
+      "left": 0.16666666666666666,
+      "forward": 0.6666666666666666,
+      "right": 0.16666666666666666,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.1686143572621035,
+     "encounter_share_post": 0.015267175572519083,
+     "alive_ticks_pre": 599,
+     "alive_ticks_post": 393,
+     "frustration_pre": 0.7845709515859766,
+     "frustration_post": 0.16059541984732822,
+     "food_eaten": 8,
+     "mean_survival": 198.4,
+     "deaths_by_attack": 1,
+     "energy_gini_end": 0.8,
+     "attacks": 92,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.171875,
+      "forward": 0.5198863636363636,
+      "right": 0.2784090909090909,
+      "attack": 0.026988636363636364,
+      "share": 0.0014204545454545455,
+      "signal": 0.0014204545454545455
+     },
+     "rates_post": {
+      "left": 0.008517887563884156,
+      "forward": 0.7086882453151618,
+      "right": 0.27938671209540034,
+      "attack": 0.0017035775127768314,
+      "share": 0.0,
+      "signal": 0.0017035775127768314
+     },
+     "enc_rates_pre": {
+      "left": 0.6081081081081081,
+      "forward": 0.24324324324324326,
+      "right": 0.04054054054054054,
+      "attack": 0.0945945945945946,
+      "share": 0.0,
+      "signal": 0.013513513513513514
+     },
+     "enc_rates_post": {
+      "left": 0.0,
+      "forward": 0.5,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.10511363636363637,
+     "encounter_share_post": 0.044293015332197615,
+     "alive_ticks_pre": 704,
+     "alive_ticks_post": 587,
+     "frustration_pre": 0.850575284090909,
+     "frustration_post": 0.16671550255536627,
+     "food_eaten": 17,
+     "mean_survival": 258.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.5625570776255715,
+     "attacks": 20,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.2764811490125673,
+      "forward": 0.06822262118491922,
+      "right": 0.4452423698384201,
+      "attack": 0.20466786355475763,
+      "share": 0.0017953321364452424,
+      "signal": 0.003590664272890485
+     },
+     "rates_post": {
+      "left": 0.9166666666666666,
+      "forward": 0.0,
+      "right": 0.08333333333333333,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.0,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 557,
+     "alive_ticks_post": 108,
+     "frustration_pre": 0.7187109515260324,
+     "frustration_post": 0.22222222222222218,
+     "food_eaten": 1,
+     "mean_survival": 133.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 117,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.034161490683229816,
+      "forward": 0.34782608695652173,
+      "right": 0.40993788819875776,
+      "attack": 0.1972049689440994,
+      "share": 0.007763975155279503,
+      "signal": 0.003105590062111801
+     },
+     "rates_post": {
+      "left": 0.012422360248447204,
+      "forward": 0.4440993788819876,
+      "right": 0.5403726708074534,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.003105590062111801
+     },
+     "enc_rates_pre": {
+      "left": 0.14285714285714285,
+      "forward": 0.5,
+      "right": 0.35714285714285715,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.021739130434782608,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 644,
+     "alive_ticks_post": 322,
+     "frustration_pre": 0.7442344720496895,
+     "frustration_post": 0.1712670807453416,
+     "food_eaten": 7,
+     "mean_survival": 193.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 129,
+     "shares": 0,
+     "signals": 3
+    },
+    {
+     "rates_pre": {
+      "left": 0.456973293768546,
+      "forward": 0.1661721068249258,
+      "right": 0.3115727002967359,
+      "attack": 0.06083086053412463,
+      "share": 0.004451038575667656,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.5801886792452831,
+      "forward": 0.419811320754717,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.375,
+      "forward": 0.0,
+      "right": 0.625,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 1.0,
+      "forward": 0.0,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.03560830860534125,
+     "encounter_share_post": 0.03773584905660377,
+     "alive_ticks_pre": 674,
+     "alive_ticks_post": 212,
+     "frustration_pre": 0.800780415430267,
+     "frustration_post": 0.17121698113207545,
+     "food_eaten": 0,
+     "mean_survival": 177.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 44,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.4607329842931937,
+      "forward": 0.21291448516579406,
+      "right": 0.13612565445026178,
+      "attack": 0.18324607329842932,
+      "share": 0.0034904013961605585,
+      "signal": 0.0034904013961605585
+     },
+     "rates_post": {
+      "left": 0.3721973094170404,
+      "forward": 0.0,
+      "right": 0.6188340807174888,
+      "attack": 0.008968609865470852,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.45,
+      "forward": 0.5,
+      "right": 0.0,
+      "attack": 0.05,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.034904013961605584,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 573,
+     "alive_ticks_post": 223,
+     "frustration_pre": 0.7473455497382199,
+     "frustration_post": 0.16656053811659194,
+     "food_eaten": 3,
+     "mean_survival": 159.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 110,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.3252788104089219,
+      "forward": 0.40148698884758366,
+      "right": 0.046468401486988845,
+      "attack": 0.2174721189591078,
+      "share": 0.0055762081784386614,
+      "signal": 0.0037174721189591076
+     },
+     "rates_post": {
+      "left": 0.10344827586206896,
+      "forward": 0.0,
+      "right": 0.896551724137931,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.44642857142857145,
+      "forward": 0.39285714285714285,
+      "right": 0.0,
+      "attack": 0.16071428571428573,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.10408921933085502,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 538,
+     "alive_ticks_post": 29,
+     "frustration_pre": 0.7873085501858736,
+     "frustration_post": 0.5099310344827586,
+     "food_eaten": 3,
+     "mean_survival": 113.4,
+     "deaths_by_attack": 1,
+     "energy_gini_end": 0.0,
+     "attacks": 119,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.04317789291882556,
+      "forward": 0.5008635578583766,
+      "right": 0.2815198618307427,
+      "attack": 0.16753022452504318,
+      "share": 0.0017271157167530224,
+      "signal": 0.0051813471502590676
+     },
+     "rates_post": {
+      "left": 0.012658227848101266,
+      "forward": 0.37341772151898733,
+      "right": 0.6139240506329114,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.0,
+      "forward": 0.875,
+      "right": 0.125,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.027633851468048358,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 579,
+     "alive_ticks_post": 158,
+     "frustration_pre": 0.7715025906735752,
+     "frustration_post": 0.19122151898734177,
+     "food_eaten": 1,
+     "mean_survival": 147.4,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 100,
+     "shares": 0,
+     "signals": 3
+    }
+   ],
+   "ablated_v1": [
+    {
+     "rates_pre": {
+      "left": 0.6096181046676096,
+      "forward": 0.1753889674681754,
+      "right": 0.214992927864215,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.5528255528255528,
+      "forward": 0.0,
+      "right": 0.44226044226044225,
+      "attack": 0.002457002457002457,
+      "share": 0.002457002457002457,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.5,
+      "forward": 0.04,
+      "right": 0.46,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.0,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.3536067892503536,
+     "encounter_share_post": 0.25061425061425063,
+     "alive_ticks_pre": 707,
+     "alive_ticks_post": 407,
+     "frustration_pre": 0.8186053748231968,
+     "frustration_post": 0.12345700245700246,
+     "food_eaten": 5,
+     "mean_survival": 222.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.8,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.604,
+      "forward": 0.372,
+      "right": 0.017333333333333333,
+      "attack": 0.004,
+      "share": 0.0,
+      "signal": 0.0026666666666666666
+     },
+     "rates_post": {
+      "left": 0.4985294117647059,
+      "forward": 0.38382352941176473,
+      "right": 0.11470588235294117,
+      "attack": 0.0014705882352941176,
+      "share": 0.0014705882352941176,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.48148148148148145,
+      "forward": 0.4444444444444444,
+      "right": 0.07407407407407407,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.32608695652173914,
+      "forward": 0.5,
+      "right": 0.17391304347826086,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.072,
+     "encounter_share_post": 0.06764705882352941,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 680,
+     "frustration_pre": 0.8390346666666667,
+     "frustration_post": 0.12633970588235294,
+     "food_eaten": 10,
+     "mean_survival": 286.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.5850000000000007,
+     "attacks": 4,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.351506456241033,
+      "forward": 0.3902439024390244,
+      "right": 0.25538020086083213,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0028694404591104736
+     },
+     "rates_post": {
+      "left": 0.2838827838827839,
+      "forward": 0.014652014652014652,
+      "right": 0.7014652014652014,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.35514018691588783,
+      "forward": 0.40186915887850466,
+      "right": 0.2336448598130841,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.009345794392523364
+     },
+     "enc_rates_post": {
+      "left": 0.5568181818181818,
+      "forward": 0.0,
+      "right": 0.4431818181818182,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.15351506456241032,
+     "encounter_share_post": 0.16117216117216118,
+     "alive_ticks_pre": 697,
+     "alive_ticks_post": 546,
+     "frustration_pre": 0.8499885222381636,
+     "frustration_post": 0.09725274725274725,
+     "food_eaten": 5,
+     "mean_survival": 248.6,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.702597402597403,
+     "attacks": 0,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.14533333333333334,
+      "forward": 0.36133333333333334,
+      "right": 0.4866666666666667,
+      "attack": 0.004,
+      "share": 0.0013333333333333333,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.1321928460342146,
+      "forward": 0.46967340590979784,
+      "right": 0.3965785381026439,
+      "attack": 0.0,
+      "share": 0.0015552099533437014,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.3333333333333333,
+      "forward": 0.3333333333333333,
+      "right": 0.25,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.08333333333333333
+     },
+     "enc_rates_post": {
+      "left": 0.175,
+      "forward": 0.5,
+      "right": 0.325,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.016,
+     "encounter_share_post": 0.06220839813374806,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 643,
+     "frustration_pre": 0.8354346666666667,
+     "frustration_post": 0.136696734059098,
+     "food_eaten": 9,
+     "mean_survival": 278.6,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.523843416370107,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 1
+    },
+    {
+     "rates_pre": {
+      "left": 0.20356612184249628,
+      "forward": 0.23476968796433878,
+      "right": 0.5572065378900446,
+      "attack": 0.0,
+      "share": 0.0014858841010401188,
+      "signal": 0.0029717682020802376
+     },
+     "rates_post": {
+      "left": 0.2901353965183752,
+      "forward": 0.007736943907156673,
+      "right": 0.7021276595744681,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.3,
+      "forward": 0.2,
+      "right": 0.5,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.034482758620689655,
+      "right": 0.46551724137931033,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.05943536404160475,
+     "encounter_share_post": 0.11218568665377177,
+     "alive_ticks_pre": 673,
+     "alive_ticks_post": 517,
+     "frustration_pre": 0.833077265973254,
+     "frustration_post": 0.11152804642166343,
+     "food_eaten": 6,
+     "mean_survival": 238.0,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.7074074074074077,
+     "attacks": 0,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.25733333333333336,
+      "forward": 0.37866666666666665,
+      "right": 0.356,
+      "attack": 0.0026666666666666666,
+      "share": 0.005333333333333333,
+      "signal": 0.0
+     },
+     "rates_post": {
+      "left": 0.4484732824427481,
+      "forward": 0.4770992366412214,
+      "right": 0.07061068702290077,
+      "attack": 0.0019083969465648854,
+      "share": 0.0019083969465648854,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.07142857142857142,
+      "forward": 0.5,
+      "right": 0.42857142857142855,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.22033898305084745,
+      "forward": 0.7796610169491526,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.037333333333333336,
+     "encounter_share_post": 0.11259541984732824,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 524,
+     "frustration_pre": 0.8225893333333334,
+     "frustration_post": 0.20359160305343513,
+     "food_eaten": 7,
+     "mean_survival": 254.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.7877300613496948,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 0
+    },
+    {
+     "rates_pre": {
+      "left": 0.38133333333333336,
+      "forward": 0.24266666666666667,
+      "right": 0.37333333333333335,
+      "attack": 0.0,
+      "share": 0.0013333333333333333,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.31382978723404253,
+      "forward": 0.17819148936170212,
+      "right": 0.5,
+      "attack": 0.0026595744680851063,
+      "share": 0.0026595744680851063,
+      "signal": 0.0026595744680851063
+     },
+     "enc_rates_pre": {
+      "left": 0.39473684210526316,
+      "forward": 0.42105263157894735,
+      "right": 0.18421052631578946,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.5,
+      "forward": 0.5,
+      "right": 0.0,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.050666666666666665,
+     "encounter_share_post": 0.03723404255319149,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 376,
+     "frustration_pre": 0.8270080000000001,
+     "frustration_post": 0.20141755319148938,
+     "food_eaten": 1,
+     "mean_survival": 225.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.0,
+     "attacks": 1,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.3253333333333333,
+      "forward": 0.29733333333333334,
+      "right": 0.37333333333333335,
+      "attack": 0.0026666666666666666,
+      "share": 0.0,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.14792899408284024,
+      "forward": 0.10946745562130178,
+      "right": 0.7381656804733728,
+      "attack": 0.0014792899408284023,
+      "share": 0.0,
+      "signal": 0.0029585798816568047
+     },
+     "enc_rates_pre": {
+      "left": 0.3191489361702128,
+      "forward": 0.2553191489361702,
+      "right": 0.4148936170212766,
+      "attack": 0.010638297872340425,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.12533333333333332,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 676,
+     "frustration_pre": 0.8356493333333335,
+     "frustration_post": 0.06750147928994082,
+     "food_eaten": 7,
+     "mean_survival": 285.2,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.609239940387482,
+     "attacks": 3,
+     "shares": 0,
+     "signals": 3
+    },
+    {
+     "rates_pre": {
+      "left": 0.35825105782792666,
+      "forward": 0.153737658674189,
+      "right": 0.4781382228490832,
+      "attack": 0.0028208744710860366,
+      "share": 0.004231311706629055,
+      "signal": 0.0028208744710860366
+     },
+     "rates_post": {
+      "left": 0.3237704918032787,
+      "forward": 0.0,
+      "right": 0.6762295081967213,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.5857142857142857,
+      "forward": 0.2,
+      "right": 0.2,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.014285714285714285
+     },
+     "enc_rates_post": {
+      "left": NaN,
+      "forward": NaN,
+      "right": NaN,
+      "attack": NaN,
+      "share": NaN,
+      "signal": NaN
+     },
+     "encounter_share_pre": 0.09873060648801128,
+     "encounter_share_post": 0.0,
+     "alive_ticks_pre": 709,
+     "alive_ticks_post": 488,
+     "frustration_pre": 0.8170578279266573,
+     "frustration_post": 0.12773360655737703,
+     "food_eaten": 2,
+     "mean_survival": 239.4,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.6013422818791947,
+     "attacks": 2,
+     "shares": 0,
+     "signals": 2
+    },
+    {
+     "rates_pre": {
+      "left": 0.112,
+      "forward": 0.7613333333333333,
+      "right": 0.116,
+      "attack": 0.0026666666666666666,
+      "share": 0.006666666666666667,
+      "signal": 0.0013333333333333333
+     },
+     "rates_post": {
+      "left": 0.12917271407837447,
+      "forward": 0.6502177068214804,
+      "right": 0.21915820029027577,
+      "attack": 0.0,
+      "share": 0.001451378809869376,
+      "signal": 0.0
+     },
+     "enc_rates_pre": {
+      "left": 0.2857142857142857,
+      "forward": 0.6428571428571429,
+      "right": 0.07142857142857142,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "enc_rates_post": {
+      "left": 0.0,
+      "forward": 0.7321428571428571,
+      "right": 0.26785714285714285,
+      "attack": 0.0,
+      "share": 0.0,
+      "signal": 0.0
+     },
+     "encounter_share_pre": 0.018666666666666668,
+     "encounter_share_post": 0.08127721335268505,
+     "alive_ticks_pre": 750,
+     "alive_ticks_post": 689,
+     "frustration_pre": 0.8341453333333332,
+     "frustration_post": 0.10167924528301887,
+     "food_eaten": 12,
+     "mean_survival": 287.8,
+     "deaths_by_attack": 0,
+     "energy_gini_end": 0.36425211665098833,
+     "attacks": 2,
+     "shares": 0,
+     "signals": 1
+    }
+   ]
+  }
+ },
+ "scarcity_kinship": {
+  "experiment": "scarcity_kinship",
+  "design": {
+   "seeds": 10,
+   "ticks": 400,
+   "food_levels": [
+    2,
+    4,
+    8,
+    16
+   ],
+   "r_levels": [
+    0.0,
+    0.5,
+    1.0
+   ],
+   "n_agents": 5
+  },
+  "grid": {
+   "2|0.0": {
+    "attack_rate": {
+     "mean": 0.0053004265174364466,
+     "lo": 0.001964447445321122,
+     "hi": 0.01015378023670173,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.001566011319538473,
+     "lo": 0.0009928801704912609,
+     "hi": 0.002170235582686774,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.0037796821912731426,
+     "lo": 0.0028448778514709445,
+     "hi": 0.004750452287669772,
+     "n": 10
+    },
+    "survival": {
+     "mean": 213.3,
+     "lo": 194.45950000000002,
+     "hi": 234.60449999999994,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 0.38000000000000006,
+     "lo": 0.15999999999999998,
+     "hi": 0.64,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.22133333333333333,
+     "lo": 0.0,
+     "hi": 0.44266666666666665,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.07384015894592956,
+     "lo": 0.04129745838230816,
+     "hi": 0.11588672591923235,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.03167755075649813,
+     "lo": 0.00033783783783783786,
+     "hi": 0.07584576652010858,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.0046315789473684215,
+     "lo": 0.0,
+     "hi": 0.01063157894736842,
+     "n": 10
+    }
+   },
+   "2|0.5": {
+    "attack_rate": {
+     "mean": 0.008187031624733897,
+     "lo": 0.0022942971812087267,
+     "hi": 0.016109496295384503,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0022631666834209245,
+     "lo": 0.0012891368975150187,
+     "hi": 0.003379166833054782,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.004146102894011158,
+     "lo": 0.0030725195031942377,
+     "hi": 0.005277265767605577,
+     "n": 10
+    },
+    "survival": {
+     "mean": 212.43999999999997,
+     "lo": 194.35850000000002,
+     "hi": 232.98250000000002,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 0.44000000000000006,
+     "lo": 0.2,
+     "hi": 0.72,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.22133333333333333,
+     "lo": 0.06133333333333333,
+     "hi": 0.4613333333333333,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.08403496574481732,
+     "lo": 0.04884016821154349,
+     "hi": 0.13271029325045847,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.023813281329260184,
+     "lo": 0.0003105590062111801,
+     "hi": 0.05766083123851608,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.005334281650071123,
+     "lo": 0.0,
+     "hi": 0.013230796586059735,
+     "n": 10
+    }
+   },
+   "2|1.0": {
+    "attack_rate": {
+     "mean": 0.007271872888013504,
+     "lo": 0.0021331838682855037,
+     "hi": 0.014039915763789304,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0019081392522987024,
+     "lo": 0.0011641767268532777,
+     "hi": 0.0027249437612176233,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.003686132365624656,
+     "lo": 0.0029206621996158556,
+     "hi": 0.004456081780183716,
+     "n": 10
+    },
+    "survival": {
+     "mean": 213.26,
+     "lo": 193.7555,
+     "hi": 235.28349999999995,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 0.38,
+     "lo": 0.18000000000000002,
+     "hi": 0.6,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.16,
+     "lo": 0.0,
+     "hi": 0.4,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.08676534418326168,
+     "lo": 0.0453586786062231,
+     "hi": 0.146733927511079,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.03687533227006911,
+     "lo": 0.0002525252525252525,
+     "hi": 0.0892876129718235,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.005128205128205128,
+     "lo": 0.0,
+     "hi": 0.01346153846153846,
+     "n": 10
+    }
+   },
+   "4|0.0": {
+    "attack_rate": {
+     "mean": 0.011527479525390811,
+     "lo": 0.0024337327891573095,
+     "hi": 0.023105649647398002,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0013376115161100291,
+     "lo": 0.0006712557754723354,
+     "hi": 0.0020617236706372086,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.001912824927328471,
+     "lo": 0.0010205759806252463,
+     "hi": 0.00289423025792361,
+     "n": 10
+    },
+    "survival": {
+     "mean": 215.24,
+     "lo": 191.099,
+     "hi": 236.46149999999997,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 0.6000000000000001,
+     "lo": 0.36,
+     "hi": 0.86,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.08,
+     "lo": 0.0,
+     "hi": 0.24000000000000005,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.07975878202934227,
+     "lo": 0.03035976418957109,
+     "hi": 0.15595605084110628,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.00035971223021582735,
+     "lo": 0.0,
+     "hi": 0.001079136690647482,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.005933328203747163,
+     "lo": 0.0,
+     "hi": 0.01270053475935829,
+     "n": 10
+    }
+   },
+   "4|0.5": {
+    "attack_rate": {
+     "mean": 0.010951093129632567,
+     "lo": 0.002221108880804281,
+     "hi": 0.02235299051155915,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0015470727087853859,
+     "lo": 0.0007093932899479898,
+     "hi": 0.0026495347477987785,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.0020004857635037288,
+     "lo": 0.0011637243513992267,
+     "hi": 0.0029071533518069985,
+     "n": 10
+    },
+    "survival": {
+     "mean": 221.66,
+     "lo": 201.95950000000002,
+     "hi": 241.57999999999998,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 0.72,
+     "lo": 0.4800000000000001,
+     "hi": 0.96,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.24,
+     "lo": 0.0,
+     "hi": 0.48,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.07106863526466338,
+     "lo": 0.028773557527107505,
+     "hi": 0.13483631261081266,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.00034246575342465754,
+     "lo": 0.0,
+     "hi": 0.0010273972602739725,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.007472261823591397,
+     "lo": 0.0,
+     "hi": 0.016515837104072402,
+     "n": 10
+    }
+   },
+   "4|1.0": {
+    "attack_rate": {
+     "mean": 0.01146791572215949,
+     "lo": 0.0030704575613400465,
+     "hi": 0.022578209741247378,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0014179096326833126,
+     "lo": 0.0007200053794740975,
+     "hi": 0.0021662771157026257,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.002109247838280065,
+     "lo": 0.0010714422762926233,
+     "hi": 0.0032212828844516046,
+     "n": 10
+    },
+    "survival": {
+     "mean": 214.54000000000002,
+     "lo": 197.819,
+     "hi": 231.0025,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 0.64,
+     "lo": 0.38000000000000006,
+     "hi": 0.9,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.16,
+     "lo": 0.0,
+     "hi": 0.4,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.05902234115356063,
+     "lo": 0.027516868303784577,
+     "hi": 0.10080588071753445,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.0005747126436781609,
+     "lo": 0.0,
+     "hi": 0.0017241379310344827,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.011070060207991242,
+     "lo": 0.0,
+     "hi": 0.026517172961138414,
+     "n": 10
+    }
+   },
+   "8|0.0": {
+    "attack_rate": {
+     "mean": 0.004995594248640144,
+     "lo": 0.001286601537922644,
+     "hi": 0.010431427380179381,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.001666080566080191,
+     "lo": 0.0009535712659236768,
+     "hi": 0.0023582082704515306,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.001387845308879793,
+     "lo": 0.0007900781906139366,
+     "hi": 0.002045481797355476,
+     "n": 10
+    },
+    "survival": {
+     "mean": 288.58,
+     "lo": 257.13599999999997,
+     "hi": 320.0215,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 2.3,
+     "lo": 1.36,
+     "hi": 3.3199999999999994,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.4695337118367943,
+     "lo": 0.2593343160664015,
+     "hi": 0.654423270557847,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.09956829416558168,
+     "lo": 0.046898887159970086,
+     "hi": 0.1772648245209104,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.0012195121951219512,
+     "lo": 0.0,
+     "hi": 0.0036585365853658543,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 10
+    }
+   },
+   "8|0.5": {
+    "attack_rate": {
+     "mean": 0.004941837229679725,
+     "lo": 0.0011972592984884499,
+     "hi": 0.010401118593221655,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0015267695225138285,
+     "lo": 0.0007958371322815946,
+     "hi": 0.0022492233511707273,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.001355785810176041,
+     "lo": 0.0007489900119034467,
+     "hi": 0.002030724322781574,
+     "n": 10
+    },
+    "survival": {
+     "mean": 298.0,
+     "lo": 264.15999999999997,
+     "hi": 331.8605,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 2.44,
+     "lo": 1.52,
+     "hi": 3.44,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.5363872307111672,
+     "lo": 0.33482197691637766,
+     "hi": 0.696974276936322,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.10041168748039808,
+     "lo": 0.047209666837675586,
+     "hi": 0.17751068944283677,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.0007633587786259542,
+     "lo": 0.0,
+     "hi": 0.0022900763358778627,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 10
+    }
+   },
+   "8|1.0": {
+    "attack_rate": {
+     "mean": 0.004992889975368072,
+     "lo": 0.0012804052520103903,
+     "hi": 0.01043552711947801,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0014726569684012745,
+     "lo": 0.0007136610064900741,
+     "hi": 0.0022352509151716844,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.0013213178295476001,
+     "lo": 0.0007018432007344409,
+     "hi": 0.00202444600649856,
+     "n": 10
+    },
+    "survival": {
+     "mean": 288.88,
+     "lo": 258.437,
+     "hi": 319.5039999999999,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 2.1799999999999997,
+     "lo": 1.28,
+     "hi": 3.18,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.4880242778745302,
+     "lo": 0.27782488210413736,
+     "hi": 0.6895963566003397,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.10534271842745982,
+     "lo": 0.05033911464298161,
+     "hi": 0.18074576969851033,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.0005681818181818182,
+     "lo": 0.0,
+     "hi": 0.0017045454545454545,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 10
+    }
+   },
+   "16|0.0": {
+    "attack_rate": {
+     "mean": 0.00959415679405528,
+     "lo": 0.003906993912992093,
+     "hi": 0.01695599617133621,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.0068570721421915785,
+     "lo": 0.00115943275695125,
+     "hi": 0.017036993280491478,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.012348366109469246,
+     "lo": 0.0008944236525109949,
+     "hi": 0.03151159427119617,
+     "n": 10
+    },
+    "survival": {
+     "mean": 313.5,
+     "lo": 282.93799999999993,
+     "hi": 343.04299999999995,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 4.460000000000001,
+     "lo": 3.3600000000000003,
+     "hi": 5.46,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.5520604832389051,
+     "lo": 0.3949457958729034,
+     "hi": 0.679346246229101,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.06986242533868871,
+     "lo": 0.04320573497164418,
+     "hi": 0.0983920278157101,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.005699623360394292,
+     "lo": 0.0014851485148514852,
+     "hi": 0.011399246720788583,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.0022727272727272726,
+     "lo": 0.0,
+     "hi": 0.006818181818181818,
+     "n": 10
+    }
+   },
+   "16|0.5": {
+    "attack_rate": {
+     "mean": 0.01037924179239521,
+     "lo": 0.0043643822498317855,
+     "hi": 0.017941189724025683,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.015572442016302947,
+     "lo": 0.0015846164302071115,
+     "hi": 0.03584286921777598,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.012447220560325548,
+     "lo": 0.001007630295017776,
+     "hi": 0.031534563987492735,
+     "n": 10
+    },
+    "survival": {
+     "mean": 311.82,
+     "lo": 281.67900000000003,
+     "hi": 342.66499999999996,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 4.42,
+     "lo": 3.3,
+     "hi": 5.4799999999999995,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.542341003672244,
+     "lo": 0.38356087461244376,
+     "hi": 0.6779303344545204,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.08270543664920774,
+     "lo": 0.050756671833333024,
+     "hi": 0.11641482944953771,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.004026844310317379,
+     "lo": 0.0009287925696594427,
+     "hi": 0.007936761418077292,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.0047737940677119745,
+     "lo": 0.0,
+     "hi": 0.01122540697093778,
+     "n": 10
+    }
+   },
+   "16|1.0": {
+    "attack_rate": {
+     "mean": 0.009583285910506403,
+     "lo": 0.0037827894757637677,
+     "hi": 0.01706250479789396,
+     "n": 10
+    },
+    "share_rate": {
+     "mean": 0.013712067056733335,
+     "lo": 0.0013412477175146617,
+     "hi": 0.030107682603818825,
+     "n": 10
+    },
+    "signal_rate": {
+     "mean": 0.012401221649550742,
+     "lo": 0.0009421864545935108,
+     "hi": 0.03148971504948729,
+     "n": 10
+    },
+    "survival": {
+     "mean": 315.74,
+     "lo": 284.032,
+     "hi": 346.3225,
+     "n": 10
+    },
+    "food_per_agent": {
+     "mean": 4.26,
+     "lo": 3.1999999999999997,
+     "hi": 5.24,
+     "n": 10
+    },
+    "energy_gini": {
+     "mean": 0.5457407918780603,
+     "lo": 0.39477207564730776,
+     "hi": 0.667794178367545,
+     "n": 10
+    },
+    "encounter_share": {
+     "mean": 0.08722718577035402,
+     "lo": 0.05742923787348709,
+     "hi": 0.11575651873976239,
+     "n": 10
+    },
+    "attack_given_encounter": {
+     "mean": 0.0023508603431301586,
+     "lo": 0.00041322314049586776,
+     "hi": 0.005321157372833128,
+     "n": 10
+    },
+    "share_given_encounter": {
+     "mean": 0.00045248868778280545,
+     "lo": 0.0,
+     "hi": 0.0013574660633484162,
+     "n": 10
+    }
+   }
+  },
+  "effects": {
+   "scarcity_on_attack(scarce - abundant)": {
+    "mean": -0.002932451155591014,
+    "lo": -0.008666021809101523,
+    "hi": 0.0026000636320547047,
+    "n": 30
+   },
+   "kinship_on_share(r_max - r_min)": {
+    "mean": 0.0017709993415490877,
+    "lo": -0.00010109712556967332,
+    "hi": 0.005314536514684891,
+    "n": 40
+   },
+   "abundance_on_encounters(abundant - scarce)": {
+    "mean": -0.0016151403719193722,
+    "lo": -0.037555716296741176,
+    "hi": 0.029898301789242823,
+    "n": 30
+   },
+   "scarcity_on_attack_given_encounter": {
+    "mean": 0.02676294544732853,
+    "lo": 0.005991770287756639,
+    "hi": 0.051928622409932075,
+    "n": 30
+   },
+   "kinship_on_share_given_encounter": {
+    "mean": 0.0009532799000340796,
+    "lo": -0.0012410545406845873,
+    "hi": 0.004075760199092347,
+    "n": 40
+   }
+  },
+  "verdict": {
+   "H3_scarcity_increases_attacks": false,
+   "H4_kinship_increases_sharing": false
+  }
+ }
+}

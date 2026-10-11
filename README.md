@@ -25,7 +25,8 @@ git clone https://github.com/sitta07/AgentGraph.git && cd AgentGraph
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements-neuralmind.txt -r requirements-server.txt
 
-python -m neuralmind.server          # then open http://127.0.0.1:8000
+python -m neuralmind.server          # Playground: http://127.0.0.1:8000
+                                     # Discovery Lab: http://127.0.0.1:8000/lab
 ```
 
 Run the tests (85 tests, ~20 s):
@@ -84,7 +85,12 @@ while env.agents:
         {a: env.action_space(a).sample() for a in env.agents})
 ```
 
-**Re-run or extend our studies.** Each study is pre-registered, multi-seed,
+**Browse and replicate in the Discovery Lab** (`/lab`). Every study is a card
+with verdict badges, a 95% CI bar for each test against zero, charts and the
+full report. Launch a replication with your own seeds and ticks from the
+browser.
+
+**Re-run or extend our studies from the command line.** Each study is pre-registered, multi-seed,
 and reports bootstrap CIs. The raw results are committed in `results/`.
 
 ```bash
@@ -102,6 +108,7 @@ python -m neuralmind.research.evolution --seeds 6 --ticks 6000   # kin selection
 | Discrete reward task (`reward_learning`) | chance ≈ 0.5 → 0.8–0.95 correct choices | validated (qualitative) |
 | Pavlovian threat conditioning (`threat_avoidance`) | paired ≫ unpaired | validated (qualitative) |
 | `pain_response`, `forgetting` | dose-response; catastrophic interference | exploratory |
+| **Selfish learning vs kin-selected helping** (evolution, [write-up](docs/research/FINDINGS_EVOLUTION_KIN.md)) | Selfish lifetime learning *doubled* sharing, the opposite of our prediction. Shares reached kin above chance only when offspring stayed near their parents, with no kin recognition. Innate social genes barely evolved in ~6–9 generations. | completed; follow-up C2 running |
 | **Social behaviour from lifetime learning** ([write-up](docs/research/FINDINGS_SOCIAL.md)) | 4/4 pre-registered hypotheses **not supported**. Attacks are untargeted, which points to an exploration bottleneck. An ablation exposed apparent "aggression" (12.7%) as a modelling artifact. | completed, negative |
 
 Bugs found during development and how they were fixed are listed in the commit

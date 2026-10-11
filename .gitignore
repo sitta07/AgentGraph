@@ -209,3 +209,7 @@ __marimo__/
 # NeuralMind experiment DB
 neuralmind_experiments.sqlite
 *.sqlite
+# Generated visualization outputs
+examples/*.html
+examples/*.png
+.playwright-mcp/

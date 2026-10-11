@@ -128,6 +128,58 @@ def _search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _visualize(args: argparse.Namespace) -> int:
+    import numpy as np
+
+    from neuralmind.affect.affect_state import AffectState
+    from neuralmind.core.network import Connection, SpikingNetwork
+    from neuralmind.core.neurons import LIFPopulation
+    from neuralmind.recorder import record
+    from neuralmind.viz import render_html
+
+    rng = np.random.default_rng(args.seed)
+    dt = 1.0
+    net = SpikingNetwork(dt=dt)
+    net.add_population("input", LIFPopulation(10, dt=dt, seed=args.seed))
+    net.add_population("exc", LIFPopulation(40, dt=dt, seed=args.seed + 1,
+                                            randomize_initial_v=True))
+    net.add_population("inh", LIFPopulation(10, dt=dt, seed=args.seed + 2))
+    net.connect(Connection("input", "exc",
+                           weights=rng.uniform(0, 2.6, (40, 10)), tau_syn=5.0))
+    net.connect(Connection("exc", "inh",
+                           weights=rng.uniform(0, 1.0, (10, 40)), tau_syn=5.0))
+    net.connect(Connection("inh", "exc",
+                           weights=-rng.uniform(0, 0.8, (40, 10)), tau_syn=10.0))
+    net.build()
+
+    affect = AffectState()
+    state = {"threat": 0.0, "arousal": 0.0, "valence": 0.0}
+
+    def external(i: int) -> dict:
+        # A stimulus pulse arrives for the middle third of the run.
+        on = args.steps // 3 <= i < 2 * args.steps // 3
+        drive = (8.0 if on else 2.0) + rng.normal(0, 1.5, 10)
+        return {"input": drive}
+
+    def extra(i: int) -> dict:
+        exc_rate = net.populations["exc"].spikes.mean() * 1000.0 / dt
+        affect.update(threat_cue=min(1.0, exc_rate / 120.0),
+                      reward_expectation=0.3)
+        return {"valence": affect.valence, "arousal": affect.arousal,
+                "threat": affect.threat}
+
+    rec = record(net, args.steps, external=external, extra_series=extra,
+                 meta={"demo": "input->E/I network with affect read-out"})
+    out = render_html(rec, args.out,
+                      title="NeuralMind — E/I network activity",
+                      subtitle=("Input→excitatory/inhibitory network. Stimulus "
+                                "pulses during the middle third. Affect variables "
+                                "are read out from live population activity."))
+    print(f"wrote {out}  ({rec.n_steps} steps, {len(rec.populations)} populations)")
+    print("open it in a browser to play back the recorded simulation.")
+    return 0
+
+
 def _list(_args: argparse.Namespace) -> int:
     print("available experiments:")
     for name in REGISTRY:
@@ -168,6 +220,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--path", default="docs", help="file or directory to index")
     sp.add_argument("--top-k", type=int, default=5)
     sp.set_defaults(func=_search)
+
+    sp = sub.add_parser("visualize", help="record a demo simulation to a self-contained HTML viewer")
+    sp.add_argument("--steps", type=int, default=450)
+    sp.add_argument("--seed", type=int, default=0)
+    sp.add_argument("--out", default="neuralmind_viewer.html")
+    sp.set_defaults(func=_visualize)
     return p
 
 

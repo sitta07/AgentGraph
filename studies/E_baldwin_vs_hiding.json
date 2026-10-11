@@ -1,0 +1,20 @@
+{
+  "id": "E_baldwin_vs_hiding",
+  "title": "Baldwin effect or hiding effect? Lifetime learning and the evolution of innate foraging",
+  "question": "Does reward-modulated lifetime learning speed up the evolution of innate foraging ability (Baldwin effect / genetic assimilation), or does it shield genotypes from selection so innate ability evolves less (hiding effect)?",
+  "background": "Theory predicts both directions (Hinton & Nowlan 1987; Mayley 1997; Paenke, Sendhoff & Kawecki 2007). We measure innate foraging by assaying evolved genomes alone, with learning switched off, so only the inherited wiring is tested. A no-mutation control checks whether mutation plus selection improves innate foraging at all.",
+  "simulator": "evolution",
+  "seeds": 6,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "learn":          {"config": {}, "learning": true},
+    "nolearn":        {"config": {}, "learning": false},
+    "nolearn_nomut":  {"config": {"mut_sigma": 0.0, "trait_sigma": 0.0}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H11a", "statement": "Baldwin: learning populations evolve HIGHER innate foraging", "metric": "innate_foraging", "a": "learn", "b": "nolearn", "direction": "greater"},
+    {"id": "H11b", "statement": "Hiding: learning populations evolve LOWER innate foraging", "metric": "innate_foraging", "a": "learn", "b": "nolearn", "direction": "less"},
+    {"id": "H12", "statement": "Mutation + selection improves innate foraging over selection among founder genomes alone", "metric": "innate_foraging", "a": "nolearn", "b": "nolearn_nomut", "direction": "greater"}
+  ]
+}

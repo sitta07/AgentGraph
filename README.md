@@ -57,7 +57,7 @@ and new studies are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 ## 🚀 Quickstart
 
 ```bash
-git clone https://github.com/sitta07/NeuralMind.git && cd AgentGraph
+git clone https://github.com/sitta07/NeuralMind.git && cd NeuralMind
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements-neuralmind.txt -r requirements-server.txt -r requirements-research.txt
 
@@ -252,7 +252,7 @@ A multi-agent system for real-time system design, security evaluation, and archi
 1. Clone the repository:
 ```bash
 git clone https://github.com/sitta07/NeuralMind.git
-cd AgentGraph
+cd NeuralMind
 ```
 
 2. Create a Python virtual environment:

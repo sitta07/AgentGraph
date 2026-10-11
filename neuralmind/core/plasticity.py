@@ -78,6 +78,10 @@ class STDPSynapse:
         self.x_post[:] = 0.0
         self.eligibility[:] = 0.0
 
+    def clear_eligibility(self) -> None:
+        """Zero the eligibility trace without touching spike traces or weights."""
+        self.eligibility[:] = 0.0
+
     def update(
         self,
         weights: np.ndarray,

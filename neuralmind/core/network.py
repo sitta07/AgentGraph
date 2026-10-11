@@ -84,6 +84,10 @@ class Connection:
         if self.plastic and self._stdp is not None:
             self._stdp.apply_reward(self.weights, modulator)
 
+    def clear_eligibility(self) -> None:
+        if self._stdp is not None:
+            self._stdp.clear_eligibility()
+
 
 class SpikingNetwork:
     """Container that steps populations and their connections in lockstep."""
@@ -187,3 +191,8 @@ class SpikingNetwork:
         """
         for c in self.connections:
             c.apply_reward(modulator)
+
+    def clear_eligibility(self) -> None:
+        """Zero eligibility traces on all plastic connections (keeps weights)."""
+        for c in self.connections:
+            c.clear_eligibility()

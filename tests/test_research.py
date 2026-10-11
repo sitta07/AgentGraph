@@ -46,3 +46,26 @@ def test_heatmap_svg_is_valid_markup():
     grid = {f"{f}|{r}": {"attack_rate": {"mean": 0.1 * f}} for f in (1, 2) for r in (0, 1)}
     svg = heatmap_svg(grid, [1, 2], [0, 1], "attack_rate", "t")
     assert svg.startswith("<svg") and svg.endswith("</svg>")
+
+
+def test_evolution_run_produces_births_and_series():
+    from neuralmind.research.evolution import run_evolution
+    r = run_evolution({"seed": 0, "n_agents": 6, "max_pop": 12}, ticks=120, learning=True,
+                      sample_every=40)
+    assert r["births"] >= 0
+    assert len(r["series"]["t"]) == 3
+    assert not r["extinct"] or r["final_pop"] == 0
+
+
+def test_relatedness_genealogy():
+    from neuralmind.world import World2D, WorldConfig
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True))
+    p = w.agents[0]
+    p.energy = 2.0
+    c1 = w._birth(p)
+    p.energy = 2.0
+    c2 = w._birth(p)
+    assert w.relatedness(p, c1) == 0.5
+    assert w.relatedness(c1, c2) == 0.25
+    assert w.relatedness(c1, w.agents[1]) == 0.0
+    assert c1.generation == 1 and c1.lineage == p.lineage

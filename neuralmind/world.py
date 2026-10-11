@@ -90,6 +90,7 @@ class WorldConfig:
     r_prosocial: float = 0.0       # Hamilton-style weight on partners' gain/loss
     r_hurt: float = 1.0            # penalty per food-unit of energy stolen from you
     aggression_gain: float = 1.0   # frustration -> current into 'attack' (nA)
+    gift_reward: bool = True       # recipients' learning reward counts energy received as a gift
     w_social_scale: float = 0.85   # initial input-weight scale for social actions
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
@@ -570,7 +571,8 @@ class World2D:
             r -= c.r_hurt * ag.pending_hurt * unit
             hurt, ag.pending_hurt = True, 0.0
         if ag.pending_gift > 0:
-            r += c.r_eat * ag.pending_gift * unit
+            if c.gift_reward:
+                r += c.r_eat * ag.pending_gift * unit
             ag.pending_gift = 0.0
 
         name = ag.actions[action]

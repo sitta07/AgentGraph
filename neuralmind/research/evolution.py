@@ -160,6 +160,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
              for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
     return {
+        "extinct01": float(not live),
+        "survival_ticks": float(t + 1),
         "innate_foraging": float(np.mean(assay)) if assay else float("nan"),
         "extinct": not live,
         "ticks_run": t + 1,

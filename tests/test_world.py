@@ -219,3 +219,14 @@ def test_social_run_is_deterministic():
             w.step(True)
         return [(x.attacks, x.shares_given, x.signals, round(x.energy, 6)) for x in w.agents]
     assert run() == run()
+
+
+def test_gift_reward_flag_controls_recipient_reward_only():
+    for flag in (True, False):
+        w = World2D(WorldConfig(seed=0, n_agents=2, social=True, gift_reward=flag))
+        a, b = w.agents
+        b.pending_gift = 0.2
+        e = b.energy
+        r, _ = w._social_effects(b, b.actions.index("left"), [a])
+        assert (r > 0) == flag
+        assert b.energy == e        # energy was already transferred at gift time

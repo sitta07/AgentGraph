@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuralMind — Artificial Life Playground</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#12151c; --panel2:#171b24; --ink:#e8ecf3; --muted:#8a93a6;
+    --grid:#232a36; --accent:#6d9bff; --good:#49d6a6; --bad:#e0734f; --warn:#e0a63b;
+    --food:#49d6a6; --hazard:#e0734f; --agent:#6d9bff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+  a{color:var(--accent)}
+  .app{display:flex;flex-direction:column;height:100vh;min-height:0}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;
+    border-bottom:1px solid var(--grid);flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.01em}
+  header .tag{color:var(--muted);font-size:12px}
+  .spacer{flex:1}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;
+    padding:7px 13px;font-size:13px;cursor:pointer;font-weight:600}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--grid);font-weight:500}
+  button.ghost:hover{border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:default}
+  .main{display:grid;grid-template-columns:320px 1fr 340px;gap:12px;padding:12px;
+    flex:1;min-height:0;overflow:hidden}
+  .col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto}
+  .panel{background:var(--panel);border:1px solid var(--grid);border-radius:12px;padding:12px}
+  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    margin:0 0 10px;font-weight:600}
+  canvas{display:block;width:100%;border-radius:8px}
+  #worldwrap{flex:1;min-height:0;display:flex;flex-direction:column}
+  #world{height:100%;background:#0e1118;touch-action:none}
+  #brain{height:230px;background:#0e1118}
+  .stat{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums;
+    padding:3px 0;border-bottom:1px solid var(--grid)}
+  .stat:last-child{border-bottom:0}
+  .stat b{color:var(--muted);font-weight:500}
+  .bar{height:8px;border-radius:5px;background:var(--grid);overflow:hidden;margin-top:4px}
+  .bar>i{display:block;height:100%;background:var(--good)}
+  .scores{display:flex;gap:6px;margin-top:8px}
+  .score{flex:1;text-align:center;background:var(--panel2);border-radius:7px;padding:6px 0;font-size:12px}
+  .score.on{background:var(--accent);color:#fff}
+  .ctl{margin-bottom:9px}
+  .ctl label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:2px}
+  .ctl input[type=range]{width:100%;accent-color:var(--accent)}
+  .ctl .val{color:var(--ink);font-variant-numeric:tabular-nums}
+  .seg{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
+    margin:12px 0 6px;font-weight:600}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{font-size:11px;color:var(--muted);background:var(--panel2);border-radius:20px;padding:3px 9px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:6px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+  #speed{width:120px}
+  .note{color:var(--muted);font-size:11px;line-height:1.45}
+  table.tl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:11px}
+  table.tl th,table.tl td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--grid)}
+  table.tl th{color:var(--muted);font-weight:500}
+  table.tl td:first-child,table.tl th:first-child{text-align:left}
+  #world{image-rendering:pixelated}
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel2);
+    border:1px solid var(--grid);padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;
+    transition:opacity .25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  @media (max-width:1000px){ .main{grid-template-columns:1fr;overflow:auto}
+    #world{height:360px} .col{overflow:visible} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🧠 NeuralMind</h1>
+    <span class="tag">Artificial Life Playground</span>
+    <span class="spacer"></span>
+    <button id="btnNew" class="ghost">New world</button>
+    <button id="btnPlay">▶ Play</button>
+    <button id="btnStep" class="ghost">Step</button>
+    <button id="btnReset" class="ghost">Reset</button>
+    <button id="btnFood" class="ghost">🍎 Food ahead</button>
+    <button id="btnDeprive" class="ghost">🚫 Deprive</button>
+    <button id="btnDay1" class="ghost">⏩ +1 day</button>
+    <button id="btnDay3" class="ghost">⏩ +3 days</button>
+    <label class="note" style="display:flex;align-items:center;gap:6px">speed
+      <input type="range" id="speed" min="1" max="30" value="10"></label>
+    <label class="note" style="display:flex;align-items:center;gap:6px">
+      <input type="checkbox" id="learnTgl" checked> learning</label>
+  </header>
+
+  <div class="main">
+    <!-- LEFT: Brain Scanner + Agent Inspector -->
+    <div class="col">
+      <div class="panel">
+        <h2>Brain Scanner — live neural activity</h2>
+        <canvas id="brain"></canvas>
+        <div class="legend" id="brainLegend"></div>
+        <div class="scores" id="scores"></div>
+        <p class="note" style="margin:8px 0 0">Nodes glow when the population
+          spikes. The action population that fires most is the executed action —
+          the network, not a rule, chooses it.</p>
+      </div>
+      <div class="panel">
+        <h2>Agent Inspector — <span id="selName" style="color:var(--ink)">P1</span></h2>
+        <div class="stat"><b>Energy</b><span id="iEnergy">–</span></div>
+        <div class="bar"><i id="energyBar" style="width:100%"></i></div>
+        <div class="stat" style="margin-top:8px"><b>Day</b><span id="iDay">0</span></div>
+        <div class="stat"><b>Hunger</b><span id="iHunger">0</span></div>
+        <div class="bar"><i id="hungerBar" style="width:0%;background:var(--warn)"></i></div>
+        <div class="stat" style="margin-top:8px"><b>Survival (ticks)</b><span id="iAge">0</span></div>
+        <div class="stat"><b>Food eaten</b><span id="iFood">0</span></div>
+        <div class="stat"><b>Hazard hits</b><span id="iHaz">0</span></div>
+        <div class="stat"><b>Action</b><span id="iAction">–</span></div>
+        <div class="stat"><b>Episode reward</b><span id="iReward">0</span></div>
+        <div class="stat"><b>Reward pred. error</b><span id="iRpe">0</span></div>
+        <div class="seg">Affect / physiology <span class="note">(model variables)</span></div>
+        <div id="affectBars"></div>
+        <p class="note" style="margin:8px 0 0">These are internal model variables,
+          not claims about subjective experience.</p>
+      </div>
+      <div class="panel">
+        <h2>Day-by-day timeline</h2>
+        <div id="timeline" class="note">Use ⏩ to fast-forward days (try 🚫 Deprive first)
+          and see how the selected agent's body, affect and neural firing change.</div>
+      </div>
+    </div>
+
+    <!-- CENTER: 2D world -->
+    <div class="col" id="worldwrap">
+      <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <h2>2D World <span id="worldState" class="pill">idle</span></h2>
+        <canvas id="world"></canvas>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--agent)"></span>agent</span>
+          <span><span class="dot" style="background:var(--food)"></span>food</span>
+          <span><span class="dot" style="background:var(--hazard)"></span>hazard</span>
+          <span class="note">click a person to inspect · click grass to drop food</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Controls + Results -->
+    <div class="col">
+      <div class="panel">
+        <h2>Experiment Controls</h2>
+        <div class="seg">Environment <span class="note">(applied on New world)</span></div>
+        <div id="envCtls"></div>
+        <div class="seg">Neural &amp; learning <span class="note">(New world)</span></div>
+        <div id="neuroCtls"></div>
+      </div>
+      <div class="panel">
+        <h2>Results Dashboard</h2>
+        <div class="row" style="margin-bottom:8px">
+          <button id="btnTrain" class="ghost">Train 40 episodes</button>
+          <button id="btnCompare" class="ghost">Compare vs untrained</button>
+        </div>
+        <div class="seg">Energy &amp; reward (this episode)</div>
+        <canvas id="chartEp" height="90"></canvas>
+        <div class="seg">Learning curve (food / episode)</div>
+        <canvas id="chartLearn" height="90"></canvas>
+        <div id="compareBox" class="note"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnSave" class="ghost">Save episode</button>
+          <span id="saveMsg" class="note"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

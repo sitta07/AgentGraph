@@ -1,0 +1,7 @@
+# NeuralMind Playground web backend (optional — the engine/experiments/CLI run
+# without these). All permissively licensed (MIT / BSD-style).
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+
+# For the FastAPI TestClient used in tests/test_server.py
+httpx==0.28.1

@@ -1,4 +1,135 @@
-# AgentGraph: AI Architecture Consultant
+# NeuralMind — Artificial Life Playground
+
+**A local-first lab where little pixel-art people are controlled by real spiking
+neural networks.** You can watch them forage, learn, avoid hazards and starve,
+and look inside their brains while it happens. Everything runs on your laptop:
+no GPU, no API key.
+
+![NeuralMind Playground](docs/images/playground.png)
+
+> **What this is:** a computational model with explicitly defined mechanisms —
+> leaky integrate-and-fire neurons, reward-modulated plasticity, a reward
+> prediction error, and a small set of affect variables.
+>
+> **What this is not:** a human brain, a conscious system, or evidence of real
+> feelings. "Hunger", "valence" or "threat" are model variables. See
+> [`docs/research/SCIENTIFIC_EVIDENCE.md`](docs/research/SCIENTIFIC_EVIDENCE.md)
+> for which parts are established science, hypotheses, or engineering shortcuts.
+
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/sitta07/AgentGraph.git && cd AgentGraph
+python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements-neuralmind.txt -r requirements-server.txt
+
+python -m neuralmind.server          # then open http://127.0.0.1:8000
+```
+
+Run the tests (85 tests, ~20 s):
+
+```bash
+python -m pytest tests/ -q                 # everything
+python -m pytest tests/ -q -m "not slow"   # skip the training test (~4 s)
+```
+
+## Things to try in the Playground
+
+| Try this | How |
+|---|---|
+| **Watch a brain drive behaviour** | Press **Play**. The Brain Scanner glows with the selected person's spikes; the action population that fires most (left / forward / right) is the move they make. |
+| **Add more people** | Set **People (agents)** (1–8) → **New world**. Each person has their own brain and they compete for the same food. Click a person to inspect them. |
+| **Feed someone** | Click the grass to drop a mushroom, or press **🍎 Food ahead** to put one in front of the selected person. |
+| **Starvation experiment** | Press **🚫 Deprive** (removes all food), then **⏩ +1 day / +3 days**. The day-by-day timeline shows energy, hunger, affect and neural firing for each simulated day. |
+| **Does learning help?** | Press **Train 40 episodes**, then **Compare vs untrained**. Toggle **learning** off for a no-plasticity control. |
+| **Change the world** | Adjust food, hazards, sensor range, costs, learning rate, exploration noise… then **New world**. |
+| **Save results** | **Save episode** stores config + metrics in a local SQLite file. |
+
+## How a decision is made (the causal chain)
+
+```
+world ──► egocentric sensors ──► input currents ──► LIF spiking network
+ ▲          (food & threat in        (nA)            sensory → 3 action populations
+ │           3 directions + hunger)                  with lateral inhibition
+ │                                                          │
+ │                                              most active population = action
+ │                                                          ▼
+ └── weights change ◄── reward-modulated ◄── reward prediction ◄── move / eat / get hurt
+                        Hebbian learning        error (TD)
+```
+
+The physics only moves bodies and does the energy bookkeeping. **It never picks
+an action**: the choice comes from the neural network. Reward is *shaped*
+(points for turning toward food). That shaping is an engineering choice, not a
+claim about biology.
+
+## What the evidence says (so far)
+
+| Experiment | Result | Status |
+|---|---|---|
+| Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode on average (≈ +40%); trained agent was better in 36 of 60 worlds | real effect, noisy per world |
+| Learning curves (3 training seeds) | food/episode rises with training (e.g. 0.6 → 6.3) | real effect |
+| Starvation (no food) | energy falls and hunger rises each day; agents eventually die | mechanical, as designed |
+| Discrete reward task (`reward_learning`) | chance ≈ 0.5 → 0.8–0.95 correct choices | validated (qualitative) |
+| Pavlovian threat conditioning (`threat_avoidance`) | paired ≫ unpaired | validated (qualitative) |
+| `pain_response`, `forgetting` | dose-response; catastrophic interference | exploratory |
+
+Bugs found during development and how they were fixed are listed in the commit
+history and [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md).
+One example: an STDP sign issue inverted the learned food→turn mapping.
+
+## Command-line tools
+
+```bash
+python -m neuralmind.cli list                              # experiments
+python -m neuralmind.cli run reward_learning --seed 0      # with learning
+python -m neuralmind.cli run reward_learning --no-learning # baseline
+python -m neuralmind.cli visualize --out examples/brain_viewer.html   # 3D brain viewer
+python -m neuralmind.cli search "spike timing"             # search the docs, with citations
+python -m neuralmind.bench --sizes 50 100 200 400          # runtime + memory
+```
+
+## Project layout
+
+```
+neuralmind/
+  core/          LIF neurons, synapses, STDP / eligibility traces, SpikingNetwork
+  affect/        reward prediction error (TD), affect state
+  world.py       2D world + Agent (sensors → brain → action → reward → learning)
+  server.py      FastAPI backend (the browser only renders backend state)
+  webui/         Playground frontend (vanilla JS + canvas, Kenney CC0 pixel art)
+  experiments/   reward_learning, threat_avoidance, pain_response, forgetting
+  persistence/   SQLite experiment store
+  knowledge/     local document search with source citations
+  recorder.py, viz.py, bench.py, cli.py
+docs/            research report, reuse matrix, scientific evidence, ADRs, status
+tests/           pytest suite
+```
+
+## Known limitations
+
+- Agents compete for food but **cannot see or respond to each other** yet (no social behaviour).
+- A "day" is a simulation unit (`ticks_per_day`, default 60), not a real day.
+- Point-neuron LIF model; small networks (31 neurons per agent). TVB, Brian2 and NEST were studied for reference only. All three are copyleft.
+- Learning gains vary a lot between worlds. Judge them by multi-seed averages, not a single run.
+
+## Licence & credits
+
+MIT (see `LICENSE`). Pixel art from **Kenney** (Tiny Town, Tiny Dungeon), released under CC0.
+Details in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+---
+
+<details>
+<summary><b>Legacy project: AgentGraph (original LLM multi-agent app — needs a Novita API key)</b></summary>
+
+This repository started as **AgentGraph**, a LangGraph/Streamlit multi-agent
+architecture consultant. Its code (`app.py`, `main.py`, `src/`, `evals/`) is kept
+unchanged and is independent of NeuralMind.
+
+## AgentGraph: AI Architecture Consultant
 
 <div align="center">
 
@@ -241,3 +372,5 @@ MIT License (2026) — See [LICENSE](LICENSE) file for details
 **Built with**: LangGraph + Llama 3.3 70B + LangSmith + Streamlit
 
 **Questions?** Review agent prompts in `src/prompts/` or check the conversation history in the UI.
+
+</details>

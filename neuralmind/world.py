@@ -1,0 +1,524 @@
+"""A 2-D artificial-life world driven by spiking neural networks.
+
+Implements the full, testable causal chain for the NeuralMind Artificial Life
+Playground, for one or several independent neural agents sharing one arena:
+
+    world state -> egocentric sensory observations -> input currents
+    -> LIF spiking dynamics -> action-population competition (soft WTA)
+    -> executed action -> world consequences -> shaped reward
+    -> reward-prediction-error -> reward-modulated Hebbian (eligibility)
+    -> changed synaptic weights -> subsequent decisions.
+
+Each agent owns its own network, reward predictor and affect state. The
+environment uses simple physics for movement, collisions and energy accounting
+ONLY; it never selects an agent's high-level action — that is decided solely by
+which action population fires most.
+
+Deliberate approximations (documented, not biological claims):
+* Discrete 3-way action set (turn-left / forward / turn-right).
+* Reward is *shaped* (alignment-to-food term) for learnability — an engineering
+  choice, stated explicitly.
+* Small egocentric sensor set (food/threat in 3 angular bins + hunger).
+* Affect variables are bounded model quantities, NOT subjective feelings.
+
+Backwards compatibility: ``World2D`` exposes the first agent's state through
+``agent``/``heading``/``energy``/``net``/``sense()``/``_decide()``/``_move()``
+etc., so single-agent code and tests are unaffected. The random-number draw
+order for the first agent is identical to the original single-agent engine.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass, asdict
+
+import numpy as np
+
+from neuralmind.affect.affect_state import AffectState
+from neuralmind.affect.reward import RewardPredictor
+from neuralmind.core.network import Connection, SpikingNetwork
+from neuralmind.core.neurons import LIFPopulation
+from neuralmind.core.plasticity import STDPConfig
+
+ACTIONS = ("left", "forward", "right")
+N_SENSORS = 7  # 3 food bins + 3 threat bins + hunger
+
+
+@dataclass
+class WorldConfig:
+    size: float = 1.0
+    n_agents: int = 1
+    n_food: int = 8
+    n_hazard: int = 2
+    eat_radius: float = 0.05
+    hazard_radius: float = 0.09
+    sensor_range: float = 0.6
+    speed: float = 0.022
+    turn: float = 0.5
+    e0: float = 1.0
+    food_energy: float = 0.35
+    move_cost: float = 0.004
+    hazard_cost: float = 0.04
+    max_ticks: int = 500
+    n_action: int = 8
+    substeps: int = 8
+    idle_drive: float = 3.0
+    sensor_gain: float = 8.0
+    action_noise: float = 3.5
+    w_init: float = 1.2
+    w_max: float = 4.0
+    w_inhib: float = 0.8
+    lr: float = 0.8
+    normalize: bool = False
+    reward_mode: str = "align"
+    r_eat: float = 1.0
+    r_approach: float = 5.0
+    r_align: float = 4.0
+    r_hazard: float = 1.0
+    ticks_per_day: int = 60
+    seed: int = 0
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+
+class Agent:
+    """One neural agent: its brain, body state, learning and affect."""
+
+    N_SENSORS = N_SENSORS
+
+    def __init__(self, cfg: WorldConfig, aid: int = 0) -> None:
+        self.cfg = cfg
+        self.id = aid
+        self.net: SpikingNetwork | None = None
+
+    # ---- lifecycle ------------------------------------------------------
+    def spawn(self, pos: np.ndarray, heading: float) -> None:
+        """Place the body and reset per-episode metrics (keeps the brain)."""
+        self.pos = np.asarray(pos, dtype=float)
+        self.heading = float(heading)
+        self.energy = self.cfg.e0
+        self.alive = True
+        self.food_eaten = 0
+        self.hazard_hits = 0
+        self.distance = 0.0
+        self.total_reward = 0.0
+        self.last_action = 1
+        self.last_scores = np.zeros(3)
+        self.predictor = RewardPredictor(alpha=0.2)
+        self.affect = AffectState()
+        self._prev_food_dist = self.cfg.sensor_range
+        self._prev_align = 0.0
+
+    def build_net(self, rng: np.random.Generator) -> None:
+        c = self.cfg
+        net = SpikingNetwork(dt=1.0)
+        net.add_population("sensory", LIFPopulation(self.N_SENSORS, dt=1.0))
+        # Reward-modulated Hebbian rule (potentiation-only eligibility): a
+        # positive reward strengthens the sensors that drove the chosen action.
+        stdp = STDPConfig(a_plus=0.02, a_minus=0.0, w_max=c.w_max, tau_eligibility=100.0)
+        w0 = np.clip(rng.normal(c.w_init, c.w_init * 0.2,
+                                size=(c.n_action, self.N_SENSORS)), 0.0, c.w_max)
+        for a in ACTIONS:
+            net.add_population(a, LIFPopulation(c.n_action, dt=1.0))
+            net.connect(Connection("sensory", a, weights=w0.copy(), tau_syn=5.0,
+                                   plastic=True, stdp_config=stdp))
+        inhib = -abs(c.w_inhib) * np.ones((c.n_action, c.n_action))
+        for a in ACTIONS:
+            for b in ACTIONS:
+                if a != b:
+                    net.connect(Connection(a, b, weights=inhib.copy(), tau_syn=10.0))
+        net.build()
+        self.net = net
+        self._plastic = [cn for cn in net.connections if cn.plastic]
+        self._row_budget = c.w_init * self.N_SENSORS
+        self._node_order = list(net.populations)
+        self._node_offsets, off = {}, 0
+        for p in self._node_order:
+            self._node_offsets[p] = off
+            off += net.populations[p].n
+        self._n_nodes = off
+        self._glow = np.zeros(off)
+
+    def reset_membrane(self) -> None:
+        self.net.reset()
+        self._glow[:] = 0.0
+
+    # ---- normalization --------------------------------------------------
+    def _normalize(self) -> None:
+        for cn in self._plastic:
+            rs = cn.weights.sum(axis=1, keepdims=True)
+            rs[rs < 1e-9] = 1e-9
+            cn.weights *= self._row_budget / rs
+
+    # ---- sensing --------------------------------------------------------
+    def _bin_signals(self, points: np.ndarray) -> np.ndarray:
+        c = self.cfg
+        sig = np.zeros(3)
+        if len(points) == 0:
+            return sig
+        bin_dirs = np.array([self.heading + 0.9, self.heading, self.heading - 0.9])
+        for p in points:
+            dv = p - self.pos
+            dist = math.hypot(dv[0], dv[1])
+            if dist > c.sensor_range or dist < 1e-9:
+                continue
+            bearing = math.atan2(dv[1], dv[0])
+            prox = 1.0 - dist / c.sensor_range
+            for k in range(3):
+                align = math.cos(bearing - bin_dirs[k])
+                if align > 0:
+                    sig[k] += (align ** 2) * prox
+        return np.clip(sig, 0.0, 1.0)
+
+    def sense(self, food: np.ndarray, hazards: np.ndarray) -> np.ndarray:
+        food_s = self._bin_signals(food)
+        threat_s = self._bin_signals(hazards)
+        hunger = float(np.clip(1.0 - self.energy / self.cfg.e0, 0.0, 1.0))
+        return np.concatenate([food_s, threat_s, [hunger]])
+
+    def nearest_food_dist(self, food: np.ndarray) -> float:
+        if len(food) == 0:
+            return self.cfg.sensor_range
+        return float(np.linalg.norm(food - self.pos, axis=1).min())
+
+    def food_alignment(self, food: np.ndarray) -> float:
+        if len(food) == 0:
+            return 0.0
+        d = np.linalg.norm(food - self.pos, axis=1)
+        p = food[int(np.argmin(d))]
+        bearing = math.atan2(p[1] - self.pos[1], p[0] - self.pos[0])
+        return math.cos(bearing - self.heading)
+
+    # ---- acting ---------------------------------------------------------
+    def decide(self, sensors: np.ndarray, rng: np.random.Generator) -> tuple[int, np.ndarray, dict]:
+        c = self.cfg
+        current = c.idle_drive + c.sensor_gain * sensors
+        counts = np.zeros(3)
+        spikes_any = {p: np.zeros(self.net.populations[p].n, bool) for p in self._node_order}
+        for _ in range(c.substeps):
+            ext = {"sensory": current}
+            for a in ACTIONS:
+                ext[a] = rng.normal(0.0, c.action_noise, size=c.n_action)
+            s = self.net.step(external=ext)
+            for p in self._node_order:
+                spikes_any[p] |= s[p]
+            for i, a in enumerate(ACTIONS):
+                counts[i] += int(s[a].sum())
+        self._glow *= 0.55
+        for p in self._node_order:
+            o = self._node_offsets[p]
+            self._glow[o:o + spikes_any[p].size] = np.maximum(
+                self._glow[o:o + spikes_any[p].size], spikes_any[p].astype(float))
+        if counts.max() == counts.min():
+            action = int(rng.integers(0, 3))
+        else:
+            action = int(np.argmax(counts))
+        return action, counts, spikes_any
+
+    def move(self, action: int) -> None:
+        c = self.cfg
+        if action == 0:
+            self.heading += c.turn
+            step = c.speed * 0.5
+        elif action == 2:
+            self.heading -= c.turn
+            step = c.speed * 0.5
+        else:
+            step = c.speed
+        self.heading %= 2 * math.pi
+        nx = self.pos[0] + step * math.cos(self.heading)
+        ny = self.pos[1] + step * math.sin(self.heading)
+        if nx < 0 or nx > c.size:
+            self.heading = math.pi - self.heading
+            nx = min(max(nx, 0.0), c.size)
+        if ny < 0 or ny > c.size:
+            self.heading = -self.heading
+            ny = min(max(ny, 0.0), c.size)
+        self.distance += math.hypot(nx - self.pos[0], ny - self.pos[1])
+        self.pos = np.array([nx, ny])
+
+    def learn_and_affect(self, reward: float, sensors: np.ndarray,
+                         in_hazard: bool, learning: bool) -> float:
+        c = self.cfg
+        rpe = self.predictor.update(reward)
+        if learning:
+            self.net.apply_reward(c.lr * rpe)
+            if c.normalize:
+                self._normalize()
+        self.net.clear_eligibility()
+        self.affect.update(rpe=rpe, threat_cue=float(max(sensors[3:6])),
+                           pain=1.0 if in_hazard else 0.0,
+                           reward_expectation=float(np.clip(self.predictor.value(), 0, 1)))
+        return rpe
+
+    def neural_glow(self) -> list[float]:
+        return [round(float(x), 3) for x in self._glow]
+
+    def brain_layout(self) -> dict:
+        from neuralmind.recorder import build_layout
+        return build_layout(self.net, seed=self.cfg.seed)
+
+
+class World2D:
+    """A 2-D arena with shared food/hazards and one or more neural agents."""
+
+    N_SENSORS = N_SENSORS
+
+    def __init__(self, config: WorldConfig | None = None) -> None:
+        self.cfg = config or WorldConfig()
+        self.reset(self.cfg.seed)
+
+    # ---- setup ----------------------------------------------------------
+    def reset(self, seed: int | None = None, keep_weights: bool = False) -> None:
+        c = self.cfg
+        if seed is not None:
+            self.seed = int(seed)
+            self.rng = np.random.default_rng(self.seed)
+        elif not hasattr(self, "rng"):
+            self.rng = np.random.default_rng(self.seed)
+        self.t = 0
+        self.deprive = False
+
+        reuse = keep_weights and hasattr(self, "agents")
+        if not reuse:
+            self.agents = [Agent(c, i) for i in range(max(1, c.n_agents))]
+
+        # --- agent 0 first, in the ORIGINAL draw order (heading, food, hazards,
+        #     weights) so single-agent numerics are byte-identical. ---
+        a0 = self.agents[0]
+        a0.spawn(np.array([c.size / 2, c.size / 2]),
+                 float(self.rng.uniform(0, 2 * math.pi)))
+        self.food = self._scatter(c.n_food)
+        self.hazards = self._scatter(c.n_hazard, margin=0.15)
+        if reuse:
+            a0.reset_membrane()
+        else:
+            a0.build_net(self.rng)
+        a0._prev_food_dist = a0.nearest_food_dist(self.food)
+        a0._prev_align = a0.food_alignment(self.food)
+
+        # --- extra agents (only when n_agents > 1) ---
+        for ag in self.agents[1:]:
+            ang = float(self.rng.uniform(0, 2 * math.pi))
+            r = c.size * 0.25
+            pos = np.array([c.size / 2 + r * math.cos(ang), c.size / 2 + r * math.sin(ang)])
+            pos = np.clip(pos, 0.02, c.size - 0.02)
+            ag.spawn(pos, float(self.rng.uniform(0, 2 * math.pi)))
+            if reuse:
+                ag.reset_membrane()
+            else:
+                ag.build_net(self.rng)
+            ag._prev_food_dist = ag.nearest_food_dist(self.food)
+            ag._prev_align = ag.food_alignment(self.food)
+
+        # affect readout alias (agent 0)
+        self.affect = a0.affect
+
+    def _scatter(self, n: int, margin: float = 0.05) -> np.ndarray:
+        c = self.cfg
+        if n <= 0:
+            return np.empty((0, 2))
+        return self.rng.uniform(margin, c.size - margin, size=(n, 2))
+
+    # ---- single-agent compatibility proxies (agent 0) -------------------
+    @property
+    def agent0(self) -> Agent:
+        return self.agents[0]
+
+    @property
+    def agent(self) -> np.ndarray:
+        return self.agents[0].pos
+
+    @agent.setter
+    def agent(self, v) -> None:
+        self.agents[0].pos = np.asarray(v, dtype=float)
+
+    @property
+    def heading(self) -> float:
+        return self.agents[0].heading
+
+    @heading.setter
+    def heading(self, v) -> None:
+        self.agents[0].heading = float(v)
+
+    @property
+    def energy(self) -> float:
+        return self.agents[0].energy
+
+    @energy.setter
+    def energy(self, v) -> None:
+        self.agents[0].energy = float(v)
+
+    def _proxy0(name):  # noqa: N805
+        def getter(self):
+            return getattr(self.agents[0], name)
+        return property(getter)
+
+    alive = _proxy0("alive")
+    food_eaten = _proxy0("food_eaten")
+    hazard_hits = _proxy0("hazard_hits")
+    distance = _proxy0("distance")
+    total_reward = _proxy0("total_reward")
+    net = _proxy0("net")
+    predictor = _proxy0("predictor")
+    last_action = _proxy0("last_action")
+    last_scores = _proxy0("last_scores")
+    _node_order = _proxy0("_node_order")
+    _glow = _proxy0("_glow")
+
+    def sense(self) -> np.ndarray:
+        return self.agents[0].sense(self.food, self.hazards)
+
+    def _decide(self, sensors: np.ndarray):
+        return self.agents[0].decide(sensors, self.rng)
+
+    def _move(self, action: int) -> None:
+        self.agents[0].move(action)
+
+    def neural_glow(self) -> list[float]:
+        return self.agents[0].neural_glow()
+
+    def brain_layout(self) -> dict:
+        return self.agents[0].brain_layout()
+
+    def hazard_list(self) -> list[list[float]]:
+        return [[round(float(x), 4), round(float(y), 4)] for x, y in self.hazards]
+
+    # ---- stepping -------------------------------------------------------
+    def _advance_agent(self, ag: Agent, learning: bool) -> dict:
+        c = self.cfg
+        sensors = ag.sense(self.food, self.hazards)
+        action, scores, _ = ag.decide(sensors, self.rng)
+        ag.move(action)
+
+        # eating (shared food)
+        eaten = 0
+        if len(self.food):
+            d = np.linalg.norm(self.food - ag.pos, axis=1)
+            hit = list(np.nonzero(d < c.eat_radius)[0])
+            if hit:
+                eaten = len(hit)
+                if self.deprive:
+                    self.food = np.delete(self.food, hit, axis=0)
+                else:
+                    for idx in hit:
+                        self.food[idx] = self._scatter(1)[0]
+        ag.food_eaten += eaten
+        ag.energy += eaten * c.food_energy
+
+        in_hazard = False
+        if len(self.hazards):
+            dh = np.linalg.norm(self.hazards - ag.pos, axis=1)
+            in_hazard = bool((dh < c.hazard_radius).any())
+        if in_hazard:
+            ag.hazard_hits += 1
+            ag.energy -= c.hazard_cost
+        ag.energy -= c.move_cost
+        ag.energy = min(ag.energy, 1.5 * c.e0)
+
+        new_dist = ag.nearest_food_dist(self.food)
+        new_align = ag.food_alignment(self.food)
+        if c.reward_mode == "align":
+            shaped = 0.0 if eaten else c.r_align * (new_align - ag._prev_align)
+        else:
+            shaped = 0.0 if eaten else c.r_approach * (ag._prev_food_dist - new_dist)
+        ag._prev_food_dist = new_dist
+        ag._prev_align = new_align
+        reward = c.r_eat * eaten + shaped - c.r_hazard * (1.0 if in_hazard else 0.0)
+        ag.total_reward += reward
+
+        rpe = ag.learn_and_affect(reward, sensors, in_hazard, learning)
+        if ag.energy <= 0:
+            ag.alive = False
+        ag.last_action, ag.last_scores = action, scores
+        return {"action": action, "scores": scores, "reward": reward, "rpe": rpe}
+
+    def step(self, learning: bool = True) -> dict:
+        """Advance every living agent by one world tick; return a frame."""
+        results = {}
+        for ag in self.agents:
+            if ag.alive:
+                results[ag.id] = self._advance_agent(ag, learning)
+            else:
+                results[ag.id] = {"action": ag.last_action, "scores": ag.last_scores,
+                                  "reward": 0.0, "rpe": 0.0}
+        self.t += 1
+        if self.t >= self.cfg.max_ticks:
+            for ag in self.agents:
+                ag.alive = False
+        return self._frame(results)
+
+    def _agent_dict(self, ag: Agent, res: dict) -> dict:
+        c = self.cfg
+        return {
+            "id": ag.id,
+            "agent": [round(float(ag.pos[0]), 4), round(float(ag.pos[1]), 4)],
+            "heading": round(ag.heading, 4),
+            "energy": round(float(ag.energy), 4),
+            "action": int(res["action"]),
+            "scores": [int(s) for s in res["scores"]],
+            "reward": round(float(res["reward"]), 4),
+            "rpe": round(float(res["rpe"]), 4),
+            "food_eaten": ag.food_eaten,
+            "hazard_hits": ag.hazard_hits,
+            "alive": ag.alive,
+            "hunger": round(float(min(1.0, max(0.0, 1.0 - ag.energy / c.e0))), 3),
+            "affect": {k: round(v, 3) for k, v in ag.affect.as_dict().items()},
+            "glow": ag.neural_glow(),
+        }
+
+    def _frame(self, results: dict | None = None) -> dict:
+        c = self.cfg
+        if results is None:
+            results = {ag.id: {"action": ag.last_action, "scores": ag.last_scores,
+                               "reward": 0.0, "rpe": 0.0} for ag in self.agents}
+        a0 = self.agents[0]
+        frame = self._agent_dict(a0, results[a0.id])  # agent-0 fields at top level
+        frame.update({
+            "t": self.t,
+            "food": [[round(float(x), 4), round(float(y), 4)] for x, y in self.food],
+            "deprive": self.deprive,
+            "day": round(self.t / max(1, c.ticks_per_day), 2),
+            "agents": [self._agent_dict(ag, results[ag.id]) for ag in self.agents],
+        })
+        return frame
+
+    # ---- interaction ----------------------------------------------------
+    def place_food(self, x: float, y: float) -> None:
+        s = self.cfg.size
+        p = [[min(max(float(x), 0.0), s), min(max(float(y), 0.0), s)]]
+        self.food = np.vstack([self.food, p]) if len(self.food) else np.array(p)
+
+    def place_food_ahead(self, dist: float | None = None) -> None:
+        a0 = self.agents[0]
+        dist = self.cfg.sensor_range * 0.5 if dist is None else dist
+        self.place_food(a0.pos[0] + dist * math.cos(a0.heading),
+                        a0.pos[1] + dist * math.sin(a0.heading))
+
+    def set_deprive(self, on: bool, clear: bool = True) -> None:
+        self.deprive = bool(on)
+        if on and clear:
+            self.food = np.empty((0, 2))
+            for ag in self.agents:
+                ag._prev_food_dist = self.cfg.sensor_range
+                ag._prev_align = 0.0
+
+    # ---- episodes -------------------------------------------------------
+    def run(self, ticks: int | None = None, learning: bool = True) -> dict:
+        """Run until agent 0 dies or ``ticks``/max_ticks; summary for agent 0."""
+        ticks = ticks or self.cfg.max_ticks
+        energy_trace = []
+        while self.agents[0].alive and self.t < ticks:
+            self.step(learning=learning)
+            energy_trace.append(round(float(self.agents[0].energy), 4))
+        a0 = self.agents[0]
+        return {
+            "food_eaten": a0.food_eaten,
+            "survival_ticks": self.t,
+            "total_reward": round(a0.total_reward, 3),
+            "hazard_hits": a0.hazard_hits,
+            "distance": round(a0.distance, 3),
+            "mean_energy": round(float(np.mean(energy_trace)) if energy_trace else 0.0, 4),
+            "final_energy": round(float(a0.energy), 4),
+        }

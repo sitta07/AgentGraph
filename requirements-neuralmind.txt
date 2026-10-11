@@ -1,0 +1,7 @@
+# NeuralMind simulation core — minimal, local-first, no API key required.
+# The core engine, experiments, affect layer, persistence, and CLI need ONLY
+# NumPy at runtime. pytest is for development/testing.
+numpy==2.5.4
+
+# Development / testing
+pytest==9.1.1

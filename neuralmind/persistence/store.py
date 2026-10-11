@@ -38,7 +38,9 @@ class ExperimentStore:
 
     def __init__(self, path: str | Path = "neuralmind_experiments.sqlite") -> None:
         self.path = str(path)
-        self._conn = sqlite3.connect(self.path)
+        # check_same_thread=False so a single store can be used from a web
+        # server's threadpool; our access is serialised (one writer at a time).
+        self._conn = sqlite3.connect(self.path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute(_SCHEMA)
         self._conn.commit()

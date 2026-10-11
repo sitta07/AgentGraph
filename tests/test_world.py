@@ -97,8 +97,8 @@ def test_action_is_chosen_by_network_not_rules():
     action, scores, spikes = w._decide(sensors)
     assert 0 <= action < 3
     assert len(scores) == 3
-    # spikes are per action population from the real network step
-    assert set(spikes) == set(ACTIONS)
+    # spikes are per population from the real network step; action pops present
+    assert set(ACTIONS).issubset(set(spikes))
 
 
 def test_run_is_deterministic():

@@ -109,6 +109,7 @@ class World2D:
 
         if keep_weights and hasattr(self, "net"):
             self.net.reset()  # clears membrane/traces/eligibility, keeps weights
+            self._glow[:] = 0.0
         else:
             self._build_network()
         self.predictor = RewardPredictor(alpha=0.2)
@@ -147,6 +148,14 @@ class World2D:
         self.net = net
         self._plastic = [cn for cn in net.connections if cn.plastic]
         self._row_budget = c.w_init * self.N_SENSORS
+        # Node bookkeeping for the brain scanner (sensory, then the 3 actions).
+        self._node_order = list(net.populations)
+        self._node_offsets, off = {}, 0
+        for p in self._node_order:
+            self._node_offsets[p] = off
+            off += net.populations[p].n
+        self._n_nodes = off
+        self._glow = np.zeros(off)
 
     def _normalize(self) -> None:
         """Homeostatic input normalization: keep each action neuron's total
@@ -207,15 +216,23 @@ class World2D:
         c = self.cfg
         current = c.idle_drive + c.sensor_gain * sensors
         counts = np.zeros(3)
-        spikes_any = {a: np.zeros(c.n_action, bool) for a in ACTIONS}
+        spikes_any = {p: np.zeros(self.net.populations[p].n, bool)
+                      for p in self._node_order}
         for _ in range(c.substeps):
             ext = {"sensory": current}
             for a in ACTIONS:
                 ext[a] = self.rng.normal(0.0, c.action_noise, size=c.n_action)
             s = self.net.step(external=ext)
+            for p in self._node_order:
+                spikes_any[p] |= s[p]
             for i, a in enumerate(ACTIONS):
                 counts[i] += int(s[a].sum())
-                spikes_any[a] |= s[a]
+        # Update the per-node decaying glow used by the brain scanner.
+        self._glow *= 0.55
+        for p in self._node_order:
+            o = self._node_offsets[p]
+            self._glow[o:o + spikes_any[p].size] = np.maximum(
+                self._glow[o:o + spikes_any[p].size], spikes_any[p].astype(float))
         if counts.max() == counts.min():
             action = int(self.rng.integers(0, 3))
         else:
@@ -306,9 +323,6 @@ class World2D:
         return self._frame(action, scores, reward, rpe, spikes)
 
     def _frame(self, action, scores, reward, rpe, spikes=None) -> dict:
-        glow = None
-        if spikes is not None:
-            glow = {a: spikes[a].astype(float).tolist() for a in ACTIONS}
         return {
             "t": self.t,
             "agent": [round(float(self.agent[0]), 4), round(float(self.agent[1]), 4)],
@@ -322,8 +336,20 @@ class World2D:
             "food_eaten": self.food_eaten,
             "hazard_hits": self.hazard_hits,
             "alive": self.alive,
-            "glow": glow,
+            "glow": self.neural_glow(),  # per-node spike glow for the brain scanner
         }
+
+    def neural_glow(self) -> list[float]:
+        """Per-node decaying spike activity in node order (sensory, then actions)."""
+        return [round(float(x), 3) for x in self._glow]
+
+    def brain_layout(self) -> dict:
+        """3-D node layout + edges + connectivity matrix for the brain scanner."""
+        from neuralmind.recorder import build_layout
+        return build_layout(self.net, seed=self.seed)
+
+    def hazard_list(self) -> list[list[float]]:
+        return [[round(float(x), 4), round(float(y), 4)] for x, y in self.hazards]
 
     # ---- episodes -------------------------------------------------------
     def run(self, ticks: int | None = None, learning: bool = True) -> dict:

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="376" height="246" font-family="sans-serif" font-size="12">
+<rect width="376" height="246" fill="#ffffff"/>
+<text x="10" y="20" font-size="14" font-weight="bold" fill="#1a1d24">Mean survival (ticks)</text>
+<text x="90" y="38" fill="#5b6472">kinship r →</text>
+<text x="136.0" y="42" text-anchor="middle" fill="#1a1d24" dy="-2">0.0</text>
+<text x="228.0" y="42" text-anchor="middle" fill="#1a1d24" dy="-2">0.5</text>
+<text x="320.0" y="42" text-anchor="middle" fill="#1a1d24" dy="-2">1.0</text>
+<text x="82" y="70.0" text-anchor="end" fill="#1a1d24">2 food</text>
+<rect x="90" y="46" width="90" height="38" rx="4" fill="rgb(109, 143, 211)"/>
+<text x="135.0" y="70.0" text-anchor="middle" fill="#ffffff">213.3</text>
+<rect x="182" y="46" width="90" height="38" rx="4" fill="rgb(109, 143, 211)"/>
+<text x="227.0" y="70.0" text-anchor="middle" fill="#ffffff">212.4</text>
+<rect x="274" y="46" width="90" height="38" rx="4" fill="rgb(109, 143, 211)"/>
+<text x="319.0" y="70.0" text-anchor="middle" fill="#ffffff">213.3</text>
+<text x="82" y="110.0" text-anchor="end" fill="#1a1d24">4 food</text>
+<rect x="90" y="86" width="90" height="38" rx="4" fill="rgb(108, 142, 210)"/>
+<text x="135.0" y="110.0" text-anchor="middle" fill="#ffffff">215.2</text>
+<rect x="182" y="86" width="90" height="38" rx="4" fill="rgb(104, 139, 209)"/>
+<text x="227.0" y="110.0" text-anchor="middle" fill="#ffffff">221.7</text>
+<rect x="274" y="86" width="90" height="38" rx="4" fill="rgb(108, 142, 210)"/>
+<text x="319.0" y="110.0" text-anchor="middle" fill="#ffffff">214.5</text>
+<text x="82" y="150.0" text-anchor="end" fill="#1a1d24">8 food</text>
+<rect x="90" y="126" width="90" height="38" rx="4" fill="rgb(63, 107, 195)"/>
+<text x="135.0" y="150.0" text-anchor="middle" fill="#ffffff">288.6</text>
+<rect x="182" y="126" width="90" height="38" rx="4" fill="rgb(57, 103, 193)"/>
+<text x="227.0" y="150.0" text-anchor="middle" fill="#ffffff">298.0</text>
+<rect x="274" y="126" width="90" height="38" rx="4" fill="rgb(63, 107, 195)"/>
+<text x="319.0" y="150.0" text-anchor="middle" fill="#ffffff">288.9</text>
+<text x="82" y="190.0" text-anchor="end" fill="#1a1d24">16 food</text>
+<rect x="90" y="166" width="90" height="38" rx="4" fill="rgb(48, 96, 190)"/>
+<text x="135.0" y="190.0" text-anchor="middle" fill="#ffffff">313.5</text>
+<rect x="182" y="166" width="90" height="38" rx="4" fill="rgb(49, 96, 190)"/>
+<text x="227.0" y="190.0" text-anchor="middle" fill="#ffffff">311.8</text>
+<rect x="274" y="166" width="90" height="38" rx="4" fill="rgb(47, 95, 190)"/>
+<text x="319.0" y="190.0" text-anchor="middle" fill="#ffffff">315.7</text>
+<text x="10" y="236" fill="#5b6472">mean over seeds; darker = higher</text>
+</svg>

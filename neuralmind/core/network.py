@@ -55,6 +55,8 @@ class Connection:
         self.weights = self.weights.astype(np.float64, copy=True)
         self._i_syn = np.zeros(n_post, dtype=np.float64)
         self._pre_spikes_prev = np.zeros(n_pre, dtype=bool)
+        self._pre_any = False                      # any spike in _pre_spikes_prev
+        self._pre_f = np.zeros(n_pre, dtype=np.float64)
         self._decay = float(np.exp(-dt / self.tau_syn))
         if self.plastic:
             self._stdp = STDPSynapse(n_pre, n_post, self.stdp_config)
@@ -62,14 +64,15 @@ class Connection:
     def reset(self) -> None:
         self._i_syn[:] = 0.0
         self._pre_spikes_prev[:] = False
+        self._pre_any = False
         if self._stdp is not None:
             self._stdp.reset()
 
     def propagate(self) -> np.ndarray:
         """Decay the synaptic current and inject last step's presynaptic spikes."""
         self._i_syn *= self._decay
-        if self._pre_spikes_prev.any():
-            self._i_syn += self.weights @ self._pre_spikes_prev.astype(np.float64)
+        if self._pre_any:
+            self._i_syn += self.weights @ self._pre_f
         return self._i_syn
 
     def learn(self, pre_spikes: np.ndarray, post_spikes: np.ndarray,
@@ -175,9 +178,15 @@ class SpikingNetwork:
         }
 
         # 3. Plastic weight updates and store spikes for next step's transmission.
+        fired = {name: bool(s.any()) for name, s in spikes.items()}
+        as_f = {name: s.astype(np.float64) for name, s in spikes.items() if fired[name]}
         for c in self.connections:
-            c.learn(spikes[c.pre], spikes[c.post], self.dt, modulator)
+            if c._stdp is not None and c.plastic:
+                c._stdp.update(c.weights, spikes[c.pre], spikes[c.post], self.dt, modulator)
             c._pre_spikes_prev = spikes[c.pre]
+            c._pre_any = fired[c.pre]
+            if c._pre_any:
+                c._pre_f = as_f[c.pre]
 
         self.t += self.dt
         return spikes

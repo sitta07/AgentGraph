@@ -94,7 +94,7 @@
     <!-- LEFT: Brain Scanner + Agent Inspector -->
     <div class="col">
       <div class="panel">
-        <h2>Brain Scanner — live neural activity</h2>
+        <h2>Brain Scanner — <span id="brainWho" style="color:var(--ink)">P1</span>'s brain, live</h2>
         <canvas id="brain"></canvas>
         <div class="legend" id="brainLegend"></div>
         <div class="scores" id="scores"></div>
@@ -117,6 +117,7 @@
         <div class="stat"><b>Reward pred. error</b><span id="iRpe">0</span></div>
         <div class="seg">Affect / physiology <span class="note">(model variables)</span></div>
         <div id="affectBars"></div>
+        <div id="socialStats"></div>
         <p class="note" style="margin:8px 0 0">These are internal model variables,
           not claims about subjective experience.</p>
       </div>
@@ -145,6 +146,8 @@
     <div class="col">
       <div class="panel">
         <h2>Experiment Controls</h2>
+        <div class="seg">Modes <span class="note">(applied on New world)</span></div>
+        <div id="toggleCtls"></div>
         <div class="seg">Environment <span class="note">(applied on New world)</span></div>
         <div id="envCtls"></div>
         <div class="seg">Neural &amp; learning <span class="note">(New world)</span></div>
@@ -158,6 +161,8 @@
         </div>
         <div class="seg">Energy &amp; reward (this episode)</div>
         <canvas id="chartEp" height="90"></canvas>
+        <div><div class="seg">Population (blue) &amp; mean generation ×2 (orange)</div>
+          <canvas id="chartPop" height="90"></canvas></div>
         <div class="seg">Learning curve (food / episode)</div>
         <canvas id="chartLearn" height="90"></canvas>
         <div id="compareBox" class="note"></div>

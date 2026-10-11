@@ -116,3 +116,23 @@ def test_advance_days_starvation_snapshots(client):
     assert snaps[0]["energy"] > snaps[1]["energy"] > snaps[2]["energy"]
     assert snaps[0]["hunger"] < snaps[2]["hunger"]
     assert set(snaps[0]["firing"]) == {"sensory", "left", "forward", "right"}
+
+
+def test_brain_endpoint_returns_that_agents_own_weights(client):
+    client.post("/api/session", json={"seed": 0, "n_agents": 3, "social": True})
+    client.post("/api/step", json={"n": 30})
+    a = client.get("/api/brain/0").json()
+    b = client.get("/api/brain/1").json()
+    assert a["node_order"] == b["node_order"]
+    assert "attack" in a["node_order"]
+    assert a["layout"]["matrix"] != b["layout"]["matrix"]   # different individuals
+    assert client.get("/api/brain/99").status_code == 404
+
+
+def test_evolve_session_reports_population(client):
+    d = client.post("/api/session", json={"seed": 0, "n_agents": 4, "social": True,
+                                          "evolve": True}).json()
+    assert d["config"]["evolve"] is True
+    f = client.post("/api/step", json={"n": 5}).json()["frames"][-1]
+    assert f["evolve"] is True and f["population"] >= 1
+    assert "generation" in f["agents"][0]

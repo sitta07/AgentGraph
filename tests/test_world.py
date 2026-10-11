@@ -147,3 +147,75 @@ def test_agents_share_food():
     # agent 1 stood on the only food item -> it was eaten and respawned elsewhere
     assert w.agents[1].food_eaten >= 1
     assert not np.allclose(before, w.food)
+
+
+# ---------------- social layer ----------------
+from neuralmind.world import SOCIAL_ACTIONS  # noqa: E402
+
+
+def test_social_off_by_default_keeps_original_brain():
+    w = World2D(WorldConfig(seed=0))
+    assert w.agents[0].actions == ACTIONS
+    assert w.agents[0].n_sensors == World2D.N_SENSORS
+
+
+def test_social_adds_sensors_and_actions():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True))
+    ag = w.agents[0]
+    assert ag.actions == ACTIONS + SOCIAL_ACTIONS
+    assert ag.n_sensors == World2D.N_SENSORS + 4
+
+
+def test_social_sensor_sees_other_agent():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True, n_food=0, n_hazard=0))
+    a, b = w.agents
+    a.pos, a.heading = np.array([0.5, 0.5]), 0.0
+    b.pos = np.array([0.5, 0.75])            # to a's left (+y)
+    s = a.sense(w.food, w.hazards, np.array([b.pos]), np.empty((0, 2)))
+    others = s[7:10]
+    assert others[0] > others[2]
+
+
+def _force(ag, w, name):
+    return w._social_effects(ag, ag.actions.index(name), [o for o in w.agents if o is not ag])
+
+
+def test_attack_transfers_energy_and_hurts_victim():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True))
+    a, b = w.agents
+    b.pos = a.pos + np.array([0.02, 0.0])
+    ea, eb = a.energy, b.energy
+    r, _ = _force(a, w, "attack")
+    assert b.energy < eb and a.energy > ea - w.cfg.attack_cost
+    assert b.pending_hurt > 0 and b.attacked == 1
+    assert any(e["type"] == "attack" for e in w.events)
+
+
+def test_attack_out_of_reach_only_costs():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True))
+    a, b = w.agents
+    b.pos = a.pos + np.array([0.4, 0.0])
+    ea = a.energy
+    _force(a, w, "attack")
+    assert a.energy == pytest.approx(ea - w.cfg.attack_cost)
+
+
+def test_share_follows_hamiltons_rule_sign():
+    """Sharing reward is negative when r*B < 1 and positive when r*B > 1."""
+    for r_pro, sign in ((0.0, -1), (1.0, 1)):
+        w = World2D(WorldConfig(seed=0, n_agents=2, social=True,
+                                r_prosocial=r_pro, share_benefit=2.0))
+        a, b = w.agents
+        b.pos = a.pos.copy()
+        r, _ = _force(a, w, "share")
+        assert np.sign(r) == sign
+        assert b.pending_gift > 0
+
+
+def test_social_run_is_deterministic():
+    def run():
+        w = World2D(WorldConfig(seed=4, n_agents=4, social=True))
+        for _ in range(150):
+            w.step(True)
+        return [(x.attacks, x.shares_given, x.signals, round(x.energy, 6)) for x in w.agents]
+    assert run() == run()

@@ -24,7 +24,7 @@ Deliberate approximations (documented, not biological claims):
 Backwards compatibility: ``World2D`` exposes the first agent's state through
 ``agent``/``heading``/``energy``/``net``/``sense()``/``_decide()``/``_move()``
 etc., so single-agent code and tests are unaffected. The random-number draw
-order for the first agent is identical to the original single-agent engine.
+order for the first agent does not depend on how many agents there are.
 """
 
 from __future__ import annotations
@@ -41,7 +41,9 @@ from neuralmind.core.neurons import LIFPopulation
 from neuralmind.core.plasticity import STDPConfig
 
 ACTIONS = ("left", "forward", "right")
-N_SENSORS = 7  # 3 food bins + 3 threat bins + hunger
+SOCIAL_ACTIONS = ("attack", "share", "signal")
+N_SENSORS = 7          # 3 food bins + 3 threat bins + hunger
+N_SOCIAL_SENSORS = 4   # 3 "other agent" bins + heard-signal level
 
 
 @dataclass
@@ -76,6 +78,34 @@ class WorldConfig:
     r_align: float = 4.0
     r_hazard: float = 1.0
     ticks_per_day: int = 60
+    # --- social layer (opt-in) ---
+    social: bool = False
+    attack_radius: float = 0.08    # reach for attack / share
+    steal: float = 0.15            # energy taken from a victim per hit
+    attack_cost: float = 0.02      # energy the attacker spends per attempt
+    share_amount: float = 0.10     # energy given per share
+    share_benefit: float = 2.0     # recipient gains share_amount * benefit
+    signal_range: float = 0.5
+    signal_cost: float = 0.002
+    r_prosocial: float = 0.0       # Hamilton-style weight on partners' gain/loss
+    r_hurt: float = 1.0            # penalty per food-unit of energy stolen from you
+    aggression_gain: float = 1.0   # frustration -> current into 'attack' (nA)
+    w_social_scale: float = 0.85   # initial input-weight scale for social actions
+    # True: affect (and the frustration->aggression drive) follows the RPE of
+    # the primary reward (eating, hazards, theft, being hurt) only.
+    # False: affect follows the full learning reward, including shaping.
+    affect_from_primary: bool = True
+    # --- evolution (opt-in): reproduction with heritable, mutating genomes ---
+    evolve: bool = False
+    repro_threshold: float = 1.2   # energy needed to reproduce
+    repro_cost: float = 0.5        # energy handed from parent to offspring
+    max_pop: int = 40
+    max_age: int = 1500            # ticks; death of old age keeps turnover going
+    mut_sigma: float = 0.15        # weight mutation s.d. (relative to w_init)
+    trait_sigma: float = 0.2       # mutation s.d. of the heritable aggression gain
+    birth_radius: float = 0.04     # offspring scatter around the parent
+    viscous: bool = True           # True: born near parent; False: born anywhere
+    lamarckian: bool = False       # True: inherit LEARNED weights (control)
     seed: int = 0
 
     def as_dict(self) -> dict:
@@ -91,6 +121,18 @@ class Agent:
         self.cfg = cfg
         self.id = aid
         self.net: SpikingNetwork | None = None
+        self.actions = ACTIONS + (SOCIAL_ACTIONS if cfg.social else ())
+        self.n_sensors = N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
+        # heritable trait + genealogy (used by evolution; harmless otherwise)
+        self.aggr_gain = float(cfg.aggression_gain)
+        self.generation = 0
+        self.parent: int | None = None
+        self.ancestors: tuple = ()
+        self.lineage = aid
+        self.age = 0
+        self.born = 0
+        self.death_tick: int | None = None
+        self.genome: dict | None = None
 
     # ---- lifecycle ------------------------------------------------------
     def spawn(self, pos: np.ndarray, heading: float) -> None:
@@ -106,32 +148,48 @@ class Agent:
         self.last_action = 1
         self.last_scores = np.zeros(3)
         self.predictor = RewardPredictor(alpha=0.2)
+        self.primary_predictor = RewardPredictor(alpha=0.2)
         self.affect = AffectState()
         self._prev_food_dist = self.cfg.sensor_range
         self._prev_align = 0.0
+        self.attacks = self.attacked = self.shares_given = self.shares_received = 0
+        self.signals = 0
+        self.signaling = False
+        self.pending_hurt = 0.0     # energy lost to attackers since last tick
+        self.pending_gift = 0.0     # energy received from sharers since last tick
 
-    def build_net(self, rng: np.random.Generator) -> None:
+    def build_net(self, rng: np.random.Generator, genome: dict | None = None) -> None:
         c = self.cfg
         net = SpikingNetwork(dt=1.0)
-        net.add_population("sensory", LIFPopulation(self.N_SENSORS, dt=1.0))
+        net.add_population("sensory", LIFPopulation(self.n_sensors, dt=1.0))
         # Reward-modulated Hebbian rule (potentiation-only eligibility): a
         # positive reward strengthens the sensors that drove the chosen action.
         stdp = STDPConfig(a_plus=0.02, a_minus=0.0, w_max=c.w_max, tau_eligibility=100.0)
-        w0 = np.clip(rng.normal(c.w_init, c.w_init * 0.2,
-                                size=(c.n_action, self.N_SENSORS)), 0.0, c.w_max)
-        for a in ACTIONS:
+        if genome is None:
+            w0 = np.clip(rng.normal(c.w_init, c.w_init * 0.2,
+                                    size=(c.n_action, self.n_sensors)), 0.0, c.w_max)
+        for a in self.actions:
             net.add_population(a, LIFPopulation(c.n_action, dt=1.0))
-            net.connect(Connection("sensory", a, weights=w0.copy(), tau_syn=5.0,
+            if genome is not None:
+                w = genome["w"][a]
+            else:
+                # Social actions start with weaker (scaled) input so that the naive
+                # default behaviour is locomotion; learning can strengthen them.
+                w = w0 * (c.w_social_scale if a in SOCIAL_ACTIONS else 1.0)
+            net.connect(Connection("sensory", a, weights=w.copy(), tau_syn=5.0,
                                    plastic=True, stdp_config=stdp))
         inhib = -abs(c.w_inhib) * np.ones((c.n_action, c.n_action))
-        for a in ACTIONS:
-            for b in ACTIONS:
+        for a in self.actions:
+            for b in self.actions:
                 if a != b:
                     net.connect(Connection(a, b, weights=inhib.copy(), tau_syn=10.0))
         net.build()
         self.net = net
         self._plastic = [cn for cn in net.connections if cn.plastic]
-        self._row_budget = c.w_init * self.N_SENSORS
+        # The genome is the INNATE (pre-learning) wiring plus heritable traits.
+        self.genome = {"w": {cn.post: cn.weights.copy() for cn in self._plastic},
+                       "aggression_gain": self.aggr_gain}
+        self._row_budget = c.w_init * self.n_sensors
         self._node_order = list(net.populations)
         self._node_offsets, off = {}, 0
         for p in self._node_order:
@@ -171,11 +229,24 @@ class Agent:
                     sig[k] += (align ** 2) * prox
         return np.clip(sig, 0.0, 1.0)
 
-    def sense(self, food: np.ndarray, hazards: np.ndarray) -> np.ndarray:
+    def sense(self, food: np.ndarray, hazards: np.ndarray,
+              others: np.ndarray | None = None,
+              signals: np.ndarray | None = None) -> np.ndarray:
         food_s = self._bin_signals(food)
         threat_s = self._bin_signals(hazards)
         hunger = float(np.clip(1.0 - self.energy / self.cfg.e0, 0.0, 1.0))
-        return np.concatenate([food_s, threat_s, [hunger]])
+        base = [food_s, threat_s, [hunger]]
+        if self.cfg.social:
+            # other agents in 3 egocentric bins; heard calls (emitted last tick)
+            others = np.empty((0, 2)) if others is None else others
+            signals = np.empty((0, 2)) if signals is None else signals
+            heard = 0.0
+            for q in signals:
+                d = float(np.linalg.norm(q - self.pos))
+                if d <= self.cfg.signal_range:
+                    heard += 1.0 - d / self.cfg.signal_range
+            base += [self._bin_signals(others), [min(1.0, heard)]]
+        return np.concatenate(base)
 
     def nearest_food_dist(self, food: np.ndarray) -> float:
         if len(food) == 0:
@@ -194,16 +265,24 @@ class Agent:
     def decide(self, sensors: np.ndarray, rng: np.random.Generator) -> tuple[int, np.ndarray, dict]:
         c = self.cfg
         current = c.idle_drive + c.sensor_gain * sensors
-        counts = np.zeros(3)
+        k = len(self.actions)
+        counts = np.zeros(k)
         spikes_any = {p: np.zeros(self.net.populations[p].n, bool) for p in self._node_order}
+        # Frustration -> aggression coupling (hypothesis, Dollard 1939 /
+        # Berkowitz 1989): accumulated negative-RPE "frustration" adds a tonic
+        # current to the attack population. It biases, never forces, the choice.
+        self.aggression_drive = (self.aggr_gain * self.affect.frustration
+                                 if c.social else 0.0)
         for _ in range(c.substeps):
             ext = {"sensory": current}
-            for a in ACTIONS:
+            for a in self.actions:
                 ext[a] = rng.normal(0.0, c.action_noise, size=c.n_action)
+            if c.social:
+                ext["attack"] = ext["attack"] + self.aggression_drive
             s = self.net.step(external=ext)
             for p in self._node_order:
                 spikes_any[p] |= s[p]
-            for i, a in enumerate(ACTIONS):
+            for i, a in enumerate(self.actions):
                 counts[i] += int(s[a].sum())
         self._glow *= 0.55
         for p in self._node_order:
@@ -211,13 +290,15 @@ class Agent:
             self._glow[o:o + spikes_any[p].size] = np.maximum(
                 self._glow[o:o + spikes_any[p].size], spikes_any[p].astype(float))
         if counts.max() == counts.min():
-            action = int(rng.integers(0, 3))
+            action = int(rng.integers(0, k))
         else:
             action = int(np.argmax(counts))
         return action, counts, spikes_any
 
     def move(self, action: int) -> None:
         c = self.cfg
+        if action >= 3:          # attack / share / signal: stand and act
+            return
         if action == 0:
             self.heading += c.turn
             step = c.speed * 0.5
@@ -239,16 +320,19 @@ class Agent:
         self.pos = np.array([nx, ny])
 
     def learn_and_affect(self, reward: float, sensors: np.ndarray,
-                         in_hazard: bool, learning: bool) -> float:
+                         in_hazard: bool, learning: bool, hurt: bool = False,
+                         primary: float | None = None) -> float:
         c = self.cfg
         rpe = self.predictor.update(reward)
+        affect_rpe = (self.primary_predictor.update(primary)
+                      if (c.affect_from_primary and primary is not None) else rpe)
         if learning:
             self.net.apply_reward(c.lr * rpe)
             if c.normalize:
                 self._normalize()
         self.net.clear_eligibility()
-        self.affect.update(rpe=rpe, threat_cue=float(max(sensors[3:6])),
-                           pain=1.0 if in_hazard else 0.0,
+        self.affect.update(rpe=affect_rpe, threat_cue=float(max(sensors[3:6])),
+                           pain=1.0 if (in_hazard or hurt) else 0.0,
                            reward_expectation=float(np.clip(self.predictor.value(), 0, 1)))
         return rpe
 
@@ -279,13 +363,15 @@ class World2D:
             self.rng = np.random.default_rng(self.seed)
         self.t = 0
         self.deprive = False
+        self.events: list[dict] = []
+        self._signals_prev = np.empty((0, 2))
 
         reuse = keep_weights and hasattr(self, "agents")
         if not reuse:
             self.agents = [Agent(c, i) for i in range(max(1, c.n_agents))]
 
-        # --- agent 0 first, in the ORIGINAL draw order (heading, food, hazards,
-        #     weights) so single-agent numerics are byte-identical. ---
+        # Agent 0 draws heading, food, hazards, weights in this fixed order,
+        # independent of how many agents follow.
         a0 = self.agents[0]
         a0.spawn(np.array([c.size / 2, c.size / 2]),
                  float(self.rng.uniform(0, 2 * math.pi)))
@@ -314,6 +400,8 @@ class World2D:
 
         # affect readout alias (agent 0)
         self.affect = a0.affect
+        self.next_id = len(self.agents)
+        self.births = 0
 
     def _scatter(self, n: int, margin: float = 0.05) -> np.ndarray:
         c = self.cfg
@@ -386,10 +474,34 @@ class World2D:
         return [[round(float(x), 4), round(float(y), 4)] for x, y in self.hazards]
 
     # ---- stepping -------------------------------------------------------
-    def _advance_agent(self, ag: Agent, learning: bool) -> dict:
+    def observe(self, ag: Agent) -> np.ndarray:
+        """The agent's current egocentric sensor vector (what its brain sees)."""
+        if not self.cfg.social:
+            return ag.sense(self.food, self.hazards)
+        others = [o for o in self.agents if o is not ag and o.alive]
+        others_pos = np.array([o.pos for o in others]) if others else np.empty((0, 2))
+        heard = [q for (i, q) in getattr(self, "_signals_prev", []) if i != ag.id]
+        return ag.sense(self.food, self.hazards, others_pos,
+                        np.array(heard) if heard else np.empty((0, 2)))
+
+    def _advance_agent(self, ag: Agent, learning: bool, forced: int | None = None) -> dict:
         c = self.cfg
-        sensors = ag.sense(self.food, self.hazards)
-        action, scores, _ = ag.decide(sensors, self.rng)
+        others = [o for o in self.agents if o is not ag and o.alive] if c.social else []
+        if c.social:
+            ag.signaling = False
+            others_pos = np.array([o.pos for o in others]) if others else np.empty((0, 2))
+            heard = [q for (i, q) in self._signals_prev if i != ag.id]
+            heard = np.array(heard) if heard else np.empty((0, 2))
+            sensors = ag.sense(self.food, self.hazards, others_pos, heard)
+        else:
+            sensors = ag.sense(self.food, self.hazards)
+        ag.last_sensors = sensors
+        if forced is None:
+            action, scores, _ = ag.decide(sensors, self.rng)
+        else:                        # externally controlled (e.g. an RL policy)
+            action, scores = int(forced), np.zeros(len(ag.actions))
+            if not 0 <= action < len(ag.actions):
+                raise ValueError(f"action {action} out of range for agent {ag.id}")
         ag.move(action)
 
         # eating (shared food)
@@ -415,6 +527,9 @@ class World2D:
             ag.hazard_hits += 1
             ag.energy -= c.hazard_cost
         ag.energy -= c.move_cost
+
+        social_r, hurt = (self._social_effects(ag, action, others)
+                          if c.social else (0.0, False))
         ag.energy = min(ag.energy, 1.5 * c.e0)
 
         new_dist = ag.nearest_food_dist(self.food)
@@ -425,29 +540,172 @@ class World2D:
             shaped = 0.0 if eaten else c.r_approach * (ag._prev_food_dist - new_dist)
         ag._prev_food_dist = new_dist
         ag._prev_align = new_align
-        reward = c.r_eat * eaten + shaped - c.r_hazard * (1.0 if in_hazard else 0.0)
+        primary = c.r_eat * eaten - c.r_hazard * (1.0 if in_hazard else 0.0) + social_r
+        reward = primary + shaped
         ag.total_reward += reward
 
-        rpe = ag.learn_and_affect(reward, sensors, in_hazard, learning)
+        rpe = ag.learn_and_affect(reward, sensors, in_hazard,
+                                  learning and forced is None, hurt=hurt, primary=primary)
         if ag.energy <= 0:
             ag.alive = False
         ag.last_action, ag.last_scores = action, scores
         return {"action": action, "scores": scores, "reward": reward, "rpe": rpe}
 
-    def step(self, learning: bool = True) -> dict:
-        """Advance every living agent by one world tick; return a frame."""
+    def _social_effects(self, ag: Agent, action: int, others: list) -> tuple[float, bool]:
+        """Apply attack / share / signal and incoming social consequences.
+
+        Reward accounting is in "food units" (energy / food_energy):
+          attack:  +stolen * (1 - r_prosocial)  - attack_cost
+          share:   +given  * (r_prosocial * share_benefit - 1)
+          victim:  -r_hurt * stolen (next tick, with a pain signal)
+          gift:    +received (next tick)
+        With r_prosocial = 0 agents are purely selfish; sharing can only pay
+        when r * benefit > 1 (Hamilton's rule, rB > C). Nothing here forces an
+        agent to act socially — the action itself was chosen by its network.
+        """
+        c = self.cfg
+        unit = 1.0 / max(1e-9, c.food_energy)
+        r, hurt = 0.0, False
+        if ag.pending_hurt > 0:
+            r -= c.r_hurt * ag.pending_hurt * unit
+            hurt, ag.pending_hurt = True, 0.0
+        if ag.pending_gift > 0:
+            r += c.r_eat * ag.pending_gift * unit
+            ag.pending_gift = 0.0
+
+        name = ag.actions[action]
+        target = None
+        if name in ("attack", "share") and others:
+            d = [float(np.linalg.norm(o.pos - ag.pos)) for o in others]
+            j = int(np.argmin(d))
+            if d[j] <= c.attack_radius:
+                target = others[j]
+        if name == "attack":
+            ag.attacks += 1
+            ag.energy -= c.attack_cost
+            r -= c.r_eat * c.attack_cost * unit
+            if target is not None:
+                amt = min(c.steal, max(0.0, target.energy))
+                target.energy -= amt
+                target.pending_hurt += amt
+                target.attacked += 1
+                ag.energy += amt
+                r += c.r_eat * amt * unit * (1.0 - c.r_prosocial)
+                self.events.append({"type": "attack", "src": ag.id, "dst": target.id,
+                                    "amount": round(amt, 3)})
+                if target.energy <= 0:
+                    target.alive = False
+                    self.events.append({"type": "death", "src": ag.id, "dst": target.id})
+            else:
+                self.events.append({"type": "attack_miss", "src": ag.id})
+        elif name == "share" and target is not None:
+            amt = min(c.share_amount, max(0.0, ag.energy))
+            gift = amt * c.share_benefit
+            ag.energy -= amt
+            target.energy += gift
+            target.pending_gift += gift
+            ag.shares_given += 1
+            target.shares_received += 1
+            r += c.r_eat * amt * unit * (c.r_prosocial * c.share_benefit - 1.0)
+            self.events.append({"type": "share", "src": ag.id, "dst": target.id,
+                                "amount": round(gift, 3)})
+        elif name == "signal":
+            ag.energy -= c.signal_cost
+            ag.signals += 1
+            ag.signaling = True
+            self._signals_now.append((ag.id, ag.pos.copy()))
+            self.events.append({"type": "signal", "src": ag.id})
+        return r, hurt
+
+    def step(self, learning: bool = True, actions: dict | None = None) -> dict:
+        """Advance every living agent by one world tick; return a frame.
+
+        ``actions`` optionally maps agent id -> action index for agents driven
+        by an external policy; all other agents are driven by their own SNN."""
+        actions = actions or {}
+        self.events = []
+        self._signals_now = []
         results = {}
         for ag in self.agents:
             if ag.alive:
-                results[ag.id] = self._advance_agent(ag, learning)
+                results[ag.id] = self._advance_agent(ag, learning, actions.get(ag.id))
             else:
                 results[ag.id] = {"action": ag.last_action, "scores": ag.last_scores,
                                   "reward": 0.0, "rpe": 0.0}
+        self._signals_prev = self._signals_now
+        if self.cfg.evolve:
+            self._life_cycle()
         self.t += 1
         if self.t >= self.cfg.max_ticks:
             for ag in self.agents:
                 ag.alive = False
         return self._frame(results)
+
+    # ---- evolution ------------------------------------------------------
+    def _life_cycle(self) -> None:
+        """Ageing, reproduction and pruning of long-dead bodies."""
+        c = self.cfg
+        for ag in list(self.agents):
+            if not ag.alive:
+                if ag.death_tick is None:
+                    ag.death_tick = self.t
+                continue
+            ag.age += 1
+            if ag.age >= c.max_age:
+                ag.alive = False
+                ag.death_tick = self.t
+                self.events.append({"type": "old_age", "src": ag.id})
+        alive = [ag for ag in self.agents if ag.alive]
+        for ag in alive:
+            if len([a for a in self.agents if a.alive]) >= c.max_pop:
+                break
+            if ag.energy >= c.repro_threshold:
+                self._birth(ag)
+        # keep recently-dead bodies (graves) for 60 ticks, never empty the list
+        keep = [ag for ag in self.agents
+                if ag.alive or (ag.death_tick is not None and self.t - ag.death_tick < 60)]
+        self.agents = keep or self.agents[-1:]
+
+    def _birth(self, parent: Agent) -> Agent:
+        c, rng = self.cfg, self.rng
+        child = Agent(c, self.next_id)
+        self.next_id += 1
+        if c.viscous:
+            pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
+        else:
+            pos = rng.uniform(0.05, c.size - 0.05, size=2)
+        child.spawn(np.clip(pos, 0.01, c.size - 0.01), float(rng.uniform(0, 2 * math.pi)))
+        base = ({cn.post: cn.weights for cn in parent._plastic} if c.lamarckian
+                else parent.genome["w"])
+        genome_w = {a: np.clip(w + rng.normal(0.0, c.mut_sigma * c.w_init, size=w.shape),
+                               0.0, c.w_max) for a, w in base.items()}
+        child.aggr_gain = float(max(0.0, parent.genome["aggression_gain"]
+                                    + rng.normal(0.0, c.trait_sigma)))
+        child.build_net(rng, genome={"w": genome_w})
+        child.energy = c.repro_cost
+        parent.energy -= c.repro_cost
+        child.generation = parent.generation + 1
+        child.parent = parent.id
+        child.ancestors = (parent.id,) + parent.ancestors[:7]
+        child.lineage = parent.lineage
+        child.born = self.t
+        child._prev_food_dist = child.nearest_food_dist(self.food)
+        child._prev_align = child.food_alignment(self.food)
+        self.agents.append(child)
+        self.births += 1
+        self.events.append({"type": "birth", "src": parent.id, "dst": child.id})
+        return child
+
+    def relatedness(self, a: Agent, b: Agent) -> float:
+        """Genealogical relatedness 0.5**(steps to the most recent common
+        ancestor via both lines), using up to 8 recorded ancestors; 0 if none."""
+        pa, pb = (a.id,) + a.ancestors, (b.id,) + b.ancestors
+        best = None
+        for i, x in enumerate(pa):
+            if x in pb:
+                d = i + pb.index(x)
+                best = d if best is None else min(best, d)
+        return 0.0 if best is None else 0.5 ** best
 
     def _agent_dict(self, ag: Agent, res: dict) -> dict:
         c = self.cfg
@@ -466,6 +724,15 @@ class World2D:
             "hunger": round(float(min(1.0, max(0.0, 1.0 - ag.energy / c.e0))), 3),
             "affect": {k: round(v, 3) for k, v in ag.affect.as_dict().items()},
             "glow": ag.neural_glow(),
+            "action_name": ag.actions[int(res["action"])],
+            **({"attacks": ag.attacks, "attacked": ag.attacked,
+                "shares_given": ag.shares_given, "shares_received": ag.shares_received,
+                "signals": ag.signals, "signaling": ag.signaling,
+                "aggression_drive": round(float(getattr(ag, "aggression_drive", 0.0)), 3)}
+               if c.social else {}),
+            **({"generation": ag.generation, "lineage": ag.lineage, "age": ag.age,
+                "aggr_gain": round(ag.aggr_gain, 3), "parent": ag.parent}
+               if c.evolve else {}),
         }
 
     def _frame(self, results: dict | None = None) -> dict:
@@ -473,14 +740,21 @@ class World2D:
         if results is None:
             results = {ag.id: {"action": ag.last_action, "scores": ag.last_scores,
                                "reward": 0.0, "rpe": 0.0} for ag in self.agents}
+        idle = lambda ag: {"action": ag.last_action, "scores": ag.last_scores,
+                           "reward": 0.0, "rpe": 0.0}
+        res = lambda ag: results.get(ag.id) or idle(ag)   # newborns have no result yet
         a0 = self.agents[0]
-        frame = self._agent_dict(a0, results[a0.id])  # agent-0 fields at top level
+        frame = self._agent_dict(a0, res(a0))  # agent-0 fields at top level
         frame.update({
             "t": self.t,
             "food": [[round(float(x), 4), round(float(y), 4)] for x, y in self.food],
             "deprive": self.deprive,
             "day": round(self.t / max(1, c.ticks_per_day), 2),
-            "agents": [self._agent_dict(ag, results[ag.id]) for ag in self.agents],
+            "agents": [self._agent_dict(ag, res(ag)) for ag in self.agents],
+            "events": list(getattr(self, "events", [])),
+            "social": c.social,
+            "evolve": c.evolve,
+            "population": sum(1 for ag in self.agents if ag.alive),
         })
         return frame
 

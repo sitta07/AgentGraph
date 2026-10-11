@@ -30,6 +30,13 @@ _WEBUI = Path(__file__).parent / "webui"
 _BOUNDS = {
     "n_agents": (1, 8), "n_food": (0, 30), "n_hazard": (0, 10), "max_ticks": (10, 5000),
     "ticks_per_day": (10, 1000),
+    "attack_radius": (0.01, 0.3), "steal": (0.0, 1.0), "attack_cost": (0.0, 0.5),
+    "share_amount": (0.0, 1.0), "share_benefit": (0.0, 5.0), "signal_range": (0.05, 2.0),
+    "signal_cost": (0.0, 0.1), "r_prosocial": (0.0, 1.0), "r_hurt": (0.0, 10.0),
+    "aggression_gain": (0.0, 10.0), "w_social_scale": (0.1, 1.5),
+    "repro_threshold": (0.5, 1.5), "repro_cost": (0.05, 1.0), "max_pop": (2, 60),
+    "max_age": (50, 20000), "mut_sigma": (0.0, 1.0), "trait_sigma": (0.0, 2.0),
+    "birth_radius": (0.0, 0.5),
     "sensor_range": (0.05, 2.0), "speed": (0.002, 0.1), "turn": (0.05, 1.5),
     "e0": (0.1, 5.0), "food_energy": (0.0, 2.0), "move_cost": (0.0, 0.1),
     "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 20),
@@ -66,7 +73,8 @@ class Session:
             if k == "reward_mode":
                 kwargs[k] = v if v in ("align", "approach") else "align"
                 continue
-            if k == "normalize":
+            if k in ("normalize", "social", "evolve", "viscous", "lamarckian",
+                     "affect_from_primary"):
                 kwargs[k] = bool(v)
                 continue
             try:
@@ -79,7 +87,7 @@ class Session:
                 lo, hi = _BOUNDS[k]
                 v = min(max(v, lo), hi)
             if k in ("n_agents", "n_food", "n_hazard", "max_ticks", "n_action",
-                     "substeps", "seed", "ticks_per_day"):
+                     "substeps", "seed", "ticks_per_day", "max_pop", "max_age"):
                 v = int(round(v))
             kwargs[k] = v
         return WorldConfig(**kwargs)
@@ -90,7 +98,7 @@ class Session:
         return {
             "config": self.config.as_dict(),
             "bounds": _BOUNDS,
-            "actions": list(ACTIONS),
+            "actions": list(w.agents[0].actions),
             "size": self.config.size,
             "hazards": w.hazard_list(),
             "node_order": w._node_order,
@@ -133,6 +141,22 @@ def step(body: dict | None = None):
     }
 
 
+@app.get("/api/brain/{agent_id}")
+def brain(agent_id: int):
+    """One agent's own brain right now: 3-D layout, its current (learned)
+    weights as edges and connectivity matrix, plus its live spike glow."""
+    if SESSION.world is None:
+        raise HTTPException(409, "no session")
+    ag = next((a for a in SESSION.world.agents if a.id == agent_id), None)
+    if ag is None:
+        raise HTTPException(404, f"agent {agent_id} not found")
+    lay = ag.brain_layout()
+    return {"id": ag.id, "node_order": ag._node_order,
+            "sizes": {p: ag.net.populations[p].n for p in ag._node_order},
+            "layout": {"nodes": lay["nodes"], "edges": lay["edges"], "matrix": lay["matrix"]},
+            "glow": ag.neural_glow(), "actions": list(ag.actions)}
+
+
 @app.post("/api/advance")
 def advance(body: dict | None = None):
     """Fast-forward N simulated 'days', recording a snapshot of one agent's
@@ -143,7 +167,8 @@ def advance(body: dict | None = None):
     body = body or {}
     w = SESSION.world
     days = min(max(float(body.get("days", 1)), 0.1), 30.0)
-    aid = min(max(int(body.get("agent", 0)), 0), len(w.agents) - 1)
+    want = int(body.get("agent", w.agents[0].id))
+    target = next((a for a in w.agents if a.id == want), w.agents[0])
     learning = bool(body.get("learning", True))
     tpd = max(1, w.cfg.ticks_per_day)
     total = min(int(round(days * tpd)), 5000)
@@ -152,12 +177,14 @@ def advance(body: dict | None = None):
         if not any(ag.alive for ag in w.agents):
             break
         frame = w.step(learning=learning)
-        ag = frame["agents"][aid]
+        ag = next((a for a in frame["agents"] if a["id"] == target.id), None)
+        if ag is None:          # pruned after death: stop recording this agent
+            break
         g = ag["glow"]
         acc = [1.0 if v >= 0.999 else 0.0 for v in g]   # spiked this tick
         fired = acc if fired is None else [a + b for a, b in zip(fired, acc)]
         if (w.t % tpd == 0) or i == total - 1:
-            agent = w.agents[aid]
+            agent = target
             rates, off = {}, 0
             ticks = tpd if w.t % tpd == 0 else (w.t % tpd)
             for p in agent._node_order:

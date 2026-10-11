@@ -1,6 +1,6 @@
 # NeuralMind — Implementation Status
 
-**Updated:** 2026-10-12 · **Branch:** `feat/neuralmind-core` → merged to `main` via PR #1
+**Updated:** 2026-10-12 · **Branch:** `feat/social-agents` (main has the Playground via PR #1)
 
 ## 1. What works now (all executed and tested)
 
@@ -14,8 +14,13 @@
 | Experiments (CLI) | `neuralmind/experiments/` | reward_learning, threat_avoidance, pain_response, forgetting |
 | Persistence / search | `persistence/`, `knowledge/` | SQLite runs; TF-IDF doc search with citations |
 | Tooling | `cli.py`, `bench.py`, `recorder.py`, `viz.py` | CLI, benchmark, 3D brain viewer export |
+| Social layer | `world.py` (`social=True`) | sensors for other agents + heard signals; attack / share / signal as neural actions; frustration→attack drive (ablatable); Hamilton-style reward accounting |
+| Evolution | `world.py` (`evolve=True`) | reproduction, mutating innate genome + aggression gene, ageing, genealogy & relatedness, viscous vs well-mixed birth, Darwinian/Lamarckian |
+| MARL interface | `neuralmind/envs/` | PettingZoo ParallelEnv (passes official API test); RL agents can share the world with SNN agents |
+| Research harness | `neuralmind/research/` | pre-registered multi-seed studies, bootstrap CIs, auto reports + SVG charts; results committed in `results/` |
+| CI | `.github/workflows/tests.yml` | full suite on Python 3.12 / 3.13 |
 
-## 2. Tests — 85 passing (`python -m pytest tests/ -q`, ~20 s)
+## 2. Tests — 108 passing (`python -m pytest tests/ -q`)
 
 Neurons, plasticity, network, affect, experiments, persistence, knowledge,
 benchmark, recorder/viewer, world (sensing direction, action→movement, walls,
@@ -48,16 +53,15 @@ with Playwright (play, step, train, compare, deprive, fast-forward, 5 agents).
 
 ## 5. Known limitations
 
-- Agents cannot perceive one another; there is no social behaviour (anger,
-  communication, cooperation, fighting) yet.
+- Lifetime learning alone does not produce targeted social behaviour (see
+  `docs/research/FINDINGS_SOCIAL.md`); evolution studies are in progress.
 - Reward shaping is an engineering choice; learning gains vary per world.
 - Affect variables are hand-tuned model quantities, not calibrated or subjective.
 - Big simulators (TVB, Brian2, NEST) are reference-only (copyleft); no engine adapter yet.
 
 ## 6. Next tasks
 
-1. **Social layer:** a social sensor (other agents nearby + their state), new
-   neural actions (attack / share / signal), and social reward terms. Then
-   measure whether aggression or cooperation emerges, against controls.
+1. Finish Experiment C (kin selection vs selfish learning), then the ranked
+   agenda in `docs/research/RESEARCH_AGENDA.md`.
 2. Ablation harness (disable sensors/populations/learning; multi-seed).
 3. Engine adapter to validate the core against Brian2.

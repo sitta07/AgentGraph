@@ -46,6 +46,9 @@ python -m pytest tests/ -q -m "not slow"   # skip the training test (~4 s)
 | **Does learning help?** | Press **Train 40 episodes**, then **Compare vs untrained**. Toggle **learning** off for a no-plasticity control. |
 | **Change the world** | Adjust food, hazards, sensor range, costs, learning rate, exploration noise… then **New world**. |
 | **Save results** | **Save episode** stores config + metrics in a local SQLite file. |
+| **Social life** | Tick **Social**. Agents now *see* each other and can **attack** (steal energy), **share** (give energy, recipient gets 2×) or **signal**. Each of these is a neural population competing in the same winner-take-all, so no rule decides. Watch for 💢 💚 📢 on the map; 😠 marks a high frustration-driven aggression drive. |
+| **Evolution** | Tick **Evolution**. Well-fed agents reproduce, offspring inherit a mutated *innate* brain plus an aggression gene, and agents die of hunger or old age. Families share a sprite; the dashboard plots population and generation. |
+| **Scan anyone's brain** | Click any person. The Brain Scanner loads *that individual's* current learned weights and live spikes. |
 
 ## How a decision is made (the causal chain)
 
@@ -65,6 +68,30 @@ an action**: the choice comes from the neural network. Reward is *shaped*
 (points for turning toward food). That shaping is an engineering choice, not a
 claim about biology.
 
+## For researchers
+
+**Plug in your own MARL algorithm.** The world is a
+[PettingZoo](https://pettingzoo.farama.org/) `ParallelEnv`. It passes the
+official `parallel_api_test`. RL-controlled agents can share the arena with
+spiking-brain agents:
+
+```python
+from neuralmind.envs import parallel_env      # pip install -r requirements-research.txt
+env = parallel_env(n_rl=4, n_snn=4, config={"social": True}, max_cycles=500)
+obs, infos = env.reset(seed=0)
+while env.agents:
+    obs, rewards, terms, truncs, infos = env.step(
+        {a: env.action_space(a).sample() for a in env.agents})
+```
+
+**Re-run or extend our studies.** Each study is pre-registered, multi-seed,
+and reports bootstrap CIs. The raw results are committed in `results/`.
+
+```bash
+python -m neuralmind.research.social all --seeds 10         # lifetime social learning
+python -m neuralmind.research.evolution --seeds 6 --ticks 6000   # kin selection vs selfish learning
+```
+
 ## What the evidence says (so far)
 
 | Experiment | Result | Status |
@@ -75,6 +102,7 @@ claim about biology.
 | Discrete reward task (`reward_learning`) | chance ≈ 0.5 → 0.8–0.95 correct choices | validated (qualitative) |
 | Pavlovian threat conditioning (`threat_avoidance`) | paired ≫ unpaired | validated (qualitative) |
 | `pain_response`, `forgetting` | dose-response; catastrophic interference | exploratory |
+| **Social behaviour from lifetime learning** ([write-up](docs/research/FINDINGS_SOCIAL.md)) | 4/4 pre-registered hypotheses **not supported**. Attacks are untargeted, which points to an exploration bottleneck. An ablation exposed apparent "aggression" (12.7%) as a modelling artifact. | completed, negative |
 
 Bugs found during development and how they were fixed are listed in the commit
 history and [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md).
@@ -110,7 +138,7 @@ tests/           pytest suite
 
 ## Known limitations
 
-- Agents compete for food but **cannot see or respond to each other** yet (no social behaviour).
+- Social behaviour does not emerge from lifetime learning alone (see findings). Evolution experiments are in progress.
 - A "day" is a simulation unit (`ticks_per_day`, default 60), not a real day.
 - Point-neuron LIF model; small networks (31 neurons per agent). TVB, Brian2 and NEST were studied for reference only. All three are copyleft.
 - Learning gains vary a lot between worlds. Judge them by multi-seed averages, not a single run.

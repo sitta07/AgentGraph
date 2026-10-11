@@ -57,3 +57,5 @@ attribution; Kenney is credited here as a courtesy.
 | FastAPI | MIT | Playground HTTP API |
 | Uvicorn | BSD-3-Clause | ASGI server |
 | httpx | BSD-3-Clause | Test client only |
+| PettingZoo | MIT | optional multi-agent RL interface (`neuralmind/envs`) |
+| Gymnasium | MIT | observation/action spaces for the PettingZoo wrapper |

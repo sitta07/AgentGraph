@@ -154,3 +154,13 @@ def test_lab_report_rejects_path_traversal(client):
 
 def test_lab_run_validates_kind(client):
     assert client.post("/api/lab/run", json={"kind": "nope"}).status_code == 400
+
+
+def test_lab_lists_registered_specs(client):
+    d = client.get("/api/lab/specs").json()
+    ids = {s["id"] for s in d["specs"]}
+    assert {"D_scarcity_aggression", "E_baldwin_vs_hiding"} <= ids
+
+
+def test_lab_run_rejects_unknown_spec(client):
+    assert client.post("/api/lab/run", json={"kind": "spec", "spec": "../x"}).status_code == 400

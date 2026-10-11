@@ -66,6 +66,23 @@ def share_gene(ag) -> float:
     return float(w["share"].mean() / max(1e-9, loco))
 
 
+def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
+                    ticks: int = 300) -> int:
+    """Assay a genome: food eaten alone in a fresh world with learning OFF.
+    Measures what the innate wiring can do without any lifetime learning."""
+    solo = WorldConfig(**{**cfg.as_dict(), "n_agents": 1, "evolve": False,
+                          "seed": seed, "max_ticks": ticks + 1})
+    w = World2D(solo)
+    ag = w.agents[0]
+    ag.aggr_gain = aggr_gain
+    ag.build_net(w.rng, genome={"w": {a: m.copy() for a, m in genome["w"].items()}})
+    for _ in range(ticks):
+        if not ag.alive:
+            break
+        w.step(learning=False)
+    return ag.food_eaten
+
+
 def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25,
                   sample_every: int = 100) -> dict:
     """Run one evolving population; return time series + final-window metrics."""
@@ -140,7 +157,10 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             win = Counter(); win_ticks = 0
     live = [a for a in w.agents if a.alive]
     n = max(1, alive_ticks)
+    assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
+             for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
     return {
+        "innate_foraging": float(np.mean(assay)) if assay else float("nan"),
         "extinct": not live,
         "ticks_run": t + 1,
         "final_pop": len(live),

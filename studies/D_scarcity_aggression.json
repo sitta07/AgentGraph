@@ -1,0 +1,19 @@
+{
+  "id": "D_scarcity_aggression",
+  "title": "Does a heritable aggression gene evolve higher under food scarcity?",
+  "question": "When food is scarce, does natural selection favour agents whose frustration translates more strongly into attack?",
+  "background": "Agents inherit an aggression gain: how strongly frustration (accumulated negative reward-prediction error) drives their attack population. Attacking steals energy from a neighbour. Resource-defence theory predicts that aggression pays when resources are contested, but very scarce resources may not be worth defending. Both outcomes are plausible.",
+  "simulator": "evolution",
+  "seeds": 6,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "scarce":   {"config": {"n_food": 14}, "learning": true},
+    "abundant": {"config": {"n_food": 34}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H8", "statement": "The aggression gene evolves higher under scarcity", "metric": "aggr_gene", "a": "scarce", "b": "abundant", "direction": "greater"},
+    {"id": "H8b", "statement": "Agents attack more often under scarcity", "metric": "attack_rate", "a": "scarce", "b": "abundant", "direction": "greater"},
+    {"id": "H8c", "statement": "Under scarcity, attacks are more likely when a neighbour is in reach", "metric": "attack_given_encounter", "a": "scarce", "b": "abundant", "direction": "greater"}
+  ]
+}

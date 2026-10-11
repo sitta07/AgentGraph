@@ -19,6 +19,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from neuralmind.lab import RESULTS as LAB_RESULTS, router as lab_router
 from neuralmind.persistence.store import ExperimentStore
 from neuralmind.world import ACTIONS, World2D, WorldConfig
 
@@ -317,6 +318,16 @@ def health():
 @app.get("/")
 def index():
     return FileResponse(_WEBUI / "index.html")
+
+
+@app.get("/lab")
+def lab_page():
+    return FileResponse(_WEBUI / "lab.html")
+
+
+app.include_router(lab_router)
+if LAB_RESULTS.exists():
+    app.mount("/results", StaticFiles(directory=str(LAB_RESULTS)), name="results")
 
 
 if _WEBUI.exists():

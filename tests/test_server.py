@@ -136,3 +136,21 @@ def test_evolve_session_reports_population(client):
     f = client.post("/api/step", json={"n": 5}).json()["frames"][-1]
     assert f["evolve"] is True and f["population"] >= 1
     assert "generation" in f["agents"][0]
+
+
+def test_lab_lists_committed_studies(client):
+    d = client.get("/api/lab/studies").json()
+    ids = {s["id"] for s in d["studies"]}
+    assert "social_lifetime/deprivation_aggression" in ids
+    for s in d["studies"]:
+        assert isinstance(s["verdict"], dict)
+        for ci in s["tests"].values():
+            assert ci["lo"] <= ci["mean"] <= ci["hi"]
+
+
+def test_lab_report_rejects_path_traversal(client):
+    assert client.get("/api/lab/report/..%2Fneuralmind").status_code == 404
+
+
+def test_lab_run_validates_kind(client):
+    assert client.post("/api/lab/run", json={"kind": "nope"}).status_code == 400

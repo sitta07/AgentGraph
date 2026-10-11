@@ -540,6 +540,68 @@ async function toggleDeprive() {
   toast(S.deprive ? "Food deprivation ON — watch energy & affect change" : "Deprivation off");
 }
 
+// ---------- evolution observatory (phylogeny) ----------
+const TREE = {timer: null, rows: [], geom: null};
+function geneColor(g) {
+  // 0..1 blue->yellow, 1..3 yellow->red
+  const lerp = (a, b, t) => Math.round(a + (b - a) * Math.max(0, Math.min(1, t)));
+  const [c0, c1, c2] = [[77, 124, 255], [232, 212, 77], [255, 79, 79]];
+  const [a, b, t] = g <= 1 ? [c0, c1, g] : [c1, c2, (g - 1) / 2];
+  return `rgb(${lerp(a[0], b[0], t)},${lerp(a[1], b[1], t)},${lerp(a[2], b[2], t)})`;
+}
+async function drawTree() {
+  let d;
+  try { d = await API.get("/api/lineage"); } catch (e) { return; }
+  const cv = $("treeCv"); const {x, w, h} = fit(cv);
+  x.clearRect(0, 0, w, h);
+  if (!d.evolve || !d.records.length) {
+    x.fillStyle = "#8a93a6"; x.font = "13px sans-serif";
+    x.fillText("Turn on Evolution (Experiment Controls → Modes) and press New world + Play.", 16, 28);
+    $("treeStats").textContent = ""; return;
+  }
+  const recs = d.records, byId = {}, kids = {};
+  for (const r of recs) { byId[r.id] = r; kids[r.id] = []; }
+  const roots = [];
+  for (const r of recs) (r.parent !== null && byId[r.parent] ? kids[r.parent] : roots).push(r);
+  const order = [];
+  const visit = (r) => { order.push(r); kids[r.id].sort((a, b) => a.born - b.born).forEach(visit); };
+  roots.sort((a, b) => a.id - b.id).forEach(visit);
+  const alive = new Set(d.alive), T = Math.max(1, d.t);
+  const L = 40, R = 12, top = 8, bot = 22;
+  const rowH = (h - top - bot) / Math.max(1, order.length);
+  const X = (t) => L + (w - L - R) * t / T, Y = (i) => top + (i + 0.5) * rowH;
+  const row = {}; order.forEach((r, i) => row[r.id] = i);
+  x.strokeStyle = "#232a36"; x.fillStyle = "#8a93a6"; x.font = "10px sans-serif";
+  for (let k = 0; k <= 4; k++) { const t = Math.round(T * k / 4);
+    x.beginPath(); x.moveTo(X(t), top); x.lineTo(X(t), h - bot); x.stroke();
+    x.fillText("t=" + t, X(t) - 10, h - 6); }
+  const lw = Math.max(0.6, Math.min(3, rowH * 0.7));
+  for (const r of order) {                     // connectors first
+    if (r.parent === null || row[r.parent] === undefined) continue;
+    x.strokeStyle = "rgba(138,147,166,0.35)"; x.lineWidth = 0.6;
+    x.beginPath(); x.moveTo(X(r.born), Y(row[r.parent])); x.lineTo(X(r.born), Y(row[r.id])); x.stroke();
+  }
+  for (const r of order) {
+    const end = r.died === null ? T : r.died;
+    x.strokeStyle = geneColor(r.aggr_gain); x.lineWidth = lw;
+    x.beginPath(); x.moveTo(X(r.born), Y(row[r.id])); x.lineTo(X(Math.max(end, r.born + 1)), Y(row[r.id])); x.stroke();
+    if (alive.has(r.id)) { x.fillStyle = "#ffffff";
+      x.beginPath(); x.arc(X(T), Y(row[r.id]), Math.max(1.5, lw), 0, 7); x.fill(); }
+  }
+  TREE.rows = order; TREE.geom = {top, rowH};
+  const liveRecs = recs.filter(r => alive.has(r.id));
+  const lineages = new Set(liveRecs.map(r => r.lineage));
+  const maxGen = Math.max(...recs.map(r => r.generation));
+  const meanGene = liveRecs.length ? liveRecs.reduce((s, r) => s + r.aggr_gain, 0) / liveRecs.length : 0;
+  $("treeStats").textContent = `· ${recs.length} individuals ever lived · ${liveRecs.length} alive · ` +
+    `${lineages.size} founder lineage(s) surviving · max generation ${maxGen} · mean aggression gene ${meanGene.toFixed(2)}`;
+}
+function openTree() {
+  $("treeDlg").showModal(); drawTree();
+  TREE.timer = setInterval(() => { if (S.playing) drawTree(); }, 1500);
+}
+function closeTree() { clearInterval(TREE.timer); TREE.timer = null; $("treeDlg").close(); }
+
 function wire() {
   $("btnNew").onclick = newWorld;
   $("btnPlay").onclick = togglePlay;
@@ -552,6 +614,17 @@ function wire() {
   $("btnDeprive").onclick = toggleDeprive;
   $("btnDay1").onclick = () => advanceDays(1);
   $("btnDay3").onclick = () => advanceDays(3);
+  $("btnTree").onclick = openTree;
+  $("treeClose").onclick = closeTree;
+  $("treeDlg").addEventListener("close", () => { clearInterval(TREE.timer); TREE.timer = null; });
+  $("treeCv").addEventListener("mousemove", (ev) => {
+    if (!TREE.geom || !TREE.rows.length) return;
+    const r = $("treeCv").getBoundingClientRect();
+    const i = Math.floor((ev.clientY - r.top - TREE.geom.top) / TREE.geom.rowH);
+    const rec = TREE.rows[i]; if (!rec) return;
+    $("treeHover").textContent = `P${rec.id + 1} · generation ${rec.generation} · lineage L${rec.lineage} · ` +
+      `born t=${rec.born}${rec.died !== null ? " · died t=" + rec.died : " · alive"} · aggression gene ${rec.aggr_gain}`;
+  });
   $("world").addEventListener("click", placeFoodAt);
   $("world").style.cursor = "crosshair";
   $("speed").oninput = (e) => { S.speed = +e.target.value; };

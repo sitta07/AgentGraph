@@ -164,3 +164,11 @@ def test_lab_lists_registered_specs(client):
 
 def test_lab_run_rejects_unknown_spec(client):
     assert client.post("/api/lab/run", json={"kind": "spec", "spec": "../x"}).status_code == 400
+
+
+def test_lineage_endpoint(client):
+    client.post("/api/session", json={"seed": 0, "n_agents": 4, "social": True, "evolve": True})
+    client.post("/api/step", json={"n": 40})
+    d = client.get("/api/lineage").json()
+    assert d["evolve"] is True and len(d["records"]) >= 4
+    assert {"id", "parent", "born", "died", "aggr_gain"} <= set(d["records"][0])

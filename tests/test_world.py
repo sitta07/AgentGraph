@@ -243,3 +243,24 @@ def test_neutral_marker_is_inherited_but_off_by_default():
     p2.energy = 2.0
     c2 = w2._birth(p2)
     assert c2.neutral_gene == p2.neutral_gene   # not drawn when the flag is off
+
+
+def test_registry_records_births_and_deaths():
+    w = World2D(WorldConfig(seed=0, n_agents=3, social=True, evolve=True, max_age=40,
+                            max_ticks=10**6))
+    for _ in range(300):
+        w.step(True)
+    reg = w.registry
+    assert len(reg) >= 3
+    assert all(r["died"] is not None for r in reg.values() if r["born"] == 0)  # founders aged out
+    for r in reg.values():
+        if r["parent"] is not None:
+            assert r["parent"] in reg and r["generation"] == reg[r["parent"]]["generation"] + 1
+
+
+def test_evolving_world_is_open_ended():
+    w = World2D(WorldConfig(seed=0, n_agents=4, social=True, evolve=True, max_ticks=20, n_food=24,
+                            food_energy=0.6))
+    for _ in range(60):
+        w.step(True)
+    assert any(a.alive for a in w.agents)

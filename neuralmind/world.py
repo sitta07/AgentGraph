@@ -405,6 +405,10 @@ class World2D:
         self.affect = a0.affect
         self.next_id = len(self.agents)
         self.births = 0
+        # Genealogy of every agent that ever lived (kept after bodies are pruned).
+        self.registry: dict[int, dict] = {}
+        for ag in self.agents:
+            self._register(ag)
 
     def _scatter(self, n: int, margin: float = 0.05) -> np.ndarray:
         c = self.cfg
@@ -640,7 +644,8 @@ class World2D:
         if self.cfg.evolve:
             self._life_cycle()
         self.t += 1
-        if self.t >= self.cfg.max_ticks:
+        # Evolving worlds are open-ended; other worlds end the episode at max_ticks.
+        if self.t >= self.cfg.max_ticks and not self.cfg.evolve:
             for ag in self.agents:
                 ag.alive = False
         return self._frame(results)
@@ -653,11 +658,16 @@ class World2D:
             if not ag.alive:
                 if ag.death_tick is None:
                     ag.death_tick = self.t
+                rec = self.registry.get(ag.id)
+                if rec is not None and rec["died"] is None:
+                    rec["died"] = ag.death_tick
                 continue
             ag.age += 1
             if ag.age >= c.max_age:
                 ag.alive = False
                 ag.death_tick = self.t
+                if ag.id in self.registry:
+                    self.registry[ag.id]["died"] = self.t
                 self.events.append({"type": "old_age", "src": ag.id})
         alive = [ag for ag in self.agents if ag.alive]
         for ag in alive:
@@ -669,6 +679,11 @@ class World2D:
         keep = [ag for ag in self.agents
                 if ag.alive or (ag.death_tick is not None and self.t - ag.death_tick < 60)]
         self.agents = keep or self.agents[-1:]
+
+    def _register(self, ag: Agent) -> None:
+        self.registry[ag.id] = {"id": ag.id, "parent": ag.parent, "lineage": ag.lineage,
+                                "generation": ag.generation, "born": ag.born, "died": None,
+                                "aggr_gain": round(ag.aggr_gain, 3)}
 
     def _birth(self, parent: Agent) -> Agent:
         c, rng = self.cfg, self.rng
@@ -699,6 +714,7 @@ class World2D:
         child._prev_food_dist = child.nearest_food_dist(self.food)
         child._prev_align = child.food_alignment(self.food)
         self.agents.append(child)
+        self._register(child)
         self.births += 1
         self.events.append({"type": "birth", "src": parent.id, "dst": child.id})
         return child

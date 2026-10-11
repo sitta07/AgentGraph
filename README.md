@@ -38,7 +38,7 @@ NeuralMind is **MIT-licensed**. It is designed to be forked, extended and cited:
 | **Ask a new scientific question** without writing simulator code | a **declarative study spec** (`studies/*.json`): commit it, then run it. The commit hash is your pre-registration. → [`docs/ADDING_A_STUDY.md`](docs/ADDING_A_STUDY.md) |
 | **Check or extend our results** | the committed raw data in [`results/`](results/) and auto-generated reports with bootstrap CIs |
 | **Teach** neurons, plasticity, reinforcement learning or evolution | the interactive Playground: click any creature to see its brain |
-| **Build on the engine** | small, dependency-light NumPy code with 118+ tests and CI |
+| **Build on the engine** | `pip install` it: small, dependency-light NumPy code with 120+ tests and CI |
 
 If you use it in research, please cite it ([`CITATION.cff`](CITATION.cff)). PRs
 and new studies are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
@@ -83,6 +83,7 @@ neuralmind-study studies/my_study.json # run a registered study
 | **Scan anyone's brain** | Click any creature. The scanner loads *that individual's* current learned weights and live spikes. |
 | **Social life** | Tick **Social**. Creatures see each other and can **attack** (steal energy 💢), **share** (the recipient gets 2× 💚) or **signal** (📢). Each is a neural population competing in the same winner-take-all. |
 | **Evolution** | Tick **Evolution**. Well-fed creatures reproduce, and children inherit a mutated *innate* brain plus an aggression gene (✨ birth, 💀 death). |
+| **Family tree** | Press **🌳 Family tree** for a live phylogeny of every individual that ever lived. Each line is one life, colour shows its aggression gene, and you can see which founder lineages take over and which die out. |
 | **Starvation experiment** | **🚫 Deprive**, then **⏩ +1 / +3 days**. A day-by-day table shows energy, hunger, affect and neural firing. |
 | **Feed someone** | Click the grass, or press **🍎 Food ahead**. |
 | **Does learning help?** | **Train 40 episodes**, then **Compare vs untrained**. |
@@ -104,8 +105,8 @@ neuralmind-study studies/my_study.json # run a registered study
 | **Does selfish lifetime learning undermine kin-selected helping?** (evolution, [C](docs/research/FINDINGS_EVOLUTION_KIN.md), [C2](docs/research/FINDINGS_C2.md)) | Selfish learning *doubled* sharing, the opposite of our prediction. The pre-registered follow-up then **ruled out crowding** as the cause. Help reached relatives above chance **without any kin-recognition sensor**, and this replicated. The early "viscosity raises the innate share gene" result did **not** replicate. | completed |
 | **Does spatial structure prevent extinction?** (F) | Exploratory in C2: well-mixed populations went extinct in 7/12 runs vs 2/12 (p = 0.09, not significant). Now re-tested with 12 seeds. | registered · queued |
 | **Is learned sharing a reciprocity loop driven by gift rewards?** (G) | ablation of the gift reward | registered · queued |
-| **Does an aggression gene evolve under scarcity?** (D) | pre-registered in [`studies/`](studies/) | queued |
-| **Baldwin effect vs hiding effect** (E): does learning speed up or shield the evolution of innate ability? | pre-registered as competing predictions | queued |
+| **Does an aggression gene evolve under scarcity?** (D, [write-up](docs/research/FINDINGS_D.md)) | The gene rose under scarcity (+0.75 [0.37, 1.04]), but **attack behaviour did not change**. Scarce worlds also ran 2× more generations, so drift has not been ruled out. | completed; neutral-marker control **D2** registered |
+| **Baldwin effect vs hiding effect** (E): does learning speed up or shield the evolution of innate ability? | pre-registered as competing predictions | running |
 | Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode (≈ +40%) | real but noisy |
 
 The full ranked agenda of open questions is in
@@ -168,7 +169,8 @@ neuralmind/
   research/      pre-registered studies, stats (bootstrap CI, MI, G-test), spec runner
   lab.py         Discovery Lab API
   server.py      FastAPI backend (the browser only renders backend state)
-  webui/         Playground + Discovery Lab (vanilla JS + canvas, Kenney CC0 pixel art)
+  webui/         Playground (+ family tree) + Discovery Lab (vanilla JS + canvas, Kenney CC0 pixel art)
+  paths.py       where studies/ and results/ live (repo, $NEURALMIND_HOME, or current folder)
 studies/         registered study specs        results/   raw results + reports
 docs/research/   findings, evidence ledger, agenda, literature
 tests/           pytest suite (CI on 3.12 / 3.13)

@@ -85,6 +85,7 @@
     <button id="btnDeprive" class="ghost">🚫 Deprive</button>
     <button id="btnDay1" class="ghost">⏩ +1 day</button>
     <button id="btnDay3" class="ghost">⏩ +3 days</button>
+    <button id="btnTree" class="ghost">🌳 Family tree</button>
     <label class="note" style="display:flex;align-items:center;gap:6px">speed
       <input type="range" id="speed" min="1" max="30" value="10"></label>
     <label class="note" style="display:flex;align-items:center;gap:6px">
@@ -181,6 +182,23 @@
   by <a href="https://kenney.nl" target="_blank" style="color:#8a93a6">Kenney</a> (CC0) — thank you!
   · NeuralMind is MIT-licensed open source · <a href="https://github.com/sitta07/NeuralMind" target="_blank" style="color:#8a93a6">GitHub</a>
 </footer>
+<dialog id="treeDlg" style="background:var(--panel);color:var(--ink);border:1px solid var(--grid);border-radius:14px;width:min(1200px,95vw);padding:0">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--grid)">
+    <div><b>🌳 Evolution Observatory</b> <span class="note" id="treeStats"></span></div>
+    <button class="ghost" id="treeClose">Close</button>
+  </div>
+  <div style="padding:10px 14px">
+    <canvas id="treeCv" style="height:520px;background:#0e1118"></canvas>
+    <div class="legend" style="margin-top:8px">
+      <span>each line = one individual, from birth to death · connectors = parent → child · colour = heritable aggression gene</span>
+      <span><span class="dot" style="background:#4d7cff"></span>low</span>
+      <span><span class="dot" style="background:#e8d44d"></span>1.0 (founder value)</span>
+      <span><span class="dot" style="background:#ff4f4f"></span>high</span>
+      <span>● alive now</span>
+    </div>
+    <div class="note" id="treeHover" style="min-height:18px;margin-top:4px"></div>
+  </div>
+</dialog>
 <div class="toast" id="toast"></div>
 <script src="/static/app.js"></script>
 </body>

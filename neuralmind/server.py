@@ -158,6 +158,18 @@ def brain(agent_id: int):
             "glow": ag.neural_glow(), "actions": list(ag.actions)}
 
 
+@app.get("/api/lineage")
+def lineage(limit: int = 3000):
+    """Genealogy of every agent that ever lived in this world (most recent
+    ``limit`` records): id, parent, lineage, generation, born, died, gene."""
+    if SESSION.world is None:
+        raise HTTPException(409, "no session")
+    w = SESSION.world
+    recs = sorted(getattr(w, "registry", {}).values(), key=lambda r: r["id"])[-max(1, limit):]
+    return {"t": w.t, "records": recs, "alive": [a.id for a in w.agents if a.alive],
+            "evolve": w.cfg.evolve}
+
+
 @app.post("/api/advance")
 def advance(body: dict | None = None):
     """Fast-forward N simulated 'days', recording a snapshot of one agent's

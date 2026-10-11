@@ -334,10 +334,16 @@ if _WEBUI.exists():
     app.mount("/static", StaticFiles(directory=str(_WEBUI)), name="static")
 
 
-def main() -> None:
+def main(argv=None) -> None:
+    import argparse
+
     import uvicorn
-    print("NeuralMind Playground -> http://127.0.0.1:8000")
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    ap = argparse.ArgumentParser(description="NeuralMind Playground + Discovery Lab server")
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=8000)
+    a = ap.parse_args(argv)
+    print(f"NeuralMind Playground -> http://{a.host}:{a.port}   Discovery Lab -> http://{a.host}:{a.port}/lab")
+    uvicorn.run(app, host=a.host, port=a.port, log_level="warning")
 
 
 if __name__ == "__main__":

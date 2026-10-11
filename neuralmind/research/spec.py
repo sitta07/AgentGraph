@@ -45,7 +45,9 @@ from neuralmind import __version__
 from neuralmind.research.evolution import line_svg, run_conditions
 from neuralmind.research.stats import mean_ci, paired_diff
 
-ROOT = Path(__file__).resolve().parents[2]
+from neuralmind.paths import home
+
+ROOT = home()
 REQUIRED = ("id", "title", "question", "simulator", "conditions", "hypotheses")
 DIRECTIONS = ("greater", "less", "none")
 

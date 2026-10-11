@@ -18,8 +18,10 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
-RESULTS = Path(__file__).resolve().parent.parent / "results"
-STUDIES = Path(__file__).resolve().parent.parent / "studies"
+from neuralmind.paths import results_dir, studies_dir
+
+RESULTS = results_dir()
+STUDIES = studies_dir()
 router = APIRouter(prefix="/api/lab")
 
 _JOBS: dict[str, dict] = {}

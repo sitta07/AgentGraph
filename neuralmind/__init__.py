@@ -11,7 +11,7 @@ The core simulation engine depends only on NumPy and runs on an ordinary
 developer machine with no external API key.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from neuralmind.core.neurons import LIFPopulation, LIFParams
 from neuralmind.core.network import SpikingNetwork

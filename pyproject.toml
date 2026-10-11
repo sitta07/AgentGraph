@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuralmind"
+version = "0.2.0"
+description = "An open artificial-life lab: spiking-neural agents that forage, fight, share, signal and evolve, with a PettingZoo API and pre-registered research tooling."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+authors = [{ name = "Sitta Boonkaew" }]
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26"]
+keywords = ["artificial life", "spiking neural networks", "multi-agent", "evolution", "pettingzoo", "neuroevolution"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Life",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+research = ["pettingzoo>=1.24", "gymnasium>=0.29"]
+dev = ["pytest>=8", "httpx>=0.27", "pillow>=10", "playwright>=1.40"]
+all = ["neuralmind[server,research,dev]"]
+
+[project.urls]
+Homepage = "https://github.com/sitta07/NeuralMind"
+Issues = "https://github.com/sitta07/NeuralMind/issues"
+
+[project.scripts]
+neuralmind = "neuralmind.cli:main"
+neuralmind-server = "neuralmind.server:main"
+neuralmind-study = "neuralmind.research.spec:main"
+
+[tool.setuptools.packages.find]
+include = ["neuralmind*"]
+
+[tool.setuptools.package-data]
+neuralmind = ["webui/*.html", "webui/*.js", "webui/assets/kenney/*"]

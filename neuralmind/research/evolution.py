@@ -169,6 +169,9 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "max_generation": max([a.generation for a in live] or [0]),
         "share_gene": float(np.mean([share_gene(a) for a in live])) if live else float("nan"),
         "aggr_gene": float(np.mean([a.aggr_gain for a in live])) if live else float("nan"),
+        "neutral_gene": float(np.mean([a.neutral_gene for a in live])) if live else float("nan"),
+        "aggr_excess": (float(np.mean([a.aggr_gain - a.neutral_gene for a in live]))
+                        if live else float("nan")),
         "share_rate": acts["share"] / n if alive_ticks else float("nan"),
         "attack_rate": acts["attack"] / n if alive_ticks else float("nan"),
         "share_to_kin": share_kin / share_events if share_events else float("nan"),

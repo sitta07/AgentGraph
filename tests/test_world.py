@@ -230,3 +230,16 @@ def test_gift_reward_flag_controls_recipient_reward_only():
         r, _ = w._social_effects(b, b.actions.index("left"), [a])
         assert (r > 0) == flag
         assert b.energy == e        # energy was already transferred at gift time
+
+
+def test_neutral_marker_is_inherited_but_off_by_default():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, neutral_marker=True))
+    p = w.agents[0]
+    p.energy = 2.0
+    c = w._birth(p)
+    assert c.neutral_gene != p.neutral_gene     # mutated
+    w2 = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True))
+    p2 = w2.agents[0]
+    p2.energy = 2.0
+    c2 = w2._birth(p2)
+    assert c2.neutral_gene == p2.neutral_gene   # not drawn when the flag is off

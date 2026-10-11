@@ -107,6 +107,7 @@ class WorldConfig:
     birth_radius: float = 0.04     # offspring scatter around the parent
     viscous: bool = True           # True: born near parent; False: born anywhere
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
+    neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
     seed: int = 0
 
     def as_dict(self) -> dict:
@@ -126,6 +127,7 @@ class Agent:
         self.n_sensors = N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
         # heritable trait + genealogy (used by evolution; harmless otherwise)
         self.aggr_gain = float(cfg.aggression_gain)
+        self.neutral_gene = float(cfg.aggression_gain)   # drift control; never read by behaviour
         self.generation = 0
         self.parent: int | None = None
         self.ancestors: tuple = ()
@@ -683,6 +685,9 @@ class World2D:
                                0.0, c.w_max) for a, w in base.items()}
         child.aggr_gain = float(max(0.0, parent.genome["aggression_gain"]
                                     + rng.normal(0.0, c.trait_sigma)))
+        if c.neutral_marker:
+            child.neutral_gene = float(max(0.0, parent.neutral_gene
+                                           + rng.normal(0.0, c.trait_sigma)))
         child.build_net(rng, genome={"w": genome_w})
         child.energy = c.repro_cost
         parent.energy -= c.repro_cost

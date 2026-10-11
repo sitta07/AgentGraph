@@ -52,3 +52,10 @@ def test_run_and_write_end_to_end(tmp_path):
     assert res["deviations"] == {}
     rep = write(res, tmp_path / "out")
     assert "Pre-registration" in rep.read_text()
+
+
+def test_numeric_b_is_a_one_sample_test(tmp_path):
+    p = _spec(tmp_path, hypotheses=[{"id": "H", "statement": "s", "metric": "final_pop",
+                                     "a": "a", "b": 0, "direction": "greater"}])
+    res = run(load(p), p, seeds=2, ticks=60)
+    assert res["verdict"]["H"] in ("supported", "not supported")

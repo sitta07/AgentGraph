@@ -23,6 +23,9 @@ Spec format::
       ]
     }
 
+``b`` may also be a number, which tests condition ``a``'s metric against that
+constant (a one-sample CI of metric − b).
+
 ``direction`` sets the decision rule on the paired difference a − b (same seeds):
 
 * ``greater``: supported if the 95% CI lower bound is above 0.
@@ -65,9 +68,10 @@ def load(path: str | Path) -> dict:
                 raise ValueError(f"hypothesis {h.get('id', '?')} missing '{k}'")
         if h["direction"] not in DIRECTIONS:
             raise ValueError(f"direction must be one of {DIRECTIONS}")
-        for c in (h["a"], h["b"]):
-            if c not in spec["conditions"]:
-                raise ValueError(f"hypothesis {h['id']} refers to unknown condition '{c}'")
+        if h["a"] not in spec["conditions"]:
+            raise ValueError(f"hypothesis {h['id']} refers to unknown condition '{h['a']}'")
+        if not isinstance(h["b"], (int, float)) and h["b"] not in spec["conditions"]:
+            raise ValueError(f"hypothesis {h['id']} refers to unknown condition '{h['b']}'")
     return spec
 
 
@@ -116,7 +120,10 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
     summary = {n: {m: mean_ci(col(n, m)) for m in metrics} for n in conds}
     tests, verdict = {}, {}
     for h in spec["hypotheses"]:
-        ci = paired_diff(col(h["a"], h["metric"]), col(h["b"], h["metric"]))
+        if isinstance(h["b"], (int, float)):
+            ci = mean_ci([v - h["b"] for v in col(h["a"], h["metric"])])
+        else:
+            ci = paired_diff(col(h["a"], h["metric"]), col(h["b"], h["metric"]))
         tests[f"{h['id']}: {h['metric']} ({h['a']} − {h['b']})"] = ci
         verdict[h["id"]] = decide(ci, h["direction"])
     return {"experiment": spec["id"], "title": spec["title"], "question": spec["question"],

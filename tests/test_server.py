@@ -64,6 +64,31 @@ def test_save_and_list_runs(client):
     assert any(run["id"] == rid for run in runs)
 
 
+def test_place_food_adds_item(client):
+    d0 = client.post("/api/session", json={"seed": 0, "n_food": 3}).json()
+    n0 = len(d0["state"]["food"])
+    d = client.post("/api/place_food", json={"x": 0.5, "y": 0.5}).json()
+    assert len(d["food"]) == n0 + 1
+
+
+def test_deprive_clears_food_and_starves(client):
+    client.post("/api/session", json={"seed": 0, "n_food": 8, "e0": 0.2})
+    client.post("/api/deprive", json={"on": True})
+    # With no food and energy draining, the agent should die within the episode.
+    out = client.post("/api/step", json={"n": 60, "learning": False}).json()
+    assert out["frames"][-1]["deprive"] is True
+    # no food remains to eat
+    assert out["frames"][-1]["food"] == []
+    assert "hunger" in out["frames"][-1] and "affect" in out["frames"][-1]
+
+
+def test_frame_has_day_and_affect(client):
+    client.post("/api/session", json={"seed": 0})
+    f = client.post("/api/step", json={"n": 1}).json()["frames"][0]
+    assert "day" in f and "hunger" in f
+    assert set(("valence", "arousal", "threat")).issubset(f["affect"])
+
+
 def test_glow_matches_node_count(client):
     d = client.post("/api/session", json={"seed": 0}).json()
     total = sum(d["sizes"].values())

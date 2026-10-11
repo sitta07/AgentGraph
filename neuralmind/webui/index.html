@@ -75,6 +75,8 @@
     <button id="btnPlay">▶ Play</button>
     <button id="btnStep" class="ghost">Step</button>
     <button id="btnReset" class="ghost">Reset</button>
+    <button id="btnFood" class="ghost">🍎 Food ahead</button>
+    <button id="btnDeprive" class="ghost">🚫 Deprive</button>
     <label class="note" style="display:flex;align-items:center;gap:6px">speed
       <input type="range" id="speed" min="1" max="30" value="10"></label>
     <label class="note" style="display:flex;align-items:center;gap:6px">
@@ -97,12 +99,17 @@
         <h2>Agent Inspector</h2>
         <div class="stat"><b>Energy</b><span id="iEnergy">–</span></div>
         <div class="bar"><i id="energyBar" style="width:100%"></i></div>
+        <div class="stat" style="margin-top:8px"><b>Day</b><span id="iDay">0</span></div>
+        <div class="stat"><b>Hunger</b><span id="iHunger">0</span></div>
+        <div class="bar"><i id="hungerBar" style="width:0%;background:var(--warn)"></i></div>
         <div class="stat" style="margin-top:8px"><b>Survival (ticks)</b><span id="iAge">0</span></div>
         <div class="stat"><b>Food eaten</b><span id="iFood">0</span></div>
         <div class="stat"><b>Hazard hits</b><span id="iHaz">0</span></div>
         <div class="stat"><b>Action</b><span id="iAction">–</span></div>
         <div class="stat"><b>Episode reward</b><span id="iReward">0</span></div>
         <div class="stat"><b>Reward pred. error</b><span id="iRpe">0</span></div>
+        <div class="seg">Affect / physiology <span class="note">(model variables)</span></div>
+        <div id="affectBars"></div>
         <p class="note" style="margin:8px 0 0">These are internal model variables,
           not claims about subjective experience.</p>
       </div>

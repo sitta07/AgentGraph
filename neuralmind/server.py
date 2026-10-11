@@ -131,6 +131,27 @@ def step(body: dict | None = None):
     }
 
 
+@app.post("/api/place_food")
+def place_food(body: dict | None = None):
+    if SESSION.world is None:
+        raise HTTPException(409, "no session")
+    body = body or {}
+    if body.get("ahead"):
+        SESSION.world.place_food_ahead()
+    else:
+        SESSION.world.place_food(float(body.get("x", 0.5)), float(body.get("y", 0.5)))
+    return {"food": SESSION.world._frame(SESSION.world.last_action,
+                                         SESSION.world.last_scores, 0.0, 0.0)["food"]}
+
+
+@app.post("/api/deprive")
+def deprive(body: dict | None = None):
+    if SESSION.world is None:
+        raise HTTPException(409, "no session")
+    SESSION.world.set_deprive(bool((body or {}).get("on", True)))
+    return {"deprive": SESSION.world.deprive}
+
+
 @app.post("/api/reset")
 def reset(body: dict | None = None):
     if SESSION.world is None:

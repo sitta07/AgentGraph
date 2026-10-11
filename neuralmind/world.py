@@ -29,6 +29,7 @@ from dataclasses import dataclass, asdict
 
 import numpy as np
 
+from neuralmind.affect.affect_state import AffectState
 from neuralmind.affect.reward import RewardPredictor
 from neuralmind.core.network import Connection, SpikingNetwork
 from neuralmind.core.neurons import LIFPopulation
@@ -68,6 +69,7 @@ class WorldConfig:
     r_approach: float = 5.0       # approach-shaping weight (approach mode)
     r_align: float = 4.0          # alignment-shaping weight (align mode)
     r_hazard: float = 1.0
+    ticks_per_day: int = 60       # ticks that count as one "day" (for display)
     seed: int = 0
 
     def as_dict(self) -> dict:
@@ -101,6 +103,8 @@ class World2D:
         self.hazard_hits = 0
         self.distance = 0.0
         self.total_reward = 0.0
+        self.deprive = False          # starvation mode: eaten food is not replaced
+        self.affect = AffectState()   # low-dim affect read-out (not subjective!)
 
         self.agent = np.array([c.size / 2, c.size / 2], dtype=float)
         self.heading = float(self.rng.uniform(0, 2 * math.pi))
@@ -272,12 +276,18 @@ class World2D:
         action, scores, spikes = self._decide(sensors)
         self._move(action)
 
-        # Consequences.
+        # Consequences. In starvation (deprive) mode, eaten food is removed and
+        # NOT replaced, so the agent can be deprived and its brain watched.
         eaten = 0
         d = np.linalg.norm(self.food - self.agent, axis=1) if len(self.food) else np.array([])
-        for idx in np.nonzero(d < c.eat_radius)[0] if d.size else []:
-            eaten += 1
-            self.food[idx] = self._scatter(1)[0]
+        hit = list(np.nonzero(d < c.eat_radius)[0]) if d.size else []
+        if hit:
+            eaten = len(hit)
+            if self.deprive:
+                self.food = np.delete(self.food, hit, axis=0)
+            else:
+                for idx in hit:
+                    self.food[idx] = self._scatter(1)[0]
         self.food_eaten += eaten
         self.energy += eaten * c.food_energy
 
@@ -316,6 +326,13 @@ class World2D:
                 self._normalize()
         self.net.clear_eligibility()
 
+        # Affect / physiology read-out (bounded model variables, NOT feelings):
+        # hunger and threat drive it; pain proxied by hazard contact.
+        hunger = float(np.clip(1.0 - self.energy / c.e0, 0.0, 1.0))
+        self.affect.update(rpe=rpe, threat_cue=float(max(sensors[3:6])),
+                           pain=1.0 if in_hazard else 0.0,
+                           reward_expectation=float(np.clip(self.predictor.value(), 0, 1)))
+
         self.t += 1
         if self.energy <= 0 or self.t >= c.max_ticks:
             self.alive = False
@@ -336,8 +353,33 @@ class World2D:
             "food_eaten": self.food_eaten,
             "hazard_hits": self.hazard_hits,
             "alive": self.alive,
+            "deprive": self.deprive,
+            "day": round(self.t / max(1, self.cfg.ticks_per_day), 2),
+            "hunger": round(float(min(1.0, max(0.0, 1.0 - self.energy / self.cfg.e0))), 3),
+            "affect": {k: round(v, 3) for k, v in self.affect.as_dict().items()},
             "glow": self.neural_glow(),  # per-node spike glow for the brain scanner
         }
+
+    # ---- interaction ----------------------------------------------------
+    def place_food(self, x: float, y: float) -> None:
+        """Drop a food item at world coords (clamped inside the arena)."""
+        s = self.cfg.size
+        p = [[min(max(float(x), 0.0), s), min(max(float(y), 0.0), s)]]
+        self.food = np.vstack([self.food, p]) if len(self.food) else np.array(p)
+
+    def place_food_ahead(self, dist: float | None = None) -> None:
+        """Drop a food item directly in front of the agent."""
+        dist = self.cfg.sensor_range * 0.5 if dist is None else dist
+        self.place_food(self.agent[0] + dist * math.cos(self.heading),
+                        self.agent[1] + dist * math.sin(self.heading))
+
+    def set_deprive(self, on: bool, clear: bool = True) -> None:
+        """Enter/leave starvation mode. When entering, optionally clear all food."""
+        self.deprive = bool(on)
+        if on and clear:
+            self.food = np.empty((0, 2))
+            self._prev_food_dist = self.cfg.sensor_range
+            self._prev_align = 0.0
 
     def neural_glow(self) -> list[float]:
         """Per-node decaying spike activity in node order (sensory, then actions)."""

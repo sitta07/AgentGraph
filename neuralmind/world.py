@@ -96,6 +96,17 @@ class WorldConfig:
     # from the learning-only shaping term. v1 (False) let shaping noise drive
     # frustration, which a pilot study showed to be an artifact.
     affect_from_primary: bool = True
+    # --- evolution (opt-in): reproduction with heritable, mutating genomes ---
+    evolve: bool = False
+    repro_threshold: float = 1.2   # energy needed to reproduce
+    repro_cost: float = 0.5        # energy handed from parent to offspring
+    max_pop: int = 40
+    max_age: int = 1500            # ticks; death of old age keeps turnover going
+    mut_sigma: float = 0.15        # weight mutation s.d. (relative to w_init)
+    trait_sigma: float = 0.2       # mutation s.d. of the heritable aggression gain
+    birth_radius: float = 0.04     # offspring scatter around the parent
+    viscous: bool = True           # True: born near parent; False: born anywhere
+    lamarckian: bool = False       # True: inherit LEARNED weights (control)
     seed: int = 0
 
     def as_dict(self) -> dict:
@@ -113,6 +124,16 @@ class Agent:
         self.net: SpikingNetwork | None = None
         self.actions = ACTIONS + (SOCIAL_ACTIONS if cfg.social else ())
         self.n_sensors = N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
+        # heritable trait + genealogy (used by evolution; harmless otherwise)
+        self.aggr_gain = float(cfg.aggression_gain)
+        self.generation = 0
+        self.parent: int | None = None
+        self.ancestors: tuple = ()
+        self.lineage = aid
+        self.age = 0
+        self.born = 0
+        self.death_tick: int | None = None
+        self.genome: dict | None = None
 
     # ---- lifecycle ------------------------------------------------------
     def spawn(self, pos: np.ndarray, heading: float) -> None:
@@ -138,20 +159,24 @@ class Agent:
         self.pending_hurt = 0.0     # energy lost to attackers since last tick
         self.pending_gift = 0.0     # energy received from sharers since last tick
 
-    def build_net(self, rng: np.random.Generator) -> None:
+    def build_net(self, rng: np.random.Generator, genome: dict | None = None) -> None:
         c = self.cfg
         net = SpikingNetwork(dt=1.0)
         net.add_population("sensory", LIFPopulation(self.n_sensors, dt=1.0))
         # Reward-modulated Hebbian rule (potentiation-only eligibility): a
         # positive reward strengthens the sensors that drove the chosen action.
         stdp = STDPConfig(a_plus=0.02, a_minus=0.0, w_max=c.w_max, tau_eligibility=100.0)
-        w0 = np.clip(rng.normal(c.w_init, c.w_init * 0.2,
-                                size=(c.n_action, self.n_sensors)), 0.0, c.w_max)
+        if genome is None:
+            w0 = np.clip(rng.normal(c.w_init, c.w_init * 0.2,
+                                    size=(c.n_action, self.n_sensors)), 0.0, c.w_max)
         for a in self.actions:
             net.add_population(a, LIFPopulation(c.n_action, dt=1.0))
-            # Social actions start with weaker (scaled) input so that the naive
-            # default behaviour is locomotion; learning can strengthen them.
-            w = w0 * (c.w_social_scale if a in SOCIAL_ACTIONS else 1.0)
+            if genome is not None:
+                w = genome["w"][a]
+            else:
+                # Social actions start with weaker (scaled) input so that the naive
+                # default behaviour is locomotion; learning can strengthen them.
+                w = w0 * (c.w_social_scale if a in SOCIAL_ACTIONS else 1.0)
             net.connect(Connection("sensory", a, weights=w.copy(), tau_syn=5.0,
                                    plastic=True, stdp_config=stdp))
         inhib = -abs(c.w_inhib) * np.ones((c.n_action, c.n_action))
@@ -162,6 +187,9 @@ class Agent:
         net.build()
         self.net = net
         self._plastic = [cn for cn in net.connections if cn.plastic]
+        # The genome is the INNATE (pre-learning) wiring plus heritable traits.
+        self.genome = {"w": {cn.post: cn.weights.copy() for cn in self._plastic},
+                       "aggression_gain": self.aggr_gain}
         self._row_budget = c.w_init * self.n_sensors
         self._node_order = list(net.populations)
         self._node_offsets, off = {}, 0
@@ -244,7 +272,7 @@ class Agent:
         # Frustration -> aggression coupling (hypothesis, Dollard 1939 /
         # Berkowitz 1989): accumulated negative-RPE "frustration" adds a tonic
         # current to the attack population. It biases, never forces, the choice.
-        self.aggression_drive = (c.aggression_gain * self.affect.frustration
+        self.aggression_drive = (self.aggr_gain * self.affect.frustration
                                  if c.social else 0.0)
         for _ in range(c.substeps):
             ext = {"sensory": current}
@@ -373,6 +401,8 @@ class World2D:
 
         # affect readout alias (agent 0)
         self.affect = a0.affect
+        self.next_id = len(self.agents)
+        self.births = 0
 
     def _scatter(self, n: int, margin: float = 0.05) -> np.ndarray:
         c = self.cfg
@@ -584,11 +614,79 @@ class World2D:
                 results[ag.id] = {"action": ag.last_action, "scores": ag.last_scores,
                                   "reward": 0.0, "rpe": 0.0}
         self._signals_prev = self._signals_now
+        if self.cfg.evolve:
+            self._life_cycle()
         self.t += 1
         if self.t >= self.cfg.max_ticks:
             for ag in self.agents:
                 ag.alive = False
         return self._frame(results)
+
+    # ---- evolution ------------------------------------------------------
+    def _life_cycle(self) -> None:
+        """Ageing, reproduction and pruning of long-dead bodies."""
+        c = self.cfg
+        for ag in list(self.agents):
+            if not ag.alive:
+                if ag.death_tick is None:
+                    ag.death_tick = self.t
+                continue
+            ag.age += 1
+            if ag.age >= c.max_age:
+                ag.alive = False
+                ag.death_tick = self.t
+                self.events.append({"type": "old_age", "src": ag.id})
+        alive = [ag for ag in self.agents if ag.alive]
+        for ag in alive:
+            if len([a for a in self.agents if a.alive]) >= c.max_pop:
+                break
+            if ag.energy >= c.repro_threshold:
+                self._birth(ag)
+        # keep recently-dead bodies (graves) for 60 ticks, never empty the list
+        keep = [ag for ag in self.agents
+                if ag.alive or (ag.death_tick is not None and self.t - ag.death_tick < 60)]
+        self.agents = keep or self.agents[-1:]
+
+    def _birth(self, parent: Agent) -> Agent:
+        c, rng = self.cfg, self.rng
+        child = Agent(c, self.next_id)
+        self.next_id += 1
+        if c.viscous:
+            pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
+        else:
+            pos = rng.uniform(0.05, c.size - 0.05, size=2)
+        child.spawn(np.clip(pos, 0.01, c.size - 0.01), float(rng.uniform(0, 2 * math.pi)))
+        base = ({cn.post: cn.weights for cn in parent._plastic} if c.lamarckian
+                else parent.genome["w"])
+        genome_w = {a: np.clip(w + rng.normal(0.0, c.mut_sigma * c.w_init, size=w.shape),
+                               0.0, c.w_max) for a, w in base.items()}
+        child.aggr_gain = float(max(0.0, parent.genome["aggression_gain"]
+                                    + rng.normal(0.0, c.trait_sigma)))
+        child.build_net(rng, genome={"w": genome_w})
+        child.energy = c.repro_cost
+        parent.energy -= c.repro_cost
+        child.generation = parent.generation + 1
+        child.parent = parent.id
+        child.ancestors = (parent.id,) + parent.ancestors[:7]
+        child.lineage = parent.lineage
+        child.born = self.t
+        child._prev_food_dist = child.nearest_food_dist(self.food)
+        child._prev_align = child.food_alignment(self.food)
+        self.agents.append(child)
+        self.births += 1
+        self.events.append({"type": "birth", "src": parent.id, "dst": child.id})
+        return child
+
+    def relatedness(self, a: Agent, b: Agent) -> float:
+        """Genealogical relatedness 0.5**(steps to the most recent common
+        ancestor via both lines), using up to 8 recorded ancestors; 0 if none."""
+        pa, pb = (a.id,) + a.ancestors, (b.id,) + b.ancestors
+        best = None
+        for i, x in enumerate(pa):
+            if x in pb:
+                d = i + pb.index(x)
+                best = d if best is None else min(best, d)
+        return 0.0 if best is None else 0.5 ** best
 
     def _agent_dict(self, ag: Agent, res: dict) -> dict:
         c = self.cfg
@@ -613,6 +711,9 @@ class World2D:
                 "signals": ag.signals, "signaling": ag.signaling,
                 "aggression_drive": round(float(getattr(ag, "aggression_drive", 0.0)), 3)}
                if c.social else {}),
+            **({"generation": ag.generation, "lineage": ag.lineage, "age": ag.age,
+                "aggr_gain": round(ag.aggr_gain, 3), "parent": ag.parent}
+               if c.evolve else {}),
         }
 
     def _frame(self, results: dict | None = None) -> dict:
@@ -620,16 +721,21 @@ class World2D:
         if results is None:
             results = {ag.id: {"action": ag.last_action, "scores": ag.last_scores,
                                "reward": 0.0, "rpe": 0.0} for ag in self.agents}
+        idle = lambda ag: {"action": ag.last_action, "scores": ag.last_scores,
+                           "reward": 0.0, "rpe": 0.0}
+        res = lambda ag: results.get(ag.id) or idle(ag)   # newborns have no result yet
         a0 = self.agents[0]
-        frame = self._agent_dict(a0, results[a0.id])  # agent-0 fields at top level
+        frame = self._agent_dict(a0, res(a0))  # agent-0 fields at top level
         frame.update({
             "t": self.t,
             "food": [[round(float(x), 4), round(float(y), 4)] for x, y in self.food],
             "deprive": self.deprive,
             "day": round(self.t / max(1, c.ticks_per_day), 2),
-            "agents": [self._agent_dict(ag, results[ag.id]) for ag in self.agents],
+            "agents": [self._agent_dict(ag, res(ag)) for ag in self.agents],
             "events": list(getattr(self, "events", [])),
             "social": c.social,
+            "evolve": c.evolve,
+            "population": sum(1 for ag in self.agents if ag.alive),
         })
         return frame
 

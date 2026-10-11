@@ -65,6 +65,14 @@ python -m neuralmind.server     # Playground → http://127.0.0.1:8000   ·   La
 python -m pytest tests/ -q      # full test suite
 ```
 
+Or install it as a package, for use in your own project:
+
+```bash
+pip install "neuralmind[server,research] @ git+https://github.com/sitta07/NeuralMind"
+neuralmind-server --port 8000          # Playground + Lab (results/ and studies/ live in the current folder)
+neuralmind-study studies/my_study.json # run a registered study
+```
+
 ## 🎮 The Playground
 
 ![Playground](docs/media/playground.png)

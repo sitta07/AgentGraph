@@ -216,3 +216,7 @@ examples/*.png
 
 # Replications launched from the Discovery Lab UI (commit deliberately if wanted)
 results/lab_*/
+
+# Local assistant instructions (not part of the project)
+AGENTS.md
+CLAUDE.md

@@ -4,7 +4,8 @@ Anyone can add a pre-registered study without touching the simulator.
 
 ## 1. Write a spec
 
-Create `studies/<ID>.json`. Copy an existing one, for example
+Create `studies/<ID>.json`. Use the structure of this repository's own specs
+as a template, for example
 [`studies/E_baldwin_vs_hiding.json`](../studies/E_baldwin_vs_hiding.json).
 
 | Field | Meaning |

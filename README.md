@@ -174,7 +174,7 @@ tests/           pytest suite (CI on 3.12 / 3.13)
 ## Licence & credits
 
 - **Code:** MIT (see `LICENSE`).
-- **Pixel art:** **Kenney**'s Tiny Town and Tiny Dungeon (CC0).
+- **Pixel art:** [Tiny Town](https://kenney.nl/assets/tiny-town) and [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) by **[Kenney](https://kenney.nl)**, released under CC0. Thank you! CC0 doesn't require credit, but we give it gladly.
 - **Optional dependencies:** FastAPI, PettingZoo, Gymnasium (MIT); Uvicorn (BSD); Playwright (Apache-2.0, media recording only).
 - Details in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 

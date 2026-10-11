@@ -139,6 +139,47 @@ def _job(args):
     return run_evolution(cfg_kw, ticks, learning)
 
 
+METRICS = ("share_gene", "aggr_gene", "share_rate", "attack_rate", "share_to_kin",
+           "encounter_kin", "final_pop", "max_generation")
+
+
+def run_conditions(conditions: dict, seeds: int, ticks: int) -> dict:
+    """Generic multi-seed runner. ``conditions`` maps a name to
+    ``(world_config_overrides, learning)``. Seeds are shared across conditions
+    so differences can be analysed as paired."""
+    jobs, keys = [], []
+    for name, (over, learn) in conditions.items():
+        for s in range(seeds):
+            jobs.append(({"seed": s, **over}, ticks, learn))
+            keys.append((name, s))
+    workers = max(1, (os.cpu_count() or 2) - 1)
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        out = list(ex.map(_job, jobs))
+    raw = {n: [r for (k, _), r in zip(keys, out) if k == n] for n in conditions}
+    summ = {n: {m: mean_ci([r[m] for r in raw[n]]) for m in METRICS} for n in conditions}
+    for n in conditions:
+        summ[n]["extinctions"] = sum(r["extinct"] for r in raw[n])
+    return {"raw": raw, "summary": summ}
+
+
+def scarcity_aggression(seeds: int = 6, ticks: int = 6000) -> dict:
+    """Experiment D — H8: the heritable aggression gene evolves higher when
+    food is scarce. Falsified if scarce <= abundant (paired 95% CI)."""
+    conds = {"scarce": ({"n_food": 12, "viscous": True}, True),
+             "abundant": ({"n_food": 32, "viscous": True}, True)}
+    res = run_conditions(conds, seeds, ticks)
+    col = lambda n, m: [r[m] for r in res["raw"][n]]
+    h8 = paired_diff(col("scarce", "aggr_gene"), col("abundant", "aggr_gene"))
+    att = paired_diff(col("scarce", "attack_rate"), col("abundant", "attack_rate"))
+    res.update({"experiment": "scarcity_aggression", "version": __version__,
+                "design": {"seeds": seeds, "ticks": ticks, "base": BASE,
+                           "conditions": {k: v[0] for k, v in conds.items()}},
+                "tests": {"H8_scarce_minus_abundant_aggr_gene": h8,
+                          "scarce_minus_abundant_attack_rate": att},
+                "verdict": {"H8_supported": bool(h8["lo"] > 0)}})
+    return res
+
+
 CONDITIONS = {
     "viscous_learn": (True, True), "viscous_nolearn": (True, False),
     "mixed_learn": (False, True), "mixed_nolearn": (False, False),
@@ -185,8 +226,8 @@ def experiment(seeds: int, ticks: int, extra: dict | None = None) -> dict:
 
 def line_svg(raw: dict, metric: str, title: str) -> str:
     """Mean time series per condition as a small SVG line chart."""
-    cols = {"viscous_learn": "#2a6fdb", "viscous_nolearn": "#7aa7f0",
-            "mixed_learn": "#d9622b", "mixed_nolearn": "#f0a57a"}
+    palette = ["#2a6fdb", "#7aa7f0", "#d9622b", "#f0a57a", "#3c9a5f", "#9a59c4"]
+    cols = {n: palette[i % len(palette)] for i, n in enumerate(raw)}
     W, H, L, B, T = 560, 240, 50, 30, 30
     series = {}
     for n, runs in raw.items():
@@ -253,8 +294,33 @@ def write_report(res: dict, out: Path) -> Path:
     return p
 
 
+def write_generic_report(res: dict, out: Path, title: str) -> Path:
+    out.mkdir(parents=True, exist_ok=True)
+    f = lambda c: f"{c['mean']:.4f} [{c['lo']:.4f}, {c['hi']:.4f}]"
+    for m, t in (("aggr_gene", "Heritable aggression gain"), ("attack_rate", "Attack rate"),
+                 ("share_gene", "Innate share drive"), ("pop", "Population")):
+        (out / f"series_{m}.svg").write_text(line_svg(res["raw"], m, t))
+    L = [f"# {title}", "", f"NeuralMind {res['version']} · {time.strftime('%Y-%m-%d %H:%M')} · "
+         "mean [95% bootstrap CI] over seeds, final 25% of each run.", "",
+         f"Design: `{json.dumps(res['design'])}`", "",
+         "| condition | " + " | ".join(METRICS) + " | extinct |",
+         "|---|" + "---|" * (len(METRICS) + 1)]
+    for n, c in res["summary"].items():
+        L.append(f"| {n} | " + " | ".join(f(c[m]) for m in METRICS) + f" | {c['extinctions']} |")
+    L += ["", "![](series_aggr_gene.svg) ![](series_attack_rate.svg)",
+          "![](series_share_gene.svg) ![](series_pop.svg)", "", "## Tests", ""]
+    L += [f"- {k}: {f(v)}" for k, v in res["tests"].items()]
+    L += ["", f"Verdict: `{res['verdict']}` (supported only if the 95% CI excludes 0 "
+              "in the predicted direction)."]
+    p = out / "REPORT.md"
+    p.write_text("\n".join(L))
+    (out / "results.json").write_text(json.dumps(res, indent=1, default=float))
+    return p
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--experiment", choices=["kin", "scarcity"], default="kin")
     ap.add_argument("--seeds", type=int, default=6)
     ap.add_argument("--ticks", type=int, default=6000)
     ap.add_argument("--out", default="results/evolution_kin")
@@ -265,8 +331,12 @@ def main(argv=None) -> int:
         k, v = kv.split("=")
         extra[k] = (v.lower() == "true") if v.lower() in ("true", "false") else float(v) if "." in v else int(v)
     t0 = time.perf_counter()
-    res = experiment(a.seeds, a.ticks, extra)
-    p = write_report(res, Path(a.out))
+    if a.experiment == "scarcity":
+        res = scarcity_aggression(a.seeds, a.ticks)
+        p = write_generic_report(res, Path(a.out), "Experiment D — does aggression evolve under scarcity?")
+    else:
+        res = experiment(a.seeds, a.ticks, extra)
+        p = write_report(res, Path(a.out))
     print(res["verdict"], f"-> {p} ({time.perf_counter() - t0:.0f}s)")
     return 0
 

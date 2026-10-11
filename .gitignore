@@ -213,3 +213,6 @@ neuralmind_experiments.sqlite
 examples/*.html
 examples/*.png
 .playwright-mcp/
+
+# Replications launched from the Discovery Lab UI (commit deliberately if wanted)
+results/lab_*/

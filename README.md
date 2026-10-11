@@ -21,8 +21,8 @@
   <img src="docs/media/brain_scanner.gif" width="300" alt="Brain scanner: one agent's spiking network and its action competition, live">
 </p>
 <p align="center"><sub>
-  Left: an evolving population (recorded from the app). Families share a sprite, 😠 marks a
-  frustration-driven aggression drive, 😫 marks hunger. Right: one individual's brain, live.
+  ① An evolving population, recorded from the app. Families share a sprite; 😠 marks a
+  frustration-driven aggression drive and 😫 marks hunger. ② One individual's brain, live.
   The action population that fires most is the move it makes — the network chooses, not a rule.
 </sub></p>
 

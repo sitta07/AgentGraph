@@ -18,12 +18,13 @@ const S = {
   frame: null, glow: [], queue: [], fetching: false,
   playing: false, learning: true, speed: 10, lastAdvance: 0, deprive: false,
   trail: [], epEnergy: [], epReward: [], learnCurve: [],
-  sel: 0, trails: {}, timeline: [],
+  selId: 0, brainId: -1, brainAge: 0, trails: {}, timeline: [], fx: [], popSeries: [], genSeries: [],
   yaw: 0.6, pitch: -0.35, nodeProj: [],
 };
 window.S = S;  // exposed for inspection/debugging
 
-const PAL = {sensory: "#6d9bff", left: "#bf91f3", forward: "#49d6a6", right: "#e0a63b"};
+const PAL = {sensory: "#6d9bff", left: "#bf91f3", forward: "#49d6a6", right: "#e0a63b",
+  attack: "#ff5a4f", share: "#5fe08a", signal: "#ffd84a"};
 const $ = (id) => document.getElementById(id);
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show");
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); }
@@ -49,7 +50,8 @@ function applySession(d) {
   S.cfg = d.config; S.bounds = d.bounds; S.actions = d.actions;
   S.nodeOrder = d.node_order; S.sizes = d.sizes; S.size = d.size;
   S.hazards = d.hazards; S.layout = d.layout;
-  S.trail = []; S.epEnergy = []; S.epReward = []; S.trails = {}; S.timeline = []; S.sel = 0;
+  S.trail = []; S.epEnergy = []; S.epReward = []; S.trails = {}; S.timeline = []; S.selId = (d.state.agents && d.state.agents[0]) ? d.state.agents[0].id : 0;
+  S.brainId = -1; S.fx = []; S.popSeries = []; S.genSeries = [];
   renderTimeline();
   S.queue = []; S.frame = d.state; S.glow = d.state.glow || [];
   S.deprive = false;
@@ -83,7 +85,12 @@ function sliderRow(key, label, dp, cfg, bounds) {
   return `<div class="ctl"><label>${label}<span class="val" id="v_${key}">${(+val).toFixed(dp)}</span></label>
     <input type="range" id="c_${key}" min="${b[0]}" max="${b[1]}" step="${step}" value="${val}"></div>`;
 }
+const TOGGLES = [["social", "Social (see others, attack, share, signal)"],
+  ["evolve", "Evolution (reproduce, mutate, die)"], ["viscous", "Offspring born near parent"]];
 function buildControls(cfg, bounds) {
+  $("toggleCtls").innerHTML = TOGGLES.map(([k, l]) =>
+    `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
+     <input type="checkbox" id="t_${k}" ${cfg[k] ? "checked" : ""}> ${l}</label>`).join("");
   $("envCtls").innerHTML = ENV_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
   $("neuroCtls").innerHTML = NEURO_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
   for (const [k, , dp] of [...ENV_FIELDS, ...NEURO_FIELDS]) {
@@ -96,6 +103,8 @@ function gatherControls() {
   for (const [k] of [...ENV_FIELDS, ...NEURO_FIELDS]) {
     const el = $("c_" + k); if (el) o[k] = +el.value;
   }
+  for (const [k] of TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked; }
+  if (o.evolve) o.social = true;   // evolution experiments run with the social layer
   o.learning = S.learning;
   return o;
 }
@@ -104,16 +113,28 @@ function gatherControls() {
 function applyFrame(frame, instant) {
   S.frame = frame;
   const agents = frame.agents || [frame];
-  if (S.sel >= agents.length) S.sel = 0;
+  let selAg = agents.find(a => a.id === S.selId);
+  if (!selAg || (!selAg.alive && agents.some(a => a.alive))) {
+    selAg = selAg && selAg.alive ? selAg : (agents.find(a => a.alive) || agents[0]);
+    S.selId = selAg.id;
+  }
+  queueEffects(frame);
+  if (frame.evolve) { S.popSeries.push(frame.population);
+    const live = agents.filter(a => a.alive);
+    S.genSeries.push(live.length ? live.reduce((s, a) => s + a.generation, 0) / live.length : 0);
+    if (S.popSeries.length > 600) { S.popSeries.shift(); S.genSeries.shift(); } }
   for (const ag of agents) { const k = ag.id ?? 0;
     (S.trails[k] = S.trails[k] || []).push(ag.agent);
     if (S.trails[k].length > 240) S.trails[k].shift(); }
   // the inspector, brain scanner and charts follow the SELECTED agent
-  const f = Object.assign({}, frame, agents[S.sel]);
+  const f = Object.assign({}, frame, selAg);
+  if (S.brainId !== S.selId || ++S.brainAge > 60) loadBrain(S.selId);
   S.glow = f.glow || S.glow;
   S.epEnergy.push(f.energy);
   S.epReward.push(f.reward);
-  $("selName").textContent = "P" + (S.sel + 1) + (agents.length > 1 ? ` of ${agents.length}` : "");
+  const nAlive = agents.filter(a => a.alive).length;
+  $("selName").textContent = "P" + (S.selId + 1) + (agents.length > 1 ? ` · ${nAlive} alive` : "");
+  $("brainWho").textContent = "P" + (S.selId + 1);
   // inspector
   $("iEnergy").textContent = f.energy.toFixed(3);
   const ep = Math.max(0, Math.min(1, f.energy / (S.cfg.e0 || 1)));
@@ -122,7 +143,8 @@ function applyFrame(frame, instant) {
   $("iAge").textContent = f.t;
   $("iFood").textContent = f.food_eaten;
   $("iHaz").textContent = f.hazard_hits;
-  $("iAction").textContent = S.actions[f.action] || "–";
+  $("iAction").textContent = f.action_name || S.actions[f.action] || "–";
+  renderSocial(f);
   $("iReward").textContent = sum(S.epReward).toFixed(2);
   $("iRpe").textContent = (f.rpe ?? 0).toFixed(3);
   $("iDay").textContent = (f.day ?? 0).toFixed(2);
@@ -152,6 +174,70 @@ function drawAffect(a) {
     return `<div class="stat" style="border:0;padding:1px 0"><b>${k}</b><span>${v.toFixed(2)}</span></div>
       <div class="bar" style="margin-bottom:4px"><i style="width:${pct}%;background:${col}"></i></div>`;
   }).join("");
+}
+function renderSocial(f) {
+  const el = $("socialStats"); if (!el) return;
+  const rows = [];
+  if (f.attacks !== undefined) rows.push(
+    ["Attacks made / received", `${f.attacks} / ${f.attacked}`],
+    ["Shares given / received", `${f.shares_given} / ${f.shares_received}`],
+    ["Signals sent", f.signals],
+    ["Aggression drive (nA)", (f.aggression_drive ?? 0).toFixed(2)]);
+  if (f.generation !== undefined) rows.push(
+    ["Generation · lineage", `${f.generation} · L${f.lineage}`],
+    ["Age (ticks)", f.age], ["Aggression gene", (f.aggr_gain ?? 0).toFixed(2)]);
+  el.innerHTML = rows.length ? `<div class="seg">Social &amp; evolution</div>` + rows.map(([k, v]) =>
+    `<div class="stat"><b>${k}</b><span>${v}</span></div>`).join("") : "";
+}
+async function loadBrain(id) {
+  S.brainId = id; S.brainAge = 0;
+  try {
+    const b = await API.get("/api/brain/" + id);
+    if (b.layout && S.selId === id) { S.layout = b.layout; S.nodeOrder = b.node_order;
+      S.sizes = b.sizes; S.actions = b.actions; buildBrainLegend(); }
+  } catch (e) { /* agent may have just died; keep last brain */ }
+}
+function queueEffects(frame) {
+  const byId = {}; for (const a of frame.agents || []) byId[a.id] = a;
+  const now = performance.now();
+  for (const e of frame.events || []) {
+    const src = byId[e.src], dst = e.dst !== undefined ? byId[e.dst] : null;
+    if (!src && !dst) continue;
+    S.fx.push({type: e.type, a: src ? src.agent : null, b: dst ? dst.agent : null, t0: now});
+  }
+  if (S.fx.length > 200) S.fx.splice(0, S.fx.length - 200);
+}
+function drawEffects(x, G) {
+  const now = performance.now(), {X, Y, ts} = G, life = 900;
+  S.fx = S.fx.filter(f => now - f.t0 < life);
+  x.font = `${Math.max(12, ts * 0.7)}px sans-serif`; x.textAlign = "center";
+  for (const f of S.fx) {
+    const k = 1 - (now - f.t0) / life; x.globalAlpha = k;
+    const A = f.a && [X(f.a), Y(f.a)], B = f.b && [X(f.b), Y(f.b)];
+    if (f.type === "attack" && A && B) {
+      x.strokeStyle = "#ff5a4f"; x.lineWidth = 3; x.beginPath(); x.moveTo(...A);
+      const mx = (A[0] + B[0]) / 2 + 4, my = (A[1] + B[1]) / 2 - 4; x.lineTo(mx, my); x.lineTo(...B); x.stroke();
+      x.fillText("💢", A[0], A[1] - ts * 1.3);
+    } else if (f.type === "share" && A && B) {
+      x.strokeStyle = "#5fe08a"; x.lineWidth = 2.5; x.setLineDash([4, 3]);
+      x.beginPath(); x.moveTo(...A); x.lineTo(...B); x.stroke(); x.setLineDash([]);
+      x.fillText("💚", B[0], B[1] - ts * 1.3);
+    } else if (f.type === "signal" && A) {
+      x.strokeStyle = "#ffd84a"; x.lineWidth = 2;
+      x.beginPath(); x.arc(A[0], A[1], ts * (0.6 + 2.5 * (1 - k)), 0, 7); x.stroke();
+      x.fillText("📢", A[0], A[1] - ts * 1.3);
+    } else if (f.type === "birth" && B) { x.fillText("✨", B[0], B[1] - ts);
+    } else if (f.type === "death" && B) { x.fillText("💀", B[0], B[1] - ts);
+    } else if (f.type === "attack_miss" && A) { x.fillText("💨", A[0] + ts * 0.6, A[1] - ts); }
+  }
+  x.globalAlpha = 1; x.textAlign = "start";
+}
+function mood(ag) {
+  if ((ag.aggression_drive ?? 0) > 0.5) return "😠";
+  if ((ag.hunger ?? 0) > 0.7) return "😫";
+  if (ag.signaling) return "📢";
+  if ((ag.affect && ag.affect.valence) > 0.3) return "🙂";
+  return "";
 }
 function buildBrainLegend() {
   $("brainLegend").innerHTML = S.nodeOrder.map(p =>
@@ -220,7 +306,7 @@ function drawWorld() {
   // food: forageable mushrooms
   for (const fd of f.food) tile(x, TOWN, T.food, X(fd) - ts * 0.45, Y(fd) - ts * 0.45, ts * 0.9);
   const agents = f.agents || [f];
-  const sel = agents[S.sel] || agents[0];
+  const sel = agents.find(a => a.id === S.selId) || agents[0];
   // selected agent: sensor range + trail
   const tr = S.trails[sel.id ?? 0] || [];
   if (tr.length > 1) { x.strokeStyle = "rgba(255,255,255,0.35)"; x.lineWidth = 1.5;
@@ -228,6 +314,7 @@ function drawWorld() {
   x.strokeStyle = "rgba(255,255,255,0.22)"; x.lineWidth = 1;
   x.beginPath(); x.arc(X(sel.agent), Y(sel.agent), S.cfg.sensor_range / S.size * as, 0, 7); x.stroke();
   for (const ag of agents) drawPerson(x, G, ag, ag === sel);
+  drawEffects(x, G);
 }
 function drawPerson(x, G, ag, selected) {
   const {ts, X, Y} = G, cx = X(ag.agent), cy = Y(ag.agent), s = ts * 1.25;
@@ -236,7 +323,9 @@ function drawPerson(x, G, ag, selected) {
     x.beginPath(); x.ellipse(cx, cy + s * 0.42, s * 0.55, s * 0.2, 0, 0, 7); x.fill(); }
   // faded sprite as the agent starves
   x.globalAlpha = 1 - 0.45 * (ag.hunger ?? 0);
-  tile(x, DUN, SPRITES[(ag.id ?? 0) % SPRITES.length], cx - s / 2, cy - s / 2, s,
+  // in evolution mode relatives share a sprite (lineage); otherwise one per person
+  const look = ag.lineage !== undefined ? ag.lineage : (ag.id ?? 0);
+  tile(x, DUN, SPRITES[look % SPRITES.length], cx - s / 2, cy - s / 2, s,
        Math.cos(ag.heading) < 0);
   x.globalAlpha = 1;
   // heading arrow (world +y up -> canvas -y)
@@ -251,6 +340,8 @@ function drawPerson(x, G, ag, selected) {
   x.font = `bold ${Math.max(9, ts * 0.42)}px sans-serif`; x.textAlign = "center";
   x.fillStyle = "rgba(0,0,0,0.6)"; x.fillText("P" + ((ag.id ?? 0) + 1), cx + 1, cy - s * 0.86 + 1);
   x.fillStyle = selected ? "#ffffff" : "#d8deea"; x.fillText("P" + ((ag.id ?? 0) + 1), cx, cy - s * 0.86);
+  const m = mood(ag);
+  if (m) { x.font = `${Math.max(10, ts * 0.55)}px sans-serif`; x.fillText(m, cx + s * 0.55, cy - s * 0.45); }
   x.textAlign = "start";
 }
 
@@ -305,6 +396,9 @@ function drawCharts() {
   // cumulative reward for readability
   let acc = 0; const cum = S.epReward.map(r => (acc += r));
   line($("chartEp"), [S.epEnergy, cum], ["#49d6a6", "#6d9bff"]);
+  const pc = $("chartPop");
+  if (pc) { pc.parentElement.style.display = S.popSeries.length ? "" : "none";
+    if (S.popSeries.length > 1) line(pc, [S.popSeries, S.genSeries.map(g => g * 2)], ["#6d9bff", "#e0a63b"], 0); }
   if (S.learnCurve.length) line($("chartLearn"), [S.learnCurve], ["#e0a63b"], 0);
   else { const {x, w, h} = fit($("chartLearn")); x.clearRect(0,0,w,h);
     x.fillStyle = "#8a93a6"; x.font = "11px sans-serif";
@@ -327,7 +421,9 @@ function renderLoop(ts) {
   const interval = 1000 / S.speed;
   if (S.playing && S.queue.length && ts - S.lastAdvance >= interval) {
     applyFrame(S.queue.shift()); S.lastAdvance = ts;
-    if (!S.frame.alive && !S.queue.length) { S.playing = false; setPlay(); toast("Episode ended"); }
+    const anyAlive = (S.frame.agents || [S.frame]).some(a => a.alive);
+    if (!anyAlive && !S.queue.length) { S.playing = false; setPlay();
+      toast(S.frame.evolve ? "Population extinct" : "Episode ended"); }
   }
   drawWorld(); drawBrain(); drawCharts();
   pump();
@@ -404,8 +500,9 @@ async function placeFoodAt(ev) {
   let best = -1, bd = G.ts * 1.0;
   agents.forEach((ag, i) => { const d = Math.hypot(G.X(ag.agent) - px, G.Y(ag.agent) - py);
     if (d < bd) { bd = d; best = i; } });
-  if (best >= 0) { S.sel = best; S.epEnergy = []; S.epReward = []; applyFrame(S.frame, true);
-    toast("Inspecting P" + (best + 1)); return; }
+  if (best >= 0) { S.selId = agents[best].id; S.epEnergy = []; S.epReward = [];
+    applyFrame(S.frame, true); loadBrain(S.selId);
+    toast("Inspecting P" + (S.selId + 1) + " — brain scanner shows this individual"); return; }
   const wx = (px - G.ax) / G.as * S.size, wy = (1 - (py - G.ay) / G.as) * S.size;
   if (wx < 0 || wx > S.size || wy < 0 || wy > S.size) return;
   const d = await API.post("/api/place_food", {x: wx, y: wy});
@@ -415,7 +512,7 @@ async function advanceDays(days) {
   if (!S.session) return;
   S.playing = false; setPlay(); S.queue = [];
   try {
-    const d = await API.post("/api/advance", {days, agent: S.sel, learning: S.learning});
+    const d = await API.post("/api/advance", {days, agent: S.selId, learning: S.learning});
     S.timeline.push(...d.snapshots); renderTimeline();
     if (d.frame) applyFrame(d.frame, true);
     toast(`Fast-forwarded ${days} day(s)` + (d.alive ? "" : " — everyone has died"));
@@ -431,7 +528,7 @@ function renderTimeline() {
       <td>${r.day.toFixed(1)}${r.alive ? "" : " †"}</td><td>${r.energy.toFixed(2)}</td><td>${pct(r.hunger)}</td>
       <td>${r.affect.valence.toFixed(2)}</td><td>${r.affect.arousal.toFixed(2)}</td><td>${r.affect.threat.toFixed(2)}</td>
       <td>${pct(r.firing.sensory)}</td><td>${pct(r.firing.left)}</td><td>${pct(r.firing.forward)}</td><td>${pct(r.firing.right)}</td></tr>`).join("") +
-    `</table><p class="note">Snapshot at the end of each day for P${S.sel + 1}. Firing = share of
+    `</table><p class="note">Snapshot at the end of each day for P${S.selId + 1}. Firing = share of
      ticks in which a neuron of that population spiked (sens = sensory; L/F/R = action populations).</p>`;
 }
 async function toggleDeprive() {

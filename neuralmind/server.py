@@ -167,7 +167,8 @@ def advance(body: dict | None = None):
     body = body or {}
     w = SESSION.world
     days = min(max(float(body.get("days", 1)), 0.1), 30.0)
-    aid = min(max(int(body.get("agent", 0)), 0), len(w.agents) - 1)
+    want = int(body.get("agent", w.agents[0].id))
+    target = next((a for a in w.agents if a.id == want), w.agents[0])
     learning = bool(body.get("learning", True))
     tpd = max(1, w.cfg.ticks_per_day)
     total = min(int(round(days * tpd)), 5000)
@@ -176,12 +177,14 @@ def advance(body: dict | None = None):
         if not any(ag.alive for ag in w.agents):
             break
         frame = w.step(learning=learning)
-        ag = frame["agents"][aid]
+        ag = next((a for a in frame["agents"] if a["id"] == target.id), None)
+        if ag is None:          # pruned after death: stop recording this agent
+            break
         g = ag["glow"]
         acc = [1.0 if v >= 0.999 else 0.0 for v in g]   # spiked this tick
         fired = acc if fired is None else [a + b for a, b in zip(fired, acc)]
         if (w.t % tpd == 0) or i == total - 1:
-            agent = w.agents[aid]
+            agent = target
             rates, off = {}, 0
             ticks = tpd if w.t % tpd == 0 else (w.t % tpd)
             for p in agent._node_order:

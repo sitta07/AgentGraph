@@ -33,3 +33,33 @@ def gini(values) -> float:
         return 0.0
     n = x.size
     return float((2 * np.arange(1, n + 1) - n - 1).dot(x) / (n * x.sum()))
+
+
+def mutual_information(table) -> float:
+    """Mutual information (bits) of a 2-D contingency table of counts."""
+    t = np.asarray(table, float)
+    n = t.sum()
+    if n == 0:
+        return 0.0
+    pxy = t / n
+    px, py = pxy.sum(1, keepdims=True), pxy.sum(0, keepdims=True)
+    nz = pxy > 0
+    return float((pxy[nz] * np.log2(pxy[nz] / (px @ py)[nz])).sum())
+
+
+def g_test_p(table) -> float:
+    """p-value of the G-test of independence (G = 2 N MI in nats).
+
+    df = (rows-1)(cols-1) over non-empty rows/columns. Exact for df=1
+    (erfc); Wilson-Hilferty normal approximation otherwise."""
+    import math
+    t = np.asarray(table, float)
+    t = t[t.sum(1) > 0][:, t.sum(0) > 0]
+    if t.shape[0] < 2 or t.shape[1] < 2:
+        return 1.0
+    g = 2.0 * t.sum() * mutual_information(t) * math.log(2)
+    df = (t.shape[0] - 1) * (t.shape[1] - 1)
+    if df == 1:
+        return float(math.erfc(math.sqrt(max(g, 0.0) / 2.0)))
+    z = ((g / df) ** (1 / 3) - (1 - 2 / (9 * df))) / math.sqrt(2 / (9 * df))
+    return float(0.5 * math.erfc(z / math.sqrt(2)))

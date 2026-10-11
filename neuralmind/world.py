@@ -495,6 +495,7 @@ class World2D:
             sensors = ag.sense(self.food, self.hazards, others_pos, heard)
         else:
             sensors = ag.sense(self.food, self.hazards)
+        ag.last_sensors = sensors
         if forced is None:
             action, scores, _ = ag.decide(sensors, self.rng)
         else:                        # externally controlled (e.g. an RL policy)

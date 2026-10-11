@@ -49,7 +49,7 @@ from pathlib import Path
 import numpy as np
 
 from neuralmind import __version__
-from neuralmind.research.stats import mean_ci, paired_diff
+from neuralmind.research.stats import g_test_p, mean_ci, mutual_information, paired_diff
 from neuralmind.world import World2D, WorldConfig
 
 # Ecology chosen in a pilot so populations persist without hitting extinction:
@@ -77,6 +77,10 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     series = {"t": [], "pop": [], "share_gene": [], "aggr_gene": [],
               "generation": [], "share_rate": [], "attack_rate": []}
     win = Counter(); win_ticks = 0
+    # communication: does signalling carry information about the signaller's
+    # state, and does hearing a signal change what the listener does?
+    tab = {k: np.zeros((2, 2)) for k in ("food", "threat", "hunger")}
+    heard_action = np.zeros((2, 6))
     for t in range(ticks):
         frame = w.step(learning=learning)
         live = [a for a in w.agents if a.alive]
@@ -100,6 +104,16 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
                     enc_ticks += 1
                     o = min(near, key=lambda b: np.linalg.norm(b.pos - a.pos))
                     enc_kin += w.relatedness(a, o) >= 0.25
+            for a in live:
+                sv = getattr(a, "last_sensors", None)
+                nm = names.get(a.id)
+                if sv is None or nm is None or len(sv) < 11:
+                    continue
+                sig = int(nm == "signal")
+                tab["food"][sig, int(sv[0:3].sum() > 0.2)] += 1
+                tab["threat"][sig, int(sv[3:6].sum() > 0.2)] += 1
+                tab["hunger"][sig, int(sv[6] > 0.5)] += 1
+                heard_action[int(sv[10] > 0), a.actions.index(nm)] += 1
             byid = {a.id: a for a in w.agents}
             for e in frame["events"]:
                 if e["type"] == "share" and e["src"] in byid and e["dst"] in byid:
@@ -129,6 +143,11 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_to_kin": share_kin / share_events if share_events else float("nan"),
         "encounter_kin": enc_kin / enc_ticks if enc_ticks else float("nan"),
         "share_events": share_events,
+        "signals_in_window": int(sum(t_[1].sum() for t_ in tab.values()) / 3),
+        **{f"mi_signal_{k}": mutual_information(v) for k, v in tab.items()},
+        **{f"p_signal_{k}": g_test_p(v) for k, v in tab.items()},
+        "mi_heard_action": mutual_information(heard_action),
+        "p_heard_action": g_test_p(heard_action),
         "births": w.births,
         "series": series,
     }

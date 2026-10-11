@@ -3,6 +3,7 @@
 import math
 
 import numpy as np
+import pytest
 
 from neuralmind.research.social import heatmap_svg, simulate
 from neuralmind.research.stats import gini, mean_ci, paired_diff
@@ -69,3 +70,12 @@ def test_relatedness_genealogy():
     assert w.relatedness(c1, c2) == 0.25
     assert w.relatedness(c1, w.agents[1]) == 0.0
     assert c1.generation == 1 and c1.lineage == p.lineage
+
+
+def test_mutual_information_and_g_test():
+    from neuralmind.research.stats import g_test_p, mutual_information
+    assert mutual_information([[50, 0], [0, 50]]) == pytest.approx(1.0)
+    assert mutual_information([[25, 25], [25, 25]]) == pytest.approx(0.0)
+    assert g_test_p([[50, 0], [0, 50]]) < 1e-10
+    assert g_test_p([[25, 25], [25, 25]]) > 0.99
+    assert 0.0 <= g_test_p([[10, 20, 30], [30, 20, 10]]) < 0.01

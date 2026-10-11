@@ -128,3 +128,22 @@ def test_learning_beats_baseline_on_heldout():
         trained.append(trainer.run(learning=False)["food_eaten"])
         untrained.append(World2D(WorldConfig(seed=s)).run(learning=False)["food_eaten"])
     assert np.mean(trained) > np.mean(untrained)
+
+
+def test_single_agent_numerics_unchanged_by_extra_agents():
+    """Adding agents must not change agent-0's initial state (draw order)."""
+    a = World2D(WorldConfig(seed=11, n_agents=1))
+    b = World2D(WorldConfig(seed=11, n_agents=3))
+    assert np.allclose(a.agent, b.agent) and a.heading == b.heading
+    assert np.allclose(a.food, b.food)
+    assert len(b.agents) == 3
+
+
+def test_agents_share_food():
+    w = World2D(WorldConfig(seed=0, n_agents=2, n_hazard=0, n_food=1))
+    w.agents[1].pos = w.food[0].copy()
+    before = w.food.copy()
+    w.step(learning=False)
+    # agent 1 stood on the only food item -> it was eaten and respawned elsewhere
+    assert w.agents[1].food_eaten >= 1
+    assert not np.allclose(before, w.food)

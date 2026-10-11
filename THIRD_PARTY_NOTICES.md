@@ -1,7 +1,7 @@
 # Third-Party Notices
 
-NeuralMind is distributed under the MIT License (see `LICENSE`). It currently
-**bundles no third-party source code**. This file records the external projects
+NeuralMind is distributed under the MIT License (see `LICENSE`). It bundles
+**no third-party source code**; it does bundle the CC0 art assets listed below. This file records the external projects
 it depends on at runtime/dev time, and projects studied for reference whose
 licenses would govern any future integration.
 
@@ -39,3 +39,21 @@ governs that use and this notice must be updated accordingly.
 The pre-existing AgentGraph application (LangGraph/LangChain/Streamlit based) is
 retained under this repository's MIT License. Its own Python dependencies are
 declared in `requirements.txt` and carry their respective upstream licenses.
+
+## Bundled art assets (CC0)
+
+| Asset | Author | License | Location | Use |
+|---|---|---|---|---|
+| Tiny Town 1.1 (tilemap_packed.png) | Kenney (www.kenney.nl) | CC0 1.0 | `neuralmind/webui/assets/kenney/tiny_town.png` | grass, tree border, mushroom (food) tiles |
+| Tiny Dungeon (tilemap_packed.png) | Kenney (www.kenney.nl) | CC0 1.0 | `neuralmind/webui/assets/kenney/tiny_dungeon.png` | people sprites, spike/fire hazard tiles, gravestone |
+
+The original `License.txt` files are kept next to the images. CC0 requires no
+attribution; Kenney is credited here as a courtesy.
+
+## Web backend dependencies (optional, pip-installed, not vendored)
+
+| Project | License | Use |
+|---|---|---|
+| FastAPI | MIT | Playground HTTP API |
+| Uvicorn | BSD-3-Clause | ASGI server |
+| httpx | BSD-3-Clause | Test client only |

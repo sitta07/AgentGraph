@@ -18,6 +18,7 @@ const S = {
   frame: null, glow: [], queue: [], fetching: false,
   playing: false, learning: true, speed: 10, lastAdvance: 0, deprive: false,
   trail: [], epEnergy: [], epReward: [], learnCurve: [],
+  sel: 0, trails: {}, timeline: [],
   yaw: 0.6, pitch: -0.35, nodeProj: [],
 };
 window.S = S;  // exposed for inspection/debugging
@@ -48,7 +49,8 @@ function applySession(d) {
   S.cfg = d.config; S.bounds = d.bounds; S.actions = d.actions;
   S.nodeOrder = d.node_order; S.sizes = d.sizes; S.size = d.size;
   S.hazards = d.hazards; S.layout = d.layout;
-  S.trail = []; S.epEnergy = []; S.epReward = [];
+  S.trail = []; S.epEnergy = []; S.epReward = []; S.trails = {}; S.timeline = []; S.sel = 0;
+  renderTimeline();
   S.queue = []; S.frame = d.state; S.glow = d.state.glow || [];
   S.deprive = false;
   $("btnDeprive").classList.remove("on"); $("btnDeprive").textContent = "🚫 Deprive";
@@ -61,10 +63,11 @@ function applySession(d) {
 
 // ---------- controls ----------
 const ENV_FIELDS = [
-  ["n_food", "Food items", 0], ["n_hazard", "Hazards", 0],
+  ["n_agents", "People (agents)", 0], ["n_food", "Food items", 0], ["n_hazard", "Hazards", 0],
   ["sensor_range", "Sensor range", 2], ["speed", "Move speed", 3],
   ["food_energy", "Food energy", 2], ["move_cost", "Move cost", 3],
   ["hazard_cost", "Hazard cost", 3], ["max_ticks", "Max ticks", 0],
+  ["ticks_per_day", "Ticks per day", 0],
   ["seed", "Seed", 0],
 ];
 const NEURO_FIELDS = [
@@ -98,12 +101,19 @@ function gatherControls() {
 }
 
 // ---------- apply a frame ----------
-function applyFrame(f, instant) {
-  S.frame = f; S.glow = f.glow || S.glow;
-  S.trail.push(f.agent);
-  if (S.trail.length > 240) S.trail.shift();
+function applyFrame(frame, instant) {
+  S.frame = frame;
+  const agents = frame.agents || [frame];
+  if (S.sel >= agents.length) S.sel = 0;
+  for (const ag of agents) { const k = ag.id ?? 0;
+    (S.trails[k] = S.trails[k] || []).push(ag.agent);
+    if (S.trails[k].length > 240) S.trails[k].shift(); }
+  // the inspector, brain scanner and charts follow the SELECTED agent
+  const f = Object.assign({}, frame, agents[S.sel]);
+  S.glow = f.glow || S.glow;
   S.epEnergy.push(f.energy);
   S.epReward.push(f.reward);
+  $("selName").textContent = "P" + (S.sel + 1) + (agents.length > 1 ? ` of ${agents.length}` : "");
   // inspector
   $("iEnergy").textContent = f.energy.toFixed(3);
   const ep = Math.max(0, Math.min(1, f.energy / (S.cfg.e0 || 1)));
@@ -149,85 +159,99 @@ function buildBrainLegend() {
 }
 
 // ---------- world rendering ----------
+// ---------- pixel-art world (Kenney CC0 tiles) ----------
+const TOWN = new Image(); TOWN.src = "/static/assets/kenney/tiny_town.png";
+const DUN = new Image(); DUN.src = "/static/assets/kenney/tiny_dungeon.png";
+const SPRITES = [85, 99, 86, 88, 87, 100, 97, 111];   // tiny_dungeon character tiles
+const T = {grass: 0, grass2: 1, flower: 2, trees: [4, 16, 28, 5], food: 29};
+const D = {fire: 29, spikes: 41, grave: 65};
+const GRID = 18;                                       // walkable tiles across
+
+function tile(x, img, idx, dx, dy, size, flip) {
+  if (!img.complete || !img.naturalWidth) return;
+  const sx = (idx % 12) * 16, sy = Math.floor(idx / 12) * 16;
+  if (flip) { x.save(); x.translate(dx + size, dy); x.scale(-1, 1);
+    x.drawImage(img, sx, sy, 16, 16, 0, 0, size, size); x.restore(); }
+  else x.drawImage(img, sx, sy, 16, 16, dx, dy, size, size);
+}
+const hash = (i, j) => { let h = (i * 374761393 + j * 668265263) ^ 0x5bd1e995;
+  h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+
 function worldGeom() {
   const cv = $("world"); const g = fit(cv);
-  g.sz = Math.min(g.w, g.h); g.ox = (g.w - g.sz) / 2; g.oy = (g.h - g.sz) / 2;
-  g.sc = g.sz / S.size;
-  g.X = (p) => g.ox + p[0] * g.sc;
-  g.Y = (p) => g.oy + (S.size - p[1]) * g.sc; // world +y is up; canvas +y is down
+  const total = GRID + 2;                               // +1 tree border each side
+  g.ts = Math.max(8, Math.floor(Math.min(g.w, g.h) / total));
+  g.sz = g.ts * total; g.ox = Math.floor((g.w - g.sz) / 2); g.oy = Math.floor((g.h - g.sz) / 2);
+  g.ax = g.ox + g.ts; g.ay = g.oy + g.ts; g.as = g.ts * GRID;   // arena origin/size in px
+  g.X = (p) => g.ax + p[0] / S.size * g.as;
+  g.Y = (p) => g.ay + (1 - p[1] / S.size) * g.as;              // world +y up
   g.cv = cv;
   return g;
 }
 function drawWorld() {
-  const G = worldGeom(); const {x, w, h, sz, ox, oy, sc, X, Y} = G;
+  const G = worldGeom(); const {x, w, h, ts, ox, oy, ax, ay, as, X, Y} = G;
+  x.imageSmoothingEnabled = false;
   x.clearRect(0, 0, w, h);
-  // grass background with a soft vignette + dotted grid
-  const grad = x.createRadialGradient(ox + sz / 2, oy + sz / 2, sz * 0.1,
-    ox + sz / 2, oy + sz / 2, sz * 0.75);
-  grad.addColorStop(0, "#1a2a1f"); grad.addColorStop(1, "#0f1712");
-  x.fillStyle = grad; x.fillRect(ox, oy, sz, sz);
-  x.fillStyle = "rgba(120,170,130,0.06)";
-  const gstep = sz / 24;
-  for (let i = 1; i < 24; i++) for (let j = 1; j < 24; j++) {
-    x.beginPath(); x.arc(ox + i * gstep, oy + j * gstep, 1, 0, 7); x.fill();
+  // ground + decorative tree border (decoration only: the border lies OUTSIDE
+  // the simulated arena, so it never misrepresents an obstacle)
+  for (let i = 0; i < GRID + 2; i++) for (let j = 0; j < GRID + 2; j++) {
+    const r = hash(i, j), dx = ox + i * ts, dy = oy + j * ts;
+    tile(x, TOWN, r < 0.85 ? T.grass : T.grass2, dx, dy, ts);  // no flowers: they look like food
+    const border = i === 0 || j === 0 || i === GRID + 1 || j === GRID + 1;
+    if (border) tile(x, TOWN, T.trees[Math.floor(r * 4)], dx, dy, ts);
   }
-  x.strokeStyle = "#2b3a2f"; x.strokeRect(ox, oy, sz, sz);
-
-  const f = S.frame; const now = performance.now() / 600;
-  // hazards — pulsing danger zones
+  const f = S.frame; const pulse = 0.55 + 0.25 * Math.sin(performance.now() / 300);
+  // hazards: danger zone + spike traps on covered tiles + fire in the centre
   for (const hz of S.hazards) {
-    const r = S.cfg.hazard_radius * sc, cx = X(hz), cy = Y(hz);
-    const gl = 0.5 + 0.18 * Math.sin(now + cx);
-    const rg = x.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
-    rg.addColorStop(0, `rgba(224,115,79,${0.32 * gl})`);
-    rg.addColorStop(1, "rgba(224,115,79,0.02)");
-    x.fillStyle = rg; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
-    x.strokeStyle = `rgba(224,115,79,${gl})`; x.lineWidth = 1.5;
-    x.beginPath(); x.arc(cx, cy, r, 0, 7); x.stroke();
-    // spikes
-    x.strokeStyle = `rgba(255,150,110,${gl})`;
-    for (let k = 0; k < 10; k++) { const a = k / 10 * 7, rr = r * 0.78;
-      x.beginPath(); x.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
-      x.lineTo(cx + Math.cos(a) * r * 1.12, cy + Math.sin(a) * r * 1.12); x.stroke(); }
+    const cx = X(hz), cy = Y(hz), r = S.cfg.hazard_radius / S.size * as;
+    x.fillStyle = `rgba(224,90,60,${0.18 * pulse})`;
+    x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+    x.strokeStyle = `rgba(255,120,80,${0.7 * pulse})`; x.setLineDash([4, 3]);
+    x.beginPath(); x.arc(cx, cy, r, 0, 7); x.stroke(); x.setLineDash([]);
+    const n = Math.ceil(r / ts);
+    for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) {
+      const tx = cx + di * ts, ty = cy + dj * ts;
+      if (Math.hypot(tx - cx, ty - cy) < r - ts * 0.3 && (di || dj))
+        tile(x, DUN, D.spikes, tx - ts / 2, ty - ts / 2, ts);
+    }
+    tile(x, DUN, D.fire, cx - ts * 0.6, cy - ts * 0.6, ts * 1.2);
   }
   if (!f) return;
-  // food — little berries with highlight
-  for (const fd of f.food) {
-    const cx = X(fd), cy = Y(fd), r = Math.max(4, 0.014 * sc);
-    const rg = x.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 1, cx, cy, r);
-    rg.addColorStop(0, "#8ff0c8"); rg.addColorStop(1, "#2faa78");
-    x.fillStyle = rg; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
-    x.strokeStyle = "#1c6b4c"; x.lineWidth = 1; x.beginPath(); x.moveTo(cx, cy - r); x.lineTo(cx + 2, cy - r - 3); x.stroke();
-  }
-  // trail
-  if (S.trail.length > 1) {
-    x.strokeStyle = "rgba(109,155,255,0.30)"; x.lineWidth = 1.5; x.beginPath();
-    S.trail.forEach((p, i) => i ? x.lineTo(X(p), Y(p)) : x.moveTo(X(p), Y(p))); x.stroke();
-  }
-  drawCreature(x, X(f.agent), Y(f.agent), -f.heading, f, sc);
+  // food: forageable mushrooms
+  for (const fd of f.food) tile(x, TOWN, T.food, X(fd) - ts * 0.45, Y(fd) - ts * 0.45, ts * 0.9);
+  const agents = f.agents || [f];
+  const sel = agents[S.sel] || agents[0];
+  // selected agent: sensor range + trail
+  const tr = S.trails[sel.id ?? 0] || [];
+  if (tr.length > 1) { x.strokeStyle = "rgba(255,255,255,0.35)"; x.lineWidth = 1.5;
+    x.beginPath(); tr.forEach((p, i) => i ? x.lineTo(X(p), Y(p)) : x.moveTo(X(p), Y(p))); x.stroke(); }
+  x.strokeStyle = "rgba(255,255,255,0.22)"; x.lineWidth = 1;
+  x.beginPath(); x.arc(X(sel.agent), Y(sel.agent), S.cfg.sensor_range / S.size * as, 0, 7); x.stroke();
+  for (const ag of agents) drawPerson(x, G, ag, ag === sel);
 }
-function drawCreature(x, ax, ay, hd, f, sc) {
-  // sensor ring
-  x.strokeStyle = "rgba(109,155,255,0.16)"; x.lineWidth = 1;
-  x.beginPath(); x.arc(ax, ay, S.cfg.sensor_range * sc, 0, 7); x.stroke();
-  const r = Math.max(9, 0.03 * sc);
-  const hungry = (f.hunger ?? 0);
-  // body colour fades toward pale grey as it starves
-  const base = f.alive ? [109, 155, 255] : [100, 108, 120];
-  const col = base.map(c => Math.round(c * (1 - 0.45 * hungry) + 150 * 0.45 * hungry));
-  x.save(); x.translate(ax, ay); x.rotate(hd);
-  // glow
-  x.fillStyle = `rgba(${col.join(",")},0.18)`; x.beginPath(); x.arc(0, 0, r * 1.7, 0, 7); x.fill();
-  // body
-  x.fillStyle = `rgb(${col.join(",")})`;
-  x.beginPath(); x.ellipse(0, 0, r * 1.15, r, 0, 0, 7); x.fill();
-  // direction fin
-  x.beginPath(); x.moveTo(r * 1.5, 0); x.lineTo(r * 0.5, r * 0.55); x.lineTo(r * 0.5, -r * 0.55); x.closePath(); x.fill();
-  // eyes
-  x.fillStyle = "#0b0d12";
-  x.beginPath(); x.arc(r * 0.5, -r * 0.35, r * 0.17, 0, 7); x.fill();
-  x.beginPath(); x.arc(r * 0.5, r * 0.35, r * 0.17, 0, 7); x.fill();
-  x.restore();
+function drawPerson(x, G, ag, selected) {
+  const {ts, X, Y} = G, cx = X(ag.agent), cy = Y(ag.agent), s = ts * 1.25;
+  if (!ag.alive) { tile(x, DUN, D.grave, cx - ts / 2, cy - ts / 2, ts); return; }
+  if (selected) { x.fillStyle = "rgba(109,155,255,0.30)";
+    x.beginPath(); x.ellipse(cx, cy + s * 0.42, s * 0.55, s * 0.2, 0, 0, 7); x.fill(); }
+  // faded sprite as the agent starves
+  x.globalAlpha = 1 - 0.45 * (ag.hunger ?? 0);
+  tile(x, DUN, SPRITES[(ag.id ?? 0) % SPRITES.length], cx - s / 2, cy - s / 2, s,
+       Math.cos(ag.heading) < 0);
+  x.globalAlpha = 1;
+  // heading arrow (world +y up -> canvas -y)
+  const hx = Math.cos(ag.heading), hy = -Math.sin(ag.heading);
+  x.strokeStyle = "#ffffff"; x.lineWidth = 2; x.beginPath();
+  x.moveTo(cx + hx * s * 0.45, cy + hy * s * 0.45); x.lineTo(cx + hx * s * 0.8, cy + hy * s * 0.8); x.stroke();
+  // energy bar + name tag
+  const e = Math.max(0, Math.min(1, ag.energy / (S.cfg.e0 || 1))), bw = s;
+  x.fillStyle = "rgba(0,0,0,0.55)"; x.fillRect(cx - bw / 2, cy - s * 0.78, bw, 4);
+  x.fillStyle = e > 0.5 ? "#49d6a6" : e > 0.2 ? "#e0a63b" : "#e0734f";
+  x.fillRect(cx - bw / 2, cy - s * 0.78, bw * e, 4);
+  x.font = `bold ${Math.max(9, ts * 0.42)}px sans-serif`; x.textAlign = "center";
+  x.fillStyle = "rgba(0,0,0,0.6)"; x.fillText("P" + ((ag.id ?? 0) + 1), cx + 1, cy - s * 0.86 + 1);
+  x.fillStyle = selected ? "#ffffff" : "#d8deea"; x.fillText("P" + ((ag.id ?? 0) + 1), cx, cy - s * 0.86);
+  x.textAlign = "start";
 }
 
 // ---------- brain scanner (3D) ----------
@@ -375,10 +399,40 @@ async function placeFoodAt(ev) {
   if (!S.session) return;
   const G = worldGeom(); const rect = G.cv.getBoundingClientRect();
   const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
-  const wx = (px - G.ox) / G.sc, wy = S.size - (py - G.oy) / G.sc;
+  // click near a person -> select it; otherwise drop food on the grass
+  const agents = (S.frame && S.frame.agents) || [];
+  let best = -1, bd = G.ts * 1.0;
+  agents.forEach((ag, i) => { const d = Math.hypot(G.X(ag.agent) - px, G.Y(ag.agent) - py);
+    if (d < bd) { bd = d; best = i; } });
+  if (best >= 0) { S.sel = best; S.epEnergy = []; S.epReward = []; applyFrame(S.frame, true);
+    toast("Inspecting P" + (best + 1)); return; }
+  const wx = (px - G.ax) / G.as * S.size, wy = (1 - (py - G.ay) / G.as) * S.size;
   if (wx < 0 || wx > S.size || wy < 0 || wy > S.size) return;
   const d = await API.post("/api/place_food", {x: wx, y: wy});
   if (S.frame) S.frame.food = d.food;
+}
+async function advanceDays(days) {
+  if (!S.session) return;
+  S.playing = false; setPlay(); S.queue = [];
+  try {
+    const d = await API.post("/api/advance", {days, agent: S.sel, learning: S.learning});
+    S.timeline.push(...d.snapshots); renderTimeline();
+    if (d.frame) applyFrame(d.frame, true);
+    toast(`Fast-forwarded ${days} day(s)` + (d.alive ? "" : " — everyone has died"));
+  } catch (e) { toast("advance error: " + e.message); }
+}
+function renderTimeline() {
+  const el = $("timeline"); if (!el) return;
+  if (!S.timeline.length) { el.innerHTML = 'Use ⏩ to fast-forward days (try 🚫 Deprive first) and see how the selected agent\'s body, affect and neural firing change.'; return; }
+  const pct = (v) => (v * 100).toFixed(0) + "%";
+  el.innerHTML = `<table class="tl"><tr><th>day</th><th>energy</th><th>hunger</th><th>valence</th>
+    <th>arousal</th><th>threat</th><th>sens</th><th>L</th><th>F</th><th>R</th></tr>` +
+    S.timeline.slice(-12).map(r => `<tr style="${r.alive ? "" : "color:var(--bad)"}">
+      <td>${r.day.toFixed(1)}${r.alive ? "" : " †"}</td><td>${r.energy.toFixed(2)}</td><td>${pct(r.hunger)}</td>
+      <td>${r.affect.valence.toFixed(2)}</td><td>${r.affect.arousal.toFixed(2)}</td><td>${r.affect.threat.toFixed(2)}</td>
+      <td>${pct(r.firing.sensory)}</td><td>${pct(r.firing.left)}</td><td>${pct(r.firing.forward)}</td><td>${pct(r.firing.right)}</td></tr>`).join("") +
+    `</table><p class="note">Snapshot at the end of each day for P${S.sel + 1}. Firing = share of
+     ticks in which a neuron of that population spiked (sens = sensory; L/F/R = action populations).</p>`;
 }
 async function toggleDeprive() {
   if (!S.session) return;
@@ -399,6 +453,8 @@ function wire() {
   $("btnSave").onclick = save;
   $("btnFood").onclick = foodAhead;
   $("btnDeprive").onclick = toggleDeprive;
+  $("btnDay1").onclick = () => advanceDays(1);
+  $("btnDay3").onclick = () => advanceDays(3);
   $("world").addEventListener("click", placeFoodAt);
   $("world").style.cursor = "crosshair";
   $("speed").oninput = (e) => { S.speed = +e.target.value; };

@@ -94,3 +94,25 @@ def test_glow_matches_node_count(client):
     total = sum(d["sizes"].values())
     frame = client.post("/api/step", json={"n": 1}).json()["frames"][0]
     assert len(frame["glow"]) == total
+
+
+def test_multi_agent_session(client):
+    d = client.post("/api/session", json={"seed": 0, "n_agents": 4}).json()
+    assert d["config"]["n_agents"] == 4
+    assert len(d["state"]["agents"]) == 4
+    f = client.post("/api/step", json={"n": 5}).json()["frames"][-1]
+    assert len(f["agents"]) == 4
+    # each agent has its own brain activity vector
+    assert all(len(a["glow"]) == len(f["agents"][0]["glow"]) for a in f["agents"])
+
+
+def test_advance_days_starvation_snapshots(client):
+    client.post("/api/session", json={"seed": 0, "ticks_per_day": 20})
+    client.post("/api/deprive", json={"on": True})
+    d = client.post("/api/advance", json={"days": 3}).json()
+    snaps = d["snapshots"]
+    assert [s["day"] for s in snaps] == [1.0, 2.0, 3.0]
+    # without food, energy strictly falls and hunger rises day over day
+    assert snaps[0]["energy"] > snaps[1]["energy"] > snaps[2]["energy"]
+    assert snaps[0]["hunger"] < snaps[2]["hunger"]
+    assert set(snaps[0]["firing"]) == {"sensory", "left", "forward", "right"}

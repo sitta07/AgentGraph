@@ -28,7 +28,8 @@ _WEBUI = Path(__file__).parent / "webui"
 
 # Safe bounds for user-editable parameters (min, max).
 _BOUNDS = {
-    "n_food": (0, 30), "n_hazard": (0, 10), "max_ticks": (10, 5000),
+    "n_agents": (1, 8), "n_food": (0, 30), "n_hazard": (0, 10), "max_ticks": (10, 5000),
+    "ticks_per_day": (10, 1000),
     "sensor_range": (0.05, 2.0), "speed": (0.002, 0.1), "turn": (0.05, 1.5),
     "e0": (0.1, 5.0), "food_energy": (0.0, 2.0), "move_cost": (0.0, 0.1),
     "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 20),
@@ -77,7 +78,8 @@ class Session:
             if k in _BOUNDS:
                 lo, hi = _BOUNDS[k]
                 v = min(max(v, lo), hi)
-            if k in ("n_food", "n_hazard", "max_ticks", "n_action", "substeps", "seed"):
+            if k in ("n_agents", "n_food", "n_hazard", "max_ticks", "n_action",
+                     "substeps", "seed", "ticks_per_day"):
                 v = int(round(v))
             kwargs[k] = v
         return WorldConfig(**kwargs)
@@ -129,6 +131,46 @@ def step(body: dict | None = None):
             "distance": round(w.distance, 3),
         },
     }
+
+
+@app.post("/api/advance")
+def advance(body: dict | None = None):
+    """Fast-forward N simulated 'days', recording a snapshot of one agent's
+    body, affect and per-population firing at the end of every day. All values
+    come from the running engine; nothing is interpolated."""
+    if SESSION.world is None:
+        raise HTTPException(409, "no session")
+    body = body or {}
+    w = SESSION.world
+    days = min(max(float(body.get("days", 1)), 0.1), 30.0)
+    aid = min(max(int(body.get("agent", 0)), 0), len(w.agents) - 1)
+    learning = bool(body.get("learning", True))
+    tpd = max(1, w.cfg.ticks_per_day)
+    total = min(int(round(days * tpd)), 5000)
+    snapshots, frame, fired = [], None, None
+    for i in range(total):
+        if not any(ag.alive for ag in w.agents):
+            break
+        frame = w.step(learning=learning)
+        ag = frame["agents"][aid]
+        g = ag["glow"]
+        acc = [1.0 if v >= 0.999 else 0.0 for v in g]   # spiked this tick
+        fired = acc if fired is None else [a + b for a, b in zip(fired, acc)]
+        if (w.t % tpd == 0) or i == total - 1:
+            agent = w.agents[aid]
+            rates, off = {}, 0
+            ticks = tpd if w.t % tpd == 0 else (w.t % tpd)
+            for p in agent._node_order:
+                n = agent.net.populations[p].n
+                rates[p] = round(sum(fired[off:off + n]) / (n * max(1, ticks)), 3)
+                off += n
+            snapshots.append({"day": round(w.t / tpd, 2), "t": w.t,
+                              "energy": ag["energy"], "hunger": ag["hunger"],
+                              "alive": ag["alive"], "food_eaten": ag["food_eaten"],
+                              "affect": ag["affect"], "firing": rates})
+            fired = None
+    return {"frame": frame or w._frame(), "snapshots": snapshots,
+            "alive": any(ag.alive for ag in w.agents)}
 
 
 @app.post("/api/place_food")

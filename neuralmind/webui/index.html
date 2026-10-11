@@ -57,6 +57,11 @@
   .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
   #speed{width:120px}
   .note{color:var(--muted);font-size:11px;line-height:1.45}
+  table.tl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:11px}
+  table.tl th,table.tl td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--grid)}
+  table.tl th{color:var(--muted);font-weight:500}
+  table.tl td:first-child,table.tl th:first-child{text-align:left}
+  #world{image-rendering:pixelated}
   .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel2);
     border:1px solid var(--grid);padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;
     transition:opacity .25s;pointer-events:none;z-index:50}
@@ -77,6 +82,8 @@
     <button id="btnReset" class="ghost">Reset</button>
     <button id="btnFood" class="ghost">🍎 Food ahead</button>
     <button id="btnDeprive" class="ghost">🚫 Deprive</button>
+    <button id="btnDay1" class="ghost">⏩ +1 day</button>
+    <button id="btnDay3" class="ghost">⏩ +3 days</button>
     <label class="note" style="display:flex;align-items:center;gap:6px">speed
       <input type="range" id="speed" min="1" max="30" value="10"></label>
     <label class="note" style="display:flex;align-items:center;gap:6px">
@@ -96,7 +103,7 @@
           the network, not a rule, chooses it.</p>
       </div>
       <div class="panel">
-        <h2>Agent Inspector</h2>
+        <h2>Agent Inspector — <span id="selName" style="color:var(--ink)">P1</span></h2>
         <div class="stat"><b>Energy</b><span id="iEnergy">–</span></div>
         <div class="bar"><i id="energyBar" style="width:100%"></i></div>
         <div class="stat" style="margin-top:8px"><b>Day</b><span id="iDay">0</span></div>
@@ -113,6 +120,11 @@
         <p class="note" style="margin:8px 0 0">These are internal model variables,
           not claims about subjective experience.</p>
       </div>
+      <div class="panel">
+        <h2>Day-by-day timeline</h2>
+        <div id="timeline" class="note">Use ⏩ to fast-forward days (try 🚫 Deprive first)
+          and see how the selected agent's body, affect and neural firing change.</div>
+      </div>
     </div>
 
     <!-- CENTER: 2D world -->
@@ -124,7 +136,7 @@
           <span><span class="dot" style="background:var(--agent)"></span>agent</span>
           <span><span class="dot" style="background:var(--food)"></span>food</span>
           <span><span class="dot" style="background:var(--hazard)"></span>hazard</span>
-          <span class="note">sensor range shown as the faint ring</span>
+          <span class="note">click a person to inspect · click grass to drop food</span>
         </div>
       </div>
     </div>

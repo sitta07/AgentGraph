@@ -3,24 +3,23 @@
 These instructions apply to every task in this repo, for any AI coding agent or
 human contributor.
 
-## Mission: a Discovery Lab
+## Purpose
 
-The goal is **not** a pretty app. It is a system for exploring, hypothesising,
-experimenting with, and **discovering knowledge that is new**: relationships
-nobody has clearly explained yet. No field is off-limits: artificial life, AI,
-evolution, physics, mathematics, biology, complex systems.
+This repository is a research tool more than an app. Use it to explore
+questions, state hypotheses, run experiments, and look for relationships that
+are not yet well explained. Artificial life, AI, evolution, biology, physics
+and complex systems are all in scope.
 
 Everything we produce should be something others can **inspect, reproduce and
 build on**.
 
-## The rule is: no rules — for ideas
+## Creative freedom, evidence first
 
-Think creatively and boldly. Propose unusual questions, cross fields, try
-strange experiments, and build what you think the world should have built
-already. Don't wait for approval on decisions that are safe to make yourself.
-Keep moving.
+You are free to propose unusual questions, combine fields and try
+unconventional experiments. Don't wait for approval on decisions you can
+safely make yourself. Keep moving.
 
-Freedom of ideas sits on one floor that never moves: **evidence**.
+That freedom applies to ideas, not to results:
 
 - Never fabricate results, citations, benchmarks or "validation".
 - Never overclaim. Separate *established evidence*, *hypothesis* and
@@ -29,6 +28,8 @@ Freedom of ideas sits on one floor that never moves: **evidence**.
   actually ran.
 - A failed experiment is a result. Find out why, improve the method, and
   record it honestly.
+- Keep the language plain and factual. Describe what was measured, not how
+  important it is.
 
 ## Research loop
 

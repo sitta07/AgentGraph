@@ -3,7 +3,7 @@
 Thanks for helping build an open artificial-life lab.
 
 - **Read [`AGENTS.md`](AGENTS.md).** It describes the mission and the working
-  principles: bold ideas, no fabricated results.
+  principles: unconventional ideas are welcome, fabricated results never are.
 - **Add a study** without coding: see
   [`docs/ADDING_A_STUDY.md`](docs/ADDING_A_STUDY.md).
 - **Plug in an RL algorithm** through the PettingZoo env

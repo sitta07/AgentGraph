@@ -30,6 +30,10 @@ _WEBUI = Path(__file__).parent / "webui"
 _BOUNDS = {
     "n_agents": (1, 8), "n_food": (0, 30), "n_hazard": (0, 10), "max_ticks": (10, 5000),
     "ticks_per_day": (10, 1000),
+    "attack_radius": (0.01, 0.3), "steal": (0.0, 1.0), "attack_cost": (0.0, 0.5),
+    "share_amount": (0.0, 1.0), "share_benefit": (0.0, 5.0), "signal_range": (0.05, 2.0),
+    "signal_cost": (0.0, 0.1), "r_prosocial": (0.0, 1.0), "r_hurt": (0.0, 10.0),
+    "aggression_gain": (0.0, 10.0), "w_social_scale": (0.1, 1.5),
     "sensor_range": (0.05, 2.0), "speed": (0.002, 0.1), "turn": (0.05, 1.5),
     "e0": (0.1, 5.0), "food_energy": (0.0, 2.0), "move_cost": (0.0, 0.1),
     "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 20),
@@ -66,7 +70,7 @@ class Session:
             if k == "reward_mode":
                 kwargs[k] = v if v in ("align", "approach") else "align"
                 continue
-            if k == "normalize":
+            if k in ("normalize", "social"):
                 kwargs[k] = bool(v)
                 continue
             try:
@@ -90,7 +94,7 @@ class Session:
         return {
             "config": self.config.as_dict(),
             "bounds": _BOUNDS,
-            "actions": list(ACTIONS),
+            "actions": list(w.agents[0].actions),
             "size": self.config.size,
             "hazards": w.hazard_list(),
             "node_order": w._node_order,

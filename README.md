@@ -93,7 +93,9 @@ python -m pytest tests/ -q      # full test suite
 | Study | Result | Status |
 |---|---|---|
 | **Can spiking agents learn aggression or cooperation within one lifetime?** ([write-up](docs/research/FINDINGS_SOCIAL.md)) | **No.** None of the 4 pre-registered hypotheses were supported. Attacks are untargeted, which points to an exploration bottleneck. An ablation also showed that an apparent 12.7% "aggression" came from a modelling artifact. | completed |
-| **Does selfish lifetime learning undermine kin-selected helping?** (evolution, [write-up](docs/research/FINDINGS_EVOLUTION_KIN.md)) | Selfish learning *doubled* sharing, the opposite of our prediction. Help reached relatives above chance **without any kin-recognition sensor**, but only when offspring stayed near their parents. | completed; follow-up C2 running |
+| **Does selfish lifetime learning undermine kin-selected helping?** (evolution, [C](docs/research/FINDINGS_EVOLUTION_KIN.md), [C2](docs/research/FINDINGS_C2.md)) | Selfish learning *doubled* sharing, the opposite of our prediction. The pre-registered follow-up then **ruled out crowding** as the cause. Help reached relatives above chance **without any kin-recognition sensor**, and this replicated. The early "viscosity raises the innate share gene" result did **not** replicate. | completed |
+| **Does spatial structure prevent extinction?** (F) | Exploratory in C2: well-mixed populations went extinct in 7/12 runs vs 2/12 (p = 0.09, not significant). Now re-tested with 12 seeds. | registered · queued |
+| **Is learned sharing a reciprocity loop driven by gift rewards?** (G) | ablation of the gift reward | registered · queued |
 | **Does an aggression gene evolve under scarcity?** (D) | pre-registered in [`studies/`](studies/) | queued |
 | **Baldwin effect vs hiding effect** (E): does learning speed up or shield the evolution of innate ability? | pre-registered as competing predictions | queued |
 | Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode (≈ +40%) | real but noisy |

@@ -1,83 +1,130 @@
-# NeuralMind — Artificial Life Playground
+<h1 align="center">🧠 NeuralMind — an open Artificial-Life Lab</h1>
 
-**A local-first lab where little pixel-art people are controlled by real spiking
-neural networks.** You can watch them forage, learn, avoid hazards and starve,
-and look inside their brains while it happens. Everything runs on your laptop:
-no GPU, no API key.
+<p align="center">
+  <b>Pixel-art creatures whose brains are real spiking neural networks.</b><br>
+  They forage, learn, fight, share, signal, reproduce and evolve.<br>
+  You can watch every neuron, run pre-registered experiments, and plug in your own RL agents.
+</p>
 
-![NeuralMind Playground](docs/images/playground.png)
+<p align="center">
+  <a href="https://github.com/sitta07/AgentGraph/actions/workflows/tests.yml"><img src="https://github.com/sitta07/AgentGraph/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
+  <img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-blue" alt="python">
+  <img src="https://img.shields.io/badge/PettingZoo-ParallelEnv-8a5cf6" alt="PettingZoo">
+  <img src="https://img.shields.io/badge/GPU-not%20needed-lightgrey" alt="no GPU">
+  <img src="https://img.shields.io/badge/API%20key-not%20needed-lightgrey" alt="no API key">
+</p>
 
-> **What this is:** a computational model with explicitly defined mechanisms —
-> leaky integrate-and-fire neurons, reward-modulated plasticity, a reward
-> prediction error, and a small set of affect variables.
->
-> **What this is not:** a human brain, a conscious system, or evidence of real
-> feelings. "Hunger", "valence" or "threat" are model variables. See
-> [`docs/research/SCIENTIFIC_EVIDENCE.md`](docs/research/SCIENTIFIC_EVIDENCE.md)
-> for which parts are established science, hypotheses, or engineering shortcuts.
+<p align="center">
+  <img src="docs/media/evolution_world.gif" width="440" alt="An evolving population of spiking-neural agents: births, attacks, sharing and signals">
+  &nbsp;
+  <img src="docs/media/brain_scanner.gif" width="300" alt="Brain scanner: one agent's spiking network and its action competition, live">
+</p>
+<p align="center"><sub>
+  Left: an evolving population (recorded from the app). Families share a sprite, 😠 marks a
+  frustration-driven aggression drive, 😫 marks hunger. Right: one individual's brain, live.
+  The action population that fires most is the move it makes — the network chooses, not a rule.
+</sub></p>
 
 ---
 
-## Quickstart
+## 🔓 Open for you to build on
+
+NeuralMind is **MIT-licensed**. It is designed to be forked, extended and cited:
+
+| You want to… | Use |
+|---|---|
+| **Test a MARL algorithm** in a rich social world | the **PettingZoo `ParallelEnv`** (passes the official API test). RL agents can live *alongside* spiking-brain agents. |
+| **Ask a new scientific question** without writing simulator code | a **declarative study spec** (`studies/*.json`): commit it, then run it. The commit hash is your pre-registration. → [`docs/ADDING_A_STUDY.md`](docs/ADDING_A_STUDY.md) |
+| **Check or extend our results** | the committed raw data in [`results/`](results/) and auto-generated reports with bootstrap CIs |
+| **Teach** neurons, plasticity, reinforcement learning or evolution | the interactive Playground: click any creature to see its brain |
+| **Build on the engine** | small, dependency-light NumPy code with 118+ tests and CI |
+
+If you use it in research, please cite it ([`CITATION.cff`](CITATION.cff)). PRs
+and new studies are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+> **What this is:** a computational model with explicitly defined mechanisms:
+> leaky integrate-and-fire neurons, reward-modulated plasticity, reward
+> prediction error, and bounded affect variables.
+>
+> **What this is not:** a human brain, a conscious system, or evidence of real
+> feelings. See
+> [`docs/research/SCIENTIFIC_EVIDENCE.md`](docs/research/SCIENTIFIC_EVIDENCE.md),
+> which separates evidence, hypotheses and engineering shortcuts.
+
+---
+
+## 🚀 Quickstart
 
 ```bash
 git clone https://github.com/sitta07/AgentGraph.git && cd AgentGraph
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements-neuralmind.txt -r requirements-server.txt
+pip install -r requirements-neuralmind.txt -r requirements-server.txt -r requirements-research.txt
 
-python -m neuralmind.server          # Playground: http://127.0.0.1:8000
-                                     # Discovery Lab: http://127.0.0.1:8000/lab
+python -m neuralmind.server     # Playground → http://127.0.0.1:8000   ·   Lab → http://127.0.0.1:8000/lab
+python -m pytest tests/ -q      # full test suite
 ```
 
-Run the tests (85 tests, ~20 s):
+## 🎮 The Playground
 
-```bash
-python -m pytest tests/ -q                 # everything
-python -m pytest tests/ -q -m "not slow"   # skip the training test (~4 s)
-```
-
-## Things to try in the Playground
+![Playground](docs/media/playground.png)
 
 | Try this | How |
 |---|---|
-| **Watch a brain drive behaviour** | Press **Play**. The Brain Scanner glows with the selected person's spikes; the action population that fires most (left / forward / right) is the move they make. |
-| **Add more people** | Set **People (agents)** (1–8) → **New world**. Each person has their own brain and they compete for the same food. Click a person to inspect them. |
-| **Feed someone** | Click the grass to drop a mushroom, or press **🍎 Food ahead** to put one in front of the selected person. |
-| **Starvation experiment** | Press **🚫 Deprive** (removes all food), then **⏩ +1 day / +3 days**. The day-by-day timeline shows energy, hunger, affect and neural firing for each simulated day. |
-| **Does learning help?** | Press **Train 40 episodes**, then **Compare vs untrained**. Toggle **learning** off for a no-plasticity control. |
-| **Change the world** | Adjust food, hazards, sensor range, costs, learning rate, exploration noise… then **New world**. |
-| **Save results** | **Save episode** stores config + metrics in a local SQLite file. |
-| **Social life** | Tick **Social**. Agents now *see* each other and can **attack** (steal energy), **share** (give energy, recipient gets 2×) or **signal**. Each of these is a neural population competing in the same winner-take-all, so no rule decides. Watch for 💢 💚 📢 on the map; 😠 marks a high frustration-driven aggression drive. |
-| **Evolution** | Tick **Evolution**. Well-fed agents reproduce, offspring inherit a mutated *innate* brain plus an aggression gene, and agents die of hunger or old age. Families share a sprite; the dashboard plots population and generation. |
-| **Scan anyone's brain** | Click any person. The Brain Scanner loads *that individual's* current learned weights and live spikes. |
+| **Watch a brain drive behaviour** | Press **Play**. The Brain Scanner shows the selected creature's spikes, and the winning action population is the move it makes. |
+| **Scan anyone's brain** | Click any creature. The scanner loads *that individual's* current learned weights and live spikes. |
+| **Social life** | Tick **Social**. Creatures see each other and can **attack** (steal energy 💢), **share** (the recipient gets 2× 💚) or **signal** (📢). Each is a neural population competing in the same winner-take-all. |
+| **Evolution** | Tick **Evolution**. Well-fed creatures reproduce, and children inherit a mutated *innate* brain plus an aggression gene (✨ birth, 💀 death). |
+| **Starvation experiment** | **🚫 Deprive**, then **⏩ +1 / +3 days**. A day-by-day table shows energy, hunger, affect and neural firing. |
+| **Feed someone** | Click the grass, or press **🍎 Food ahead**. |
+| **Does learning help?** | **Train 40 episodes**, then **Compare vs untrained**. |
 
-## How a decision is made (the causal chain)
+## 🔬 The Discovery Lab (`/lab`)
+
+![Discovery Lab](docs/media/discovery_lab.png)
+
+- Every study is **pre-registered**: its JSON spec is committed before the run.
+- Every hypothesis has a stated falsifier. Results are shown with 95%
+  bootstrap CIs, and negative results stay on the board.
+- You can re-run any registered study from the browser.
+
+### What we have found so far
+
+| Study | Result | Status |
+|---|---|---|
+| **Can spiking agents learn aggression or cooperation within one lifetime?** ([write-up](docs/research/FINDINGS_SOCIAL.md)) | **No.** None of the 4 pre-registered hypotheses were supported. Attacks are untargeted, which points to an exploration bottleneck. An ablation also showed that an apparent 12.7% "aggression" came from a modelling artifact. | completed |
+| **Does selfish lifetime learning undermine kin-selected helping?** (evolution, [write-up](docs/research/FINDINGS_EVOLUTION_KIN.md)) | Selfish learning *doubled* sharing, the opposite of our prediction. Help reached relatives above chance **without any kin-recognition sensor**, but only when offspring stayed near their parents. | completed; follow-up C2 running |
+| **Does an aggression gene evolve under scarcity?** (D) | pre-registered in [`studies/`](studies/) | queued |
+| **Baldwin effect vs hiding effect** (E): does learning speed up or shield the evolution of innate ability? | pre-registered as competing predictions | queued |
+| Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode (≈ +40%) | real but noisy |
+
+The full ranked agenda of open questions is in
+[`docs/research/RESEARCH_AGENDA.md`](docs/research/RESEARCH_AGENDA.md).
+
+## 🧩 How a decision is made
 
 ```
 world ──► egocentric sensors ──► input currents ──► LIF spiking network
- ▲          (food & threat in        (nA)            sensory → 3 action populations
- │           3 directions + hunger)                  with lateral inhibition
- │                                                          │
- │                                              most active population = action
+ ▲     food/threat ×3, hunger,      (nA)            sensory → action populations
+ │     others ×3, heard signal                       (move / attack / share / signal)
+ │                                                    with lateral inhibition
+ │                                         most active population = action
  │                                                          ▼
- └── weights change ◄── reward-modulated ◄── reward prediction ◄── move / eat / get hurt
-                        Hebbian learning        error (TD)
+ └── weights change ◄── reward-modulated ◄── reward prediction ◄── eat / hurt / steal / give
+     (and genomes        Hebbian learning     error (TD)
+      mutate across
+      generations)
 ```
 
-The physics only moves bodies and does the energy bookkeeping. **It never picks
-an action**: the choice comes from the neural network. Reward is *shaped*
-(points for turning toward food). That shaping is an engineering choice, not a
-claim about biology.
+- The physics only moves bodies and does the energy bookkeeping. **It never
+  picks an action.**
+- Reward shaping is an explicit engineering choice.
+- Affect is computed from the primary reward only.
 
-## For researchers
-
-**Plug in your own MARL algorithm.** The world is a
-[PettingZoo](https://pettingzoo.farama.org/) `ParallelEnv`. It passes the
-official `parallel_api_test`. RL-controlled agents can share the arena with
-spiking-brain agents:
+## 🤖 For RL researchers
 
 ```python
-from neuralmind.envs import parallel_env      # pip install -r requirements-research.txt
+from neuralmind.envs import parallel_env
 env = parallel_env(n_rl=4, n_snn=4, config={"social": True}, max_cycles=500)
 obs, infos = env.reset(seed=0)
 while env.agents:
@@ -85,75 +132,51 @@ while env.agents:
         {a: env.action_space(a).sample() for a in env.agents})
 ```
 
-**Browse and replicate in the Discovery Lab** (`/lab`). Every study is a card
-with verdict badges, a 95% CI bar for each test against zero, charts and the
-full report. Launch a replication with your own seeds and ticks from the
-browser.
+- **Observations:** the sensor vector the SNN agents use.
+- **Actions:** `Discrete` over move, plus attack / share / signal when social.
+- **Rewards:** the same reward the SNN agents learn from.
 
-**Re-run or extend our studies from the command line.** Each study is pre-registered, multi-seed,
-and reports bootstrap CIs. The raw results are committed in `results/`.
+## 🛠 Command-line tools
 
 ```bash
-python -m neuralmind.research.social all --seeds 10         # lifetime social learning
-python -m neuralmind.research.evolution --seeds 6 --ticks 6000   # kin selection vs selfish learning
+python -m neuralmind.research.spec studies/E_baldwin_vs_hiding.json   # run a registered study
+python -m neuralmind.research.social all --seeds 10                    # lifetime social study
+python -m neuralmind.research.evolution --experiment kin               # kin-selection study
+python -m neuralmind.cli run reward_learning --seed 0                  # classic experiments
+python -m neuralmind.bench --sizes 50 100 200 400                      # runtime + memory
+python tools/make_media.py                                             # re-record these GIFs
 ```
 
-## What the evidence says (so far)
-
-| Experiment | Result | Status |
-|---|---|---|
-| Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode on average (≈ +40%); trained agent was better in 36 of 60 worlds | real effect, noisy per world |
-| Learning curves (3 training seeds) | food/episode rises with training (e.g. 0.6 → 6.3) | real effect |
-| Starvation (no food) | energy falls and hunger rises each day; agents eventually die | mechanical, as designed |
-| Discrete reward task (`reward_learning`) | chance ≈ 0.5 → 0.8–0.95 correct choices | validated (qualitative) |
-| Pavlovian threat conditioning (`threat_avoidance`) | paired ≫ unpaired | validated (qualitative) |
-| `pain_response`, `forgetting` | dose-response; catastrophic interference | exploratory |
-| **Selfish learning vs kin-selected helping** (evolution, [write-up](docs/research/FINDINGS_EVOLUTION_KIN.md)) | Selfish lifetime learning *doubled* sharing, the opposite of our prediction. Shares reached kin above chance only when offspring stayed near their parents, with no kin recognition. Innate social genes barely evolved in ~6–9 generations. | completed; follow-up C2 running |
-| **Social behaviour from lifetime learning** ([write-up](docs/research/FINDINGS_SOCIAL.md)) | 4/4 pre-registered hypotheses **not supported**. Attacks are untargeted, which points to an exploration bottleneck. An ablation exposed apparent "aggression" (12.7%) as a modelling artifact. | completed, negative |
-
-Bugs found during development and how they were fixed are listed in the commit
-history and [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md).
-One example: an STDP sign issue inverted the learned food→turn mapping.
-
-## Command-line tools
-
-```bash
-python -m neuralmind.cli list                              # experiments
-python -m neuralmind.cli run reward_learning --seed 0      # with learning
-python -m neuralmind.cli run reward_learning --no-learning # baseline
-python -m neuralmind.cli visualize --out examples/brain_viewer.html   # 3D brain viewer
-python -m neuralmind.cli search "spike timing"             # search the docs, with citations
-python -m neuralmind.bench --sizes 50 100 200 400          # runtime + memory
-```
-
-## Project layout
+## 📁 Project layout
 
 ```
 neuralmind/
-  core/          LIF neurons, synapses, STDP / eligibility traces, SpikingNetwork
-  affect/        reward prediction error (TD), affect state
-  world.py       2D world + Agent (sensors → brain → action → reward → learning)
+  core/          LIF neurons, synapses, STDP / eligibility traces
+  affect/        reward prediction error, affect state
+  world.py       2D world · Agent · social layer · evolution · genealogy
+  envs/          PettingZoo ParallelEnv
+  research/      pre-registered studies, stats (bootstrap CI, MI, G-test), spec runner
+  lab.py         Discovery Lab API
   server.py      FastAPI backend (the browser only renders backend state)
-  webui/         Playground frontend (vanilla JS + canvas, Kenney CC0 pixel art)
-  experiments/   reward_learning, threat_avoidance, pain_response, forgetting
-  persistence/   SQLite experiment store
-  knowledge/     local document search with source citations
-  recorder.py, viz.py, bench.py, cli.py
-docs/            research report, reuse matrix, scientific evidence, ADRs, status
-tests/           pytest suite
+  webui/         Playground + Discovery Lab (vanilla JS + canvas, Kenney CC0 pixel art)
+studies/         registered study specs        results/   raw results + reports
+docs/research/   findings, evidence ledger, agenda, literature
+tests/           pytest suite (CI on 3.12 / 3.13)
 ```
 
-## Known limitations
+## ⚠️ Known limitations
 
-- Social behaviour does not emerge from lifetime learning alone (see findings). Evolution experiments are in progress.
-- A "day" is a simulation unit (`ticks_per_day`, default 60), not a real day.
-- Point-neuron LIF model; small networks (31 neurons per agent). TVB, Brian2 and NEST were studied for reference only. All three are copyleft.
-- Learning gains vary a lot between worlds. Judge them by multi-seed averages, not a single run.
+- Small brains: 31–59 neurons per agent, point-neuron LIF. This is not a model of any real nervous system.
+- Within-lifetime learning alone does not produce targeted social behaviour (see findings).
+- Evolution studies run for tens of generations, not thousands.
+- A "day" is a simulation unit (`ticks_per_day`).
 
 ## Licence & credits
 
-MIT (see `LICENSE`). Pixel art from **Kenney** (Tiny Town, Tiny Dungeon), released under CC0.
-Details in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+- **Code:** MIT (see `LICENSE`).
+- **Pixel art:** **Kenney**'s Tiny Town and Tiny Dungeon (CC0).
+- **Optional dependencies:** FastAPI, PettingZoo, Gymnasium (MIT); Uvicorn (BSD); Playwright (Apache-2.0, media recording only).
+- Details in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ---
 

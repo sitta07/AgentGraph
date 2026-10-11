@@ -59,3 +59,5 @@ attribution; Kenney is credited here as a courtesy.
 | httpx | BSD-3-Clause | Test client only |
 | PettingZoo | MIT | optional multi-agent RL interface (`neuralmind/envs`) |
 | Gymnasium | MIT | observation/action spaces for the PettingZoo wrapper |
+| Playwright (Python) | Apache-2.0 | dev-only: records README media (`tools/make_media.py`) |
+| Pillow | MIT-CMU | dev-only: assembles GIFs |

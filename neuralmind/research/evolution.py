@@ -159,7 +159,10 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     n = max(1, alive_ticks)
     assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
              for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
+    pops = np.array(series["pop"], dtype=float)
     return {
+        "pop_cv": float(pops.std() / pops.mean()) if pops.size and pops.mean() > 0 else float("nan"),
+        "pop_min": float(pops.min()) if pops.size else float("nan"),
         "extinct01": float(not live),
         "survival_ticks": float(t + 1),
         "innate_foraging": float(np.mean(assay)) if assay else float("nan"),
@@ -203,13 +206,13 @@ METRICS = ("share_gene", "aggr_gene", "share_rate", "attack_rate", "share_to_kin
            "encounter_kin", "final_pop", "max_generation")
 
 
-def run_conditions(conditions: dict, seeds: int, ticks: int) -> dict:
+def run_conditions(conditions: dict, seeds: int, ticks: int, seed_start: int = 0) -> dict:
     """Generic multi-seed runner. ``conditions`` maps a name to
     ``(world_config_overrides, learning)``. Seeds are shared across conditions
     so differences can be analysed as paired."""
     jobs, keys = [], []
     for name, (over, learn) in conditions.items():
-        for s in range(seeds):
+        for s in range(seed_start, seed_start + seeds):
             jobs.append(({"seed": s, **over}, ticks, learn))
             keys.append((name, s))
     workers = max(1, (os.cpu_count() or 2) - 1)

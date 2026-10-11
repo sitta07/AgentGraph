@@ -14,7 +14,7 @@ Spec format::
       "id": "D_scarcity_aggression",
       "title": "...", "question": "...", "background": "...",
       "simulator": "evolution",
-      "seeds": 6, "ticks": 6000,
+      "seeds": 6, "ticks": 6000, "seed_start": 0,
       "base": {"<WorldConfig field>": value},
       "conditions": {"name": {"config": {...}, "learning": true}},
       "hypotheses": [
@@ -110,10 +110,11 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
         deviations["ticks"] = {"registered": spec.get("ticks"), "used": ticks}
     seeds = seeds or spec.get("seeds", 6)
     ticks = ticks or spec.get("ticks", 6000)
+    seed_start = int(spec.get("seed_start", 0))
     prereg = preregistration(path)
     conds = {n: ({**spec.get("base", {}), **c.get("config", {})}, bool(c.get("learning", True)))
              for n, c in spec["conditions"].items()}
-    res = run_conditions(conds, seeds, ticks)
+    res = run_conditions(conds, seeds, ticks, seed_start)
     metrics = sorted(k for k, v in res["raw"][next(iter(conds))][0].items()
                      if isinstance(v, (int, float)) and not isinstance(v, bool))
     col = lambda n, m: [r[m] for r in res["raw"][n]]
@@ -129,7 +130,8 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
     return {"experiment": spec["id"], "title": spec["title"], "question": spec["question"],
             "background": spec.get("background", ""), "hypotheses": spec["hypotheses"],
             "version": __version__, "preregistration": prereg, "deviations": deviations,
-            "design": {"seeds": seeds, "ticks": ticks, "base": spec.get("base", {}),
+            "design": {"seeds": seeds, "seed_start": seed_start, "ticks": ticks,
+                       "base": spec.get("base", {}),
                        "conditions": spec["conditions"]},
             "summary": summary, "tests": tests, "verdict": verdict, "raw": res["raw"]}
 

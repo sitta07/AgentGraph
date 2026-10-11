@@ -59,3 +59,10 @@ def test_numeric_b_is_a_one_sample_test(tmp_path):
                                      "a": "a", "b": 0, "direction": "greater"}])
     res = run(load(p), p, seeds=2, ticks=60)
     assert res["verdict"]["H"] in ("supported", "not supported")
+
+
+def test_seed_start_uses_fresh_seeds(tmp_path):
+    p = _spec(tmp_path, seed_start=50)
+    res = run(load(p), p, seeds=2, ticks=40)
+    assert res["design"]["seed_start"] == 50
+    assert "pop_cv" in res["summary"]["a"]

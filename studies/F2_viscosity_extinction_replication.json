@@ -1,0 +1,20 @@
+{
+  "id": "F2_viscosity_extinction_replication",
+  "title": "Independent replication: does spatial structure protect populations from extinction?",
+  "question": "Using seeds never run before (100-115), do well-mixed evolving populations still go extinct more often than viscous ones? Are their population sizes more volatile (boom-bust)?",
+  "background": "Experiment F found 9/12 vs 1/12 extinctions, but half of its seeds duplicated the exploratory C2 runs that suggested the hypothesis. On fresh seeds alone the result was 4/6 vs 0/6 (p = 0.06). This spec uses seed_start = 100 so the confirmation is independent.",
+  "simulator": "evolution",
+  "seeds": 16,
+  "seed_start": 100,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "mixed":   {"config": {"viscous": false}, "learning": true},
+    "viscous": {"config": {"viscous": true},  "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H14r", "statement": "Replication: well-mixed populations go extinct more often", "metric": "extinct01", "a": "mixed", "b": "viscous", "direction": "greater"},
+    {"id": "H14br", "statement": "Replication: well-mixed populations die out sooner", "metric": "survival_ticks", "a": "mixed", "b": "viscous", "direction": "less"},
+    {"id": "H17", "statement": "Mechanism: well-mixed population sizes are more volatile (coefficient of variation)", "metric": "pop_cv", "a": "mixed", "b": "viscous", "direction": "greater"}
+  ]
+}

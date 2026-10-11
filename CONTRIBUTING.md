@@ -2,8 +2,8 @@
 
 Thanks for helping build an open artificial-life lab.
 
-- **Read [`AGENTS.md`](AGENTS.md).** It describes the mission and the working
-  principles: unconventional ideas are welcome, fabricated results never are.
+- **Report results honestly.** Never fabricate or overstate results. Keep
+  pre-registered tests separate from post-hoc explanations.
 - **Add a study** without coding: see
   [`docs/ADDING_A_STUDY.md`](docs/ADDING_A_STUDY.md).
 - **Plug in an RL algorithm** through the PettingZoo env

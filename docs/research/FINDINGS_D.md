@@ -35,3 +35,26 @@ gene** that is inherited, mutated and clipped exactly like the aggression
 gene but has no effect. If aggression rises *more than the neutral marker*
 under scarcity, that points to selection. If both rise equally, the H8 result
 is drift.
+
+## Follow-up result: D2 (completed 2026-10-12)
+
+D2 ran 16 runs: 2 conditions × 8 seeds × 8000 ticks, with a neutral marker
+gene. It was pre-registered and run without deviations. One scarce
+population went extinct. Report:
+[`results/D2_aggression_vs_neutral_marker/`](../../results/D2_aggression_vs_neutral_marker/REPORT.md).
+
+| Hypothesis | Test | Result |
+|---|---|---|
+| H16: under scarcity the aggression gene exceeds the neutral marker | −0.20 [−0.74, 0.24] | not supported |
+| H16b: the excess is larger under scarcity than abundance | −0.34 [−0.86, 0.10] | not supported |
+| H16c: the neutral marker is higher under scarcity (drift) | +0.08 [−0.26, 0.47] | not supported |
+
+**Conclusion:**
+
+- In D2 the aggression gene under scarcity averaged ≈0.96. It was not
+  elevated, and it was indistinguishable from the neutral marker.
+- D's H8 result (1.86) did **not** replicate. It is best explained as chance
+  or drift in a small sample.
+- **There is no evidence that aggression is selected under scarcity in this
+  world.** That is consistent with the gene having had no effect on attack
+  behaviour in D.

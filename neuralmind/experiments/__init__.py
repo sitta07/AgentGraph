@@ -15,6 +15,14 @@ from neuralmind.experiments.threat_avoidance import (
     ThreatAvoidanceExperiment,
     ThreatAvoidanceConfig,
 )
+from neuralmind.experiments.pain_response import (
+    PainResponseExperiment,
+    PainResponseConfig,
+)
+from neuralmind.experiments.forgetting import (
+    ForgettingExperiment,
+    ForgettingConfig,
+)
 
 __all__ = [
     "ExperimentResult",
@@ -22,4 +30,8 @@ __all__ = [
     "RewardLearningConfig",
     "ThreatAvoidanceExperiment",
     "ThreatAvoidanceConfig",
+    "PainResponseExperiment",
+    "PainResponseConfig",
+    "ForgettingExperiment",
+    "ForgettingConfig",
 ]

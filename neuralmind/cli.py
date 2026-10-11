@@ -26,11 +26,21 @@ from neuralmind.experiments.threat_avoidance import (
     ThreatAvoidanceConfig,
     ThreatAvoidanceExperiment,
 )
+from neuralmind.experiments.pain_response import (
+    PainResponseConfig,
+    PainResponseExperiment,
+)
+from neuralmind.experiments.forgetting import (
+    ForgettingConfig,
+    ForgettingExperiment,
+)
 from neuralmind.persistence.store import ExperimentStore
 
 REGISTRY = {
     "reward_learning": (RewardLearningExperiment, RewardLearningConfig),
     "threat_avoidance": (ThreatAvoidanceExperiment, ThreatAvoidanceConfig),
+    "pain_response": (PainResponseExperiment, PainResponseConfig),
+    "forgetting": (ForgettingExperiment, ForgettingConfig),
 }
 
 
@@ -50,8 +60,10 @@ def _run(args: argparse.Namespace) -> int:
 
     if args.experiment == "reward_learning":
         result = exp.run(learning=not args.no_learning)
-    else:
+    elif args.experiment == "threat_avoidance":
         result = exp.run(paired=not args.unpaired)
+    else:  # pain_response, forgetting: no learning/paired switch
+        result = exp.run()
 
     print(f"experiment : {result.name}  [{result.status}]")
     print("metrics    :")

@@ -74,12 +74,14 @@ class Connection:
 
     def learn(self, pre_spikes: np.ndarray, post_spikes: np.ndarray,
               dt: float, modulator: float = 1.0) -> None:
-        if self._stdp is not None:
+        # ``plastic`` can be toggled at runtime to freeze learning (e.g. during
+        # a recall/test phase) even though the STDP state object still exists.
+        if self.plastic and self._stdp is not None:
             self._stdp.update(self.weights, pre_spikes, post_spikes, dt, modulator)
 
     def apply_reward(self, modulator: float) -> None:
         """Apply accumulated eligibility as a weight change (eligibility mode)."""
-        if self._stdp is not None:
+        if self.plastic and self._stdp is not None:
             self._stdp.apply_reward(self.weights, modulator)
 
 

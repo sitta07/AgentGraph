@@ -6,7 +6,7 @@ import numpy as np
 
 from neuralmind.core.network import Connection, SpikingNetwork
 from neuralmind.core.neurons import LIFPopulation
-from neuralmind.recorder import record
+from neuralmind.recorder import build_layout, record
 from neuralmind.viz import render_html
 
 
@@ -53,6 +53,42 @@ def test_render_html_is_self_contained(tmp_path):
     assert "application/json" in html
     assert "http://" not in html and "https://" not in html
     assert "<canvas" in html
+
+
+def test_build_layout_nodes_edges_matrix():
+    net = _net()
+    lay = build_layout(net, seed=0)
+    assert lay["total"] == 10          # 5 + 5 neurons
+    assert len(lay["nodes"]) == 10
+    assert len(lay["matrix"]) == 10 and len(lay["matrix"][0]) == 10
+    # Every node has a population and 3-D coords in range.
+    for n in lay["nodes"]:
+        assert n["p"] in {"a", "b"}
+        assert all(-2.0 <= n[k] <= 2.0 for k in ("x", "y", "z"))
+    # Edges reference valid global indices and carry the weight.
+    assert lay["edges"]
+    for e in lay["edges"]:
+        assert 0 <= e["s"] < 10 and 0 <= e["t"] < 10
+
+
+def test_record_with_layout_captures_activity():
+    net = _net()
+    rec = record(net, steps=15, external={"a": 6.0}, layout=True)
+    assert len(rec.nodes) == 10
+    assert len(rec.activity) == 15
+    assert all(len(frame) == 10 for frame in rec.activity)
+    # Activity is a bounded glow in [0, 1].
+    assert all(0.0 <= v <= 1.0 for frame in rec.activity for v in frame)
+    # The driven population should light up at some point.
+    assert max(max(f) for f in rec.activity) > 0.0
+
+
+def test_render_html_brain_view_is_self_contained(tmp_path):
+    net = _net()
+    rec = record(net, steps=12, external={"a": 6.0}, layout=True)
+    html = render_html(rec, tmp_path / "b.html").read_text(encoding="utf-8")
+    assert "net3d" in html and "matrix" in html
+    assert "http://" not in html and "https://" not in html
 
 
 def test_extra_series_recorded_rounded():

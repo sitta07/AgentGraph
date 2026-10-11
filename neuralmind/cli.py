@@ -169,6 +169,7 @@ def _visualize(args: argparse.Namespace) -> int:
                 "threat": affect.threat}
 
     rec = record(net, args.steps, external=external, extra_series=extra,
+                 layout=True, layout_seed=args.seed,
                  meta={"demo": "input->E/I network with affect read-out"})
     out = render_html(rec, args.out,
                       title="NeuralMind — E/I network activity",

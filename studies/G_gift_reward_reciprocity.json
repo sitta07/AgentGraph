@@ -1,0 +1,20 @@
+{
+  "id": "G_gift_reward_reciprocity",
+  "title": "Does learning increase sharing because receiving a gift is rewarding?",
+  "question": "In Experiments C and C2, selfish lifetime learning roughly doubled sharing, even when we condition on a neighbour being in reach, so crowding does not explain it. Is the effect driven by recipients being rewarded for gifts, which reinforces whatever their own network was doing (often sharing)?",
+  "background": "When a gift is received, the recipient's reward counts the energy gained. If the recipient's share population was active, that pathway is potentiated, a learned reciprocity loop. Ablation: gift_reward=false still transfers the energy but gives no reward credit for it.",
+  "simulator": "evolution",
+  "seeds": 6,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "learn_gift":   {"config": {"gift_reward": true},  "learning": true},
+    "learn_nogift": {"config": {"gift_reward": false}, "learning": true},
+    "nolearn":      {"config": {"gift_reward": true},  "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H13", "statement": "Removing gift reward lowers learned sharing", "metric": "share_given_encounter", "a": "learn_gift", "b": "learn_nogift", "direction": "greater"},
+    {"id": "H13b", "statement": "Without gift reward, learning no longer raises sharing above no-learning", "metric": "share_given_encounter", "a": "learn_nogift", "b": "nolearn", "direction": "none"},
+    {"id": "H13c", "statement": "Replication: with gift reward, learning raises sharing", "metric": "share_given_encounter", "a": "learn_gift", "b": "nolearn", "direction": "greater"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "F_viscosity_extinction",
+  "title": "Does spatial structure protect evolving populations from extinction?",
+  "question": "Do well-mixed populations (offspring born anywhere) go extinct more often than viscous ones (offspring born near their parents), and do they evolve higher aggression?",
+  "background": "Exploratory observation in Experiment C2: 7/12 well-mixed populations went extinct vs 2/12 viscous (Fisher p = 0.09, not significant). In the one surviving well-mixed+learning run the aggression gene reached 3.2 vs ~1.9 in viscous runs. This mirrors Kerr et al. (2006, Nature): restricted migration favours restraint and avoids a tragedy of the commons. This study re-tests it with more seeds.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "mixed":   {"config": {"viscous": false}, "learning": true},
+    "viscous": {"config": {"viscous": true},  "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H14", "statement": "Well-mixed populations go extinct more often", "metric": "extinct01", "a": "mixed", "b": "viscous", "direction": "greater"},
+    {"id": "H14b", "statement": "Well-mixed populations die out sooner", "metric": "survival_ticks", "a": "mixed", "b": "viscous", "direction": "less"},
+    {"id": "H15", "statement": "The aggression gene evolves higher in well-mixed populations (surviving runs)", "metric": "aggr_gene", "a": "mixed", "b": "viscous", "direction": "greater"}
+  ]
+}

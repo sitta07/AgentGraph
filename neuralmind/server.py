@@ -75,7 +75,7 @@ class Session:
                 kwargs[k] = v if v in ("align", "approach") else "align"
                 continue
             if k in ("normalize", "social", "evolve", "viscous", "lamarckian",
-                     "affect_from_primary"):
+                     "affect_from_primary", "gift_reward"):
                 kwargs[k] = bool(v)
                 continue
             try:

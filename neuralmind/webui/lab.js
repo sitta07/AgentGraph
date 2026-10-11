@@ -51,14 +51,14 @@ function card(s) {
     ${charts ? `<div class="charts">${charts}</div>` : ""}
     ${s.has_report ? `<div class="row" style="margin-top:12px">
       <button class="ghost" onclick="openReport('${esc(s.folder)}')">Full report</button>
-      <a class="note" href="https://github.com/sitta07/AgentGraph/tree/main/results/${encodeURIComponent(s.folder)}" target="_blank">raw data on GitHub ↗</a></div>` : ""}
+      <a class="note" href="https://github.com/sitta07/NeuralMind/tree/main/results/${encodeURIComponent(s.folder)}" target="_blank">raw data on GitHub ↗</a></div>` : ""}
   </div>`;
 }
 
 function prereg(p, dev) {
   if (!p) return "";
   const ok = p.preregistered;
-  const link = p.commit ? `<a href="https://github.com/sitta07/AgentGraph/blob/${p.commit}/${p.spec_path}" target="_blank">${p.commit.slice(0, 7)}</a>` : "none";
+  const link = p.commit ? `<a href="https://github.com/sitta07/NeuralMind/blob/${p.commit}/${p.spec_path}" target="_blank">${p.commit.slice(0, 7)}</a>` : "none";
   const d = dev && Object.keys(dev).length ? ` · <span style="color:var(--warn)">deviations: ${esc(JSON.stringify(dev))}</span>` : "";
   return `<div class="note" style="margin-bottom:10px">${ok ? "🔒 pre-registered" : "⚠️ not pre-registered"} · spec ${link}${d}</div>`;
 }

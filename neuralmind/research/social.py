@@ -120,7 +120,7 @@ def _parallel(jobs: list) -> list:
 def deprivation_aggression(seeds: int = 10, ticks: int = 300, deprive_at: int = 150,
                            n_agents: int = 5) -> dict:
     conditions = {"intact": (1.0, True), "ablated": (0.0, True),
-                  "intact_v1": (1.0, False), "ablated_v1": (0.0, False)}
+                  "intact_shaped_affect": (1.0, False), "ablated_shaped_affect": (0.0, False)}
     jobs, keys = [], []
     for name, (gain, primary) in conditions.items():
         for s in range(seeds):
@@ -265,7 +265,7 @@ def write_report(results: dict, out_dir: Path) -> Path:
                   f"Design: {A['design']}", "",
                   "| condition | attack rate (fed) | attack rate (deprived) | change | frustration fed → deprived |",
                   "|---|---|---|---|---|"]
-        for c in ("intact", "ablated", "intact_v1", "ablated_v1"):
+        for c in ("intact", "ablated", "intact_shaped_affect", "ablated_shaped_affect"):
             lines.append(f"| {c} | {_fmt(s[c]['attack_rate_fed'])} | {_fmt(s[c]['attack_rate_deprived'])} | "
                          f"{_fmt(s[c]['deprivation_effect'])} | "
                          f"{s[c]['frustration_fed']['mean']:.2f} → {s[c]['frustration_deprived']['mean']:.2f} |")
@@ -275,8 +275,8 @@ def write_report(results: dict, out_dir: Path) -> Path:
         for c in ("intact", "ablated"):
             lines.append(f"| {c} | {_fmt(s[c]['encounter_share_fed'])} → {_fmt(s[c]['encounter_share_deprived'])} | "
                          f"{_fmt(s[c]['attack_given_encounter_fed'])} | {_fmt(s[c]['attack_given_encounter_deprived'])} |")
-        lines += ["", "`_v1` rows use the pilot model where shaping noise also drove affect "
-                      "(`affect_from_primary=False`); kept for transparency."]
+        lines += ["", "`*_shaped_affect` rows compute affect from the full shaped learning "
+                      "reward (`affect_from_primary=False`)."]
         lines += ["", f"Mediation (intact effect − ablated effect): {_fmt(s['mediation'])}", "",
                   f"Verdict: H1 = **{A['verdict']['H1_deprivation_increases_attacks']}**, "
                   f"H2 = **{A['verdict']['H2_effect_mediated_by_frustration_pathway']}** "

@@ -24,7 +24,7 @@ Deliberate approximations (documented, not biological claims):
 Backwards compatibility: ``World2D`` exposes the first agent's state through
 ``agent``/``heading``/``energy``/``net``/``sense()``/``_decide()``/``_move()``
 etc., so single-agent code and tests are unaffected. The random-number draw
-order for the first agent is identical to the original single-agent engine.
+order for the first agent does not depend on how many agents there are.
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ class WorldConfig:
     r_align: float = 4.0
     r_hazard: float = 1.0
     ticks_per_day: int = 60
-    # --- social layer (opt-in; off = original single-species engine) ---
+    # --- social layer (opt-in) ---
     social: bool = False
     attack_radius: float = 0.08    # reach for attack / share
     steal: float = 0.15            # energy taken from a victim per hit
@@ -91,10 +91,9 @@ class WorldConfig:
     r_hurt: float = 1.0            # penalty per food-unit of energy stolen from you
     aggression_gain: float = 1.0   # frustration -> current into 'attack' (nA)
     w_social_scale: float = 0.85   # initial input-weight scale for social actions
-    # Affect (and therefore the frustration->aggression drive) is computed from
-    # the RPE of the *primary* reward (eating, hazards, theft, being hurt), not
-    # from the learning-only shaping term. v1 (False) let shaping noise drive
-    # frustration, which a pilot study showed to be an artifact.
+    # True: affect (and the frustration->aggression drive) follows the RPE of
+    # the primary reward (eating, hazards, theft, being hurt) only.
+    # False: affect follows the full learning reward, including shaping.
     affect_from_primary: bool = True
     # --- evolution (opt-in): reproduction with heritable, mutating genomes ---
     evolve: bool = False
@@ -371,8 +370,8 @@ class World2D:
         if not reuse:
             self.agents = [Agent(c, i) for i in range(max(1, c.n_agents))]
 
-        # --- agent 0 first, in the ORIGINAL draw order (heading, food, hazards,
-        #     weights) so single-agent numerics are byte-identical. ---
+        # Agent 0 draws heading, food, hazards, weights in this fixed order,
+        # independent of how many agents follow.
         a0 = self.agents[0]
         a0.spawn(np.array([c.size / 2, c.size / 2]),
                  float(self.rng.uniform(0, 2 * math.pi)))

@@ -19,6 +19,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 
 RESULTS = Path(__file__).resolve().parent.parent / "results"
+STUDIES = Path(__file__).resolve().parent.parent / "studies"
 router = APIRouter(prefix="/api/lab")
 
 _JOBS: dict[str, dict] = {}
@@ -44,7 +45,10 @@ def _cards_from(name: str, data: dict) -> list[dict]:
             tests = {"mediation(intact - ablated deprivation effect)": b["summary"]["mediation"]}
         cards.append({
             "id": f"{name}/{exp}", "folder": name, "experiment": exp,
-            "title": STUDY_TITLES.get(exp, exp.replace("_", " ")),
+            "title": b.get("title") or STUDY_TITLES.get(exp, exp.replace("_", " ")),
+            "question": b.get("question", ""),
+            "preregistration": b.get("preregistration"),
+            "deviations": b.get("deviations") or {},
             "design": b.get("design", {}), "verdict": b.get("verdict", {}),
             "tests": {k: v for k, v in tests.items() if isinstance(v, dict) and "mean" in v},
         })
@@ -82,6 +86,26 @@ def report(folder: str):
     return {"markdown": (d / "REPORT.md").read_text()}
 
 
+@router.get("/specs")
+def specs():
+    """Registered studies in studies/*.json, with whether results exist yet."""
+    from neuralmind.research.spec import load, preregistration
+    out = []
+    for f in sorted(STUDIES.glob("*.json")) if STUDIES.exists() else []:
+        try:
+            sp = load(f)
+        except (ValueError, json.JSONDecodeError) as e:
+            out.append({"file": f.name, "error": str(e)})
+            continue
+        out.append({"id": sp["id"], "file": f.name, "title": sp["title"],
+                    "question": sp["question"], "seeds": sp.get("seeds"),
+                    "ticks": sp.get("ticks"), "hypotheses": sp["hypotheses"],
+                    "conditions": list(sp["conditions"]),
+                    "preregistration": preregistration(f),
+                    "has_results": (RESULTS / sp["id"] / "results.json").exists()})
+    return {"specs": out}
+
+
 # --------------------------------------------------------------- launching
 KINDS = {
     "social": "Lifetime social learning (A + B)",
@@ -90,10 +114,15 @@ KINDS = {
 }
 
 
-def _run(job_id: str, kind: str, seeds: int, ticks: int) -> None:
-    out = RESULTS / f"lab_{time.strftime('%Y%m%d_%H%M%S')}_{kind}"
+def _run(job_id: str, kind: str, seeds: int, ticks: int, spec_id: str | None = None) -> None:
+    out = RESULTS / f"lab_{time.strftime('%Y%m%d_%H%M%S')}_{spec_id or kind}"
     try:
-        if kind == "social":
+        if kind == "spec":
+            from neuralmind.research import spec as sp
+            path = STUDIES / f"{spec_id}.json"
+            res = sp.run(sp.load(path), path, seeds, ticks)
+            sp.write(res, out)
+        elif kind == "social":
             from neuralmind.research import social
             res = {"deprivation_aggression": social.deprivation_aggression(seeds=seeds),
                    "scarcity_kinship": social.scarcity_kinship(seeds=max(2, seeds))}
@@ -117,18 +146,23 @@ def _run(job_id: str, kind: str, seeds: int, ticks: int) -> None:
 def run(body: dict | None = None):
     body = body or {}
     kind = body.get("kind", "kin")
-    if kind not in KINDS:
-        raise HTTPException(400, f"kind must be one of {list(KINDS)}")
+    spec_id = body.get("spec")
+    if kind == "spec":
+        if not spec_id or not (STUDIES / f"{spec_id}.json").exists() or "/" in spec_id:
+            raise HTTPException(400, "unknown spec")
+    elif kind not in KINDS:
+        raise HTTPException(400, f"kind must be one of {list(KINDS) + ['spec']}")
     seeds = min(max(int(body.get("seeds", 3)), 2), 20)
     ticks = min(max(int(body.get("ticks", 1500)), 200), 20000)
     with _LOCK:
         if any(j["status"] == "running" for j in _JOBS.values()):
             raise HTTPException(409, "an experiment is already running")
         job_id = f"job{len(_JOBS) + 1}"
-        _JOBS[job_id] = {"id": job_id, "kind": kind, "title": KINDS[kind], "seeds": seeds,
+        _JOBS[job_id] = {"id": job_id, "kind": kind, "seeds": seeds,
+                         "title": f"Registered study {spec_id}" if kind == "spec" else KINDS[kind],
                          "ticks": ticks, "status": "running",
                          "started": time.strftime("%H:%M:%S")}
-    threading.Thread(target=_run, args=(job_id, kind, seeds, ticks), daemon=True).start()
+    threading.Thread(target=_run, args=(job_id, kind, seeds, ticks, spec_id), daemon=True).start()
     return _JOBS[job_id]
 
 

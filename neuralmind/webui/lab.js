@@ -11,6 +11,10 @@ function badge(key, val) {
     const txt = nullKey ? (val ? "null retained" : "null rejected") : (val ? "supported" : "not supported");
     return `<span class="badge ${val ? "yes" : "no"}" title="${esc(key)}">${esc(label.replace(/ (supported|null retained)$/, ""))}: ${txt}</span>`;
   }
+  if (typeof val === "string") {
+    const cls = val === "supported" ? "yes" : val === "not supported" ? "no" : "val";
+    return `<span class="badge ${cls}" title="${esc(key)}">${esc(key)}: ${esc(val)}</span>`;
+  }
   return `<span class="badge val" title="${esc(key)}">${esc(label)}: ${typeof val === "number" ? val.toFixed(3) : esc(val)}</span>`;
 }
 
@@ -40,6 +44,8 @@ function card(s) {
   return `<div class="panel card">
     <h3>${esc(s.title)}</h3>
     <div class="meta">${esc(s.folder)} · ${seeds}${ticks} · updated ${esc(s.modified)}</div>
+    ${s.question ? `<p class="note" style="margin:-4px 0 10px">${esc(s.question)}</p>` : ""}
+    ${prereg(s.preregistration, s.deviations)}
     <div class="badges">${Object.entries(s.verdict).map(([k, v]) => badge(k, v)).join("")}</div>
     ${tests || '<div class="note">No test statistics recorded.</div>'}
     ${charts ? `<div class="charts">${charts}</div>` : ""}
@@ -48,6 +54,34 @@ function card(s) {
       <a class="note" href="https://github.com/sitta07/AgentGraph/tree/main/results/${encodeURIComponent(s.folder)}" target="_blank">raw data on GitHub ↗</a></div>` : ""}
   </div>`;
 }
+
+function prereg(p, dev) {
+  if (!p) return "";
+  const ok = p.preregistered;
+  const link = p.commit ? `<a href="https://github.com/sitta07/AgentGraph/blob/${p.commit}/${p.spec_path}" target="_blank">${p.commit.slice(0, 7)}</a>` : "none";
+  const d = dev && Object.keys(dev).length ? ` · <span style="color:var(--warn)">deviations: ${esc(JSON.stringify(dev))}</span>` : "";
+  return `<div class="note" style="margin-bottom:10px">${ok ? "🔒 pre-registered" : "⚠️ not pre-registered"} · spec ${link}${d}</div>`;
+}
+
+async function loadSpecs() {
+  const d = await (await fetch("/api/lab/specs")).json();
+  $("specs").innerHTML = d.specs.map(s => s.error ? `<div class="note">${esc(s.file)}: ${esc(s.error)}</div>` : `
+    <div class="job" style="align-items:flex-start">
+      <span class="dotst ${s.has_results ? "done" : ""}" style="margin-top:6px;${s.has_results ? "" : "background:#5b6472"}"></span>
+      <div style="flex:1"><b>${esc(s.title)}</b><br>
+        <span class="note">${esc(s.question)}</span><br>
+        <span class="note">${s.hypotheses.map(h => `<b>${esc(h.id)}</b> ${esc(h.statement)}`).join(" · ")}</span><br>
+        <span class="note">${s.preregistration.preregistered ? "🔒 registered at " + s.preregistration.commit.slice(0, 7) : "⚠️ not committed yet"} · ${s.seeds} seeds · ${s.ticks} ticks · ${s.has_results ? "results available" : "not run yet"}</span></div>
+      <button class="ghost" onclick="runSpec('${esc(s.id)}', ${s.seeds}, ${s.ticks})">▶ Run as registered</button>
+    </div>`).join("");
+}
+async function runSpec(id, seeds, ticks) {
+  const r = await fetch("/api/lab/run", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({kind: "spec", spec: id, seeds, ticks})});
+  if (!r.ok) { alert((await r.json()).detail || "could not start"); return; }
+  loadJobs();
+}
+window.runSpec = runSpec;
 
 // Minimal Markdown for our auto-generated reports: headings, lists, tables, images, code, bold.
 function md(src, folder) {
@@ -99,7 +133,7 @@ async function loadJobs() {
     <span class="dotst ${j.status}"></span><b>${esc(j.title)}</b>
     <span class="note">${j.seeds} seeds · ${j.ticks} ticks · started ${j.started}${j.finished ? " · finished " + j.finished : ""}</span>
     <span class="note">${j.status === "error" ? "error: " + esc((j.error || "").split("\n").slice(-2).join(" ")) : j.status}</span></div>`).join("");
-  if (!running && polling) { clearInterval(polling); polling = null; loadStudies(); }
+  if (!running && polling) { clearInterval(polling); polling = null; loadStudies(); loadSpecs(); }
   if (running && !polling) polling = setInterval(loadJobs, 3000);
 }
 
@@ -111,4 +145,4 @@ $("runBtn").onclick = async () => {
   loadJobs();
 };
 
-loadStudies(); loadJobs();
+loadStudies(); loadJobs(); loadSpecs();

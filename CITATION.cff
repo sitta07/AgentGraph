@@ -12,7 +12,7 @@ abstract: >-
 authors:
   - given-names: Sitta
     family-names: Boonkaew
-repository-code: "https://github.com/sitta07/AgentGraph"
+repository-code: "https://github.com/sitta07/NeuralMind"
 license: MIT
 keywords:
   - artificial life

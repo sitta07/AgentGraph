@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sitta07/AgentGraph/actions/workflows/tests.yml"><img src="https://github.com/sitta07/AgentGraph/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
+  <a href="https://github.com/sitta07/NeuralMind/actions/workflows/tests.yml"><img src="https://github.com/sitta07/NeuralMind/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
   <img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-blue" alt="python">
   <img src="https://img.shields.io/badge/PettingZoo-ParallelEnv-8a5cf6" alt="PettingZoo">
@@ -57,7 +57,7 @@ and new studies are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 ## 🚀 Quickstart
 
 ```bash
-git clone https://github.com/sitta07/AgentGraph.git && cd AgentGraph
+git clone https://github.com/sitta07/NeuralMind.git && cd NeuralMind
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements-neuralmind.txt -r requirements-server.txt -r requirements-research.txt
 
@@ -191,7 +191,7 @@ unchanged and is independent of NeuralMind.
 
 <div align="center">
 
-[![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen.svg)](https://github.com/sitta07/AgentGraph)
+[![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen.svg)](https://github.com/sitta07/NeuralMind)
 [![Built with LangGraph](https://img.shields.io/badge/Built%20with-LangGraph-blue.svg)](https://langchain-ai.github.io/langgraph/)
 [![Built with LangSmith](https://img.shields.io/badge/Built%20with-LangSmith-green.svg)](https://smith.langchain.com/)
 [![Built with Streamlit](https://img.shields.io/badge/Built%20with-Streamlit-red.svg)](https://streamlit.io/)
@@ -251,8 +251,8 @@ A multi-agent system for real-time system design, security evaluation, and archi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/sitta07/AgentGraph.git
-cd AgentGraph
+git clone https://github.com/sitta07/NeuralMind.git
+cd NeuralMind
 ```
 
 2. Create a Python virtual environment:

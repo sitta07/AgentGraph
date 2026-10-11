@@ -44,11 +44,12 @@ declared in `requirements.txt` and carry their respective upstream licenses.
 
 | Asset | Author | License | Location | Use |
 |---|---|---|---|---|
-| Tiny Town 1.1 (tilemap_packed.png) | Kenney (www.kenney.nl) | CC0 1.0 | `neuralmind/webui/assets/kenney/tiny_town.png` | grass, tree border, mushroom (food) tiles |
-| Tiny Dungeon (tilemap_packed.png) | Kenney (www.kenney.nl) | CC0 1.0 | `neuralmind/webui/assets/kenney/tiny_dungeon.png` | people sprites, spike/fire hazard tiles, gravestone |
+| [Tiny Town 1.1](https://kenney.nl/assets/tiny-town) (tilemap_packed.png) | [Kenney](https://kenney.nl) | CC0 1.0 | `neuralmind/webui/assets/kenney/tiny_town.png` | grass, tree border, mushroom (food) tiles |
+| [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) (tilemap_packed.png) | [Kenney](https://kenney.nl) | CC0 1.0 | `neuralmind/webui/assets/kenney/tiny_dungeon.png` | people sprites, spike/fire hazard tiles, gravestone |
 
 The original `License.txt` files are kept next to the images. CC0 requires no
-attribution; Kenney is credited here as a courtesy.
+attribution; we credit Kenney anyway: here, in the README, and in the footer
+of both web pages.
 
 ## Web backend dependencies (optional, pip-installed, not vendored)
 

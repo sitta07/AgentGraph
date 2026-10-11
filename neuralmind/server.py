@@ -34,6 +34,9 @@ _BOUNDS = {
     "share_amount": (0.0, 1.0), "share_benefit": (0.0, 5.0), "signal_range": (0.05, 2.0),
     "signal_cost": (0.0, 0.1), "r_prosocial": (0.0, 1.0), "r_hurt": (0.0, 10.0),
     "aggression_gain": (0.0, 10.0), "w_social_scale": (0.1, 1.5),
+    "repro_threshold": (0.5, 1.5), "repro_cost": (0.05, 1.0), "max_pop": (2, 60),
+    "max_age": (50, 20000), "mut_sigma": (0.0, 1.0), "trait_sigma": (0.0, 2.0),
+    "birth_radius": (0.0, 0.5),
     "sensor_range": (0.05, 2.0), "speed": (0.002, 0.1), "turn": (0.05, 1.5),
     "e0": (0.1, 5.0), "food_energy": (0.0, 2.0), "move_cost": (0.0, 0.1),
     "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 20),
@@ -70,7 +73,8 @@ class Session:
             if k == "reward_mode":
                 kwargs[k] = v if v in ("align", "approach") else "align"
                 continue
-            if k in ("normalize", "social"):
+            if k in ("normalize", "social", "evolve", "viscous", "lamarckian",
+                     "affect_from_primary"):
                 kwargs[k] = bool(v)
                 continue
             try:
@@ -83,7 +87,7 @@ class Session:
                 lo, hi = _BOUNDS[k]
                 v = min(max(v, lo), hi)
             if k in ("n_agents", "n_food", "n_hazard", "max_ticks", "n_action",
-                     "substeps", "seed", "ticks_per_day"):
+                     "substeps", "seed", "ticks_per_day", "max_pop", "max_age"):
                 v = int(round(v))
             kwargs[k] = v
         return WorldConfig(**kwargs)
@@ -135,6 +139,22 @@ def step(body: dict | None = None):
             "distance": round(w.distance, 3),
         },
     }
+
+
+@app.get("/api/brain/{agent_id}")
+def brain(agent_id: int):
+    """One agent's own brain right now: 3-D layout, its current (learned)
+    weights as edges and connectivity matrix, plus its live spike glow."""
+    if SESSION.world is None:
+        raise HTTPException(409, "no session")
+    ag = next((a for a in SESSION.world.agents if a.id == agent_id), None)
+    if ag is None:
+        raise HTTPException(404, f"agent {agent_id} not found")
+    lay = ag.brain_layout()
+    return {"id": ag.id, "node_order": ag._node_order,
+            "sizes": {p: ag.net.populations[p].n for p in ag._node_order},
+            "layout": {"nodes": lay["nodes"], "edges": lay["edges"], "matrix": lay["matrix"]},
+            "glow": ag.neural_glow(), "actions": list(ag.actions)}
 
 
 @app.post("/api/advance")

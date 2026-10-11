@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use NeuralMind in your research, please cite it as below."
+title: "NeuralMind: an artificial-life laboratory of spiking-neural agents"
+abstract: >-
+  A local-first, reproducible artificial-life world in which agents are driven
+  by spiking neural networks with reward-modulated plasticity. Agents can
+  perceive one another, attack, share and signal, and they can reproduce with
+  mutating innate brains. The world exposes a PettingZoo ParallelEnv interface,
+  so learned policies and spiking brains can be compared under identical
+  rules. It ships pre-registered, multi-seed studies with committed raw
+  results.
+authors:
+  - given-names: Sitta
+    family-names: Boonkaew
+repository-code: "https://github.com/sitta07/AgentGraph"
+license: MIT
+keywords:
+  - artificial life
+  - spiking neural networks
+  - multi-agent systems
+  - evolution of cooperation
+  - kin selection
+  - PettingZoo
+type: software

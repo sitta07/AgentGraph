@@ -77,6 +77,11 @@ class Connection:
         if self._stdp is not None:
             self._stdp.update(self.weights, pre_spikes, post_spikes, dt, modulator)
 
+    def apply_reward(self, modulator: float) -> None:
+        """Apply accumulated eligibility as a weight change (eligibility mode)."""
+        if self._stdp is not None:
+            self._stdp.apply_reward(self.weights, modulator)
+
 
 class SpikingNetwork:
     """Container that steps populations and their connections in lockstep."""
@@ -115,6 +120,8 @@ class SpikingNetwork:
         self._built = True
 
     def reset(self) -> None:
+        if not self._built:
+            self.build()
         for pop in self.populations.values():
             pop.reset()
         for c in self.connections:
@@ -168,3 +175,13 @@ class SpikingNetwork:
 
         self.t += self.dt
         return spikes
+
+    def apply_reward(self, modulator: float) -> None:
+        """Deliver a global reward signal to every plastic connection.
+
+        Used with eligibility-mode STDP (three-factor learning): synapses that
+        were recently co-active have a non-zero eligibility trace and are
+        changed in proportion to ``modulator`` (e.g. a reward prediction error).
+        """
+        for c in self.connections:
+            c.apply_reward(modulator)

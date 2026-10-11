@@ -38,12 +38,19 @@ class STDPConfig:
     tau_minus: float = 20.0   # depression trace time constant (ms)
     w_min: float = 0.0        # lower weight bound
     w_max: float = 1.0        # upper weight bound
+    tau_eligibility: float | None = None
+    # If set (ms), STDP changes accumulate into a decaying eligibility trace
+    # instead of modifying weights immediately. Weights then change only when
+    # apply_reward() is called (three-factor learning). If None, STDP is
+    # applied immediately, gated by the per-step modulator.
 
     def __post_init__(self) -> None:
         if self.tau_plus <= 0 or self.tau_minus <= 0:
             raise ValueError("STDP time constants must be > 0")
         if self.w_max <= self.w_min:
             raise ValueError("w_max must be > w_min")
+        if self.tau_eligibility is not None and self.tau_eligibility <= 0:
+            raise ValueError("tau_eligibility must be > 0 when set")
 
 
 class STDPSynapse:
@@ -64,10 +71,12 @@ class STDPSynapse:
         self.config = config or STDPConfig()
         self.x_pre = np.zeros(n_pre, dtype=np.float64)
         self.x_post = np.zeros(n_post, dtype=np.float64)
+        self.eligibility = np.zeros((n_post, n_pre), dtype=np.float64)
 
     def reset(self) -> None:
         self.x_pre[:] = 0.0
         self.x_post[:] = 0.0
+        self.eligibility[:] = 0.0
 
     def update(
         self,
@@ -77,9 +86,12 @@ class STDPSynapse:
         dt: float,
         modulator: float = 1.0,
     ) -> np.ndarray:
-        """Decay traces, apply STDP, and return the clipped weight matrix.
+        """Decay traces, apply STDP, and return the (possibly unchanged) weights.
 
-        ``weights`` has shape ``(n_post, n_pre)`` and is modified in place.
+        ``weights`` has shape ``(n_post, n_pre)`` and is modified in place when
+        STDP is in immediate mode (``tau_eligibility is None``). In eligibility
+        mode the net STDP change is accumulated into ``self.eligibility`` and
+        weights are left untouched until :meth:`apply_reward` is called.
         """
         c = self.config
         # Decay traces, then register this step's spikes.
@@ -88,14 +100,29 @@ class STDPSynapse:
         self.x_pre[pre_spikes] += 1.0
         self.x_post[post_spikes] += 1.0
 
+        dw = np.zeros_like(weights)
         # Potentiation: post spikes paired with recent pre activity.
         if post_spikes.any():
-            dw_pot = c.a_plus * np.outer(post_spikes.astype(np.float64), self.x_pre)
-            weights += modulator * dw_pot
+            dw += c.a_plus * np.outer(post_spikes.astype(np.float64), self.x_pre)
         # Depression: pre spikes paired with recent post activity.
         if pre_spikes.any():
-            dw_dep = c.a_minus * np.outer(self.x_post, pre_spikes.astype(np.float64))
-            weights -= modulator * dw_dep
+            dw -= c.a_minus * np.outer(self.x_post, pre_spikes.astype(np.float64))
 
+        if c.tau_eligibility is None:
+            weights += modulator * dw
+            np.clip(weights, c.w_min, c.w_max, out=weights)
+        else:
+            self.eligibility *= np.exp(-dt / c.tau_eligibility)
+            self.eligibility += dw
+        return weights
+
+    def apply_reward(self, weights: np.ndarray, modulator: float) -> np.ndarray:
+        """Convert accumulated eligibility into a weight change (three-factor).
+
+        ``delta_w = modulator * eligibility`` is applied and clipped. Only
+        meaningful in eligibility mode.
+        """
+        c = self.config
+        weights += modulator * self.eligibility
         np.clip(weights, c.w_min, c.w_max, out=weights)
         return weights

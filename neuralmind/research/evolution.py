@@ -80,6 +80,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     # communication: does signalling carry information about the signaller's
     # state, and does hearing a signal change what the listener does?
     tab = {k: np.zeros((2, 2)) for k in ("food", "threat", "hunger")}
+    enc_acts = Counter()                      # actions on ticks with a neighbour in reach
+    enc_d, enc_d_kin, enc_d_non, share_d = [], [], [], []
     heard_action = np.zeros((2, 6))
     for t in range(ticks):
         frame = w.step(learning=learning)
@@ -103,7 +105,13 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
                 if near:
                     enc_ticks += 1
                     o = min(near, key=lambda b: np.linalg.norm(b.pos - a.pos))
-                    enc_kin += w.relatedness(a, o) >= 0.25
+                    kin = w.relatedness(a, o) >= 0.25
+                    enc_kin += kin
+                    dd = float(np.linalg.norm(o.pos - a.pos))
+                    enc_d.append(dd)
+                    (enc_d_kin if kin else enc_d_non).append(dd)
+                    if names.get(a.id):
+                        enc_acts[names[a.id]] += 1
             for a in live:
                 sv = getattr(a, "last_sensors", None)
                 nm = names.get(a.id)
@@ -119,6 +127,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
                 if e["type"] == "share" and e["src"] in byid and e["dst"] in byid:
                     share_events += 1
                     share_kin += w.relatedness(byid[e["src"]], byid[e["dst"]]) >= 0.25
+                    share_d.append(float(np.linalg.norm(byid[e["src"]].pos - byid[e["dst"]].pos)))
         if t % sample_every == 0:
             series["t"].append(t)
             series["pop"].append(len(live))
@@ -143,6 +152,13 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_to_kin": share_kin / share_events if share_events else float("nan"),
         "encounter_kin": enc_kin / enc_ticks if enc_ticks else float("nan"),
         "share_events": share_events,
+        "share_given_encounter": enc_acts["share"] / enc_ticks if enc_ticks else float("nan"),
+        "attack_given_encounter": enc_acts["attack"] / enc_ticks if enc_ticks else float("nan"),
+        "encounter_rate": enc_ticks / n if alive_ticks else float("nan"),
+        "enc_dist": float(np.mean(enc_d)) if enc_d else float("nan"),
+        "enc_dist_kin": float(np.mean(enc_d_kin)) if enc_d_kin else float("nan"),
+        "enc_dist_nonkin": float(np.mean(enc_d_non)) if enc_d_non else float("nan"),
+        "share_dist": float(np.mean(share_d)) if share_d else float("nan"),
         "signals_in_window": int(sum(t_[1].sum() for t_ in tab.values()) / 3),
         **{f"mi_signal_{k}": mutual_information(v) for k, v in tab.items()},
         **{f"p_signal_{k}": g_test_p(v) for k, v in tab.items()},
@@ -179,6 +195,55 @@ def run_conditions(conditions: dict, seeds: int, ticks: int) -> dict:
     for n in conditions:
         summ[n]["extinctions"] = sum(r["extinct"] for r in raw[n])
     return {"raw": raw, "summary": summ}
+
+
+C2_METRICS = ("share_rate", "share_given_encounter", "encounter_rate", "share_to_kin",
+              "encounter_kin", "share_dist", "enc_dist", "enc_dist_kin", "enc_dist_nonkin",
+              "share_gene", "aggr_gene", "max_generation")
+
+
+def crowding_and_spatial_kin(seeds: int = 6, ticks: int = 18000) -> dict:
+    """Experiment C2 — tests the two post-hoc explanations of Experiment C.
+
+    H9 (crowding): conditioned on a neighbour in reach, learning no longer
+        raises sharing. Supported if the conditional learn-minus-nolearn
+        difference has a CI that includes 0 AND a point estimate below half
+        the unconditional difference.
+    H10 (spatial kin cue, viscous): share partners are closer than the average
+        in-reach nearest neighbour (enc_dist - share_dist > 0), and kin
+        neighbours are closer than non-kin (nonkin - kin > 0).
+    Also re-tests H5 with ~3x more generations."""
+    res = run_conditions({n: ({"viscous": v}, l) for n, (v, l) in CONDITIONS.items()},
+                         seeds, ticks)
+    col = lambda n, m: [r[m] for r in res["raw"][n]]
+    res["summary"] = {n: {m: mean_ci(col(n, m)) for m in C2_METRICS}
+                      for n in CONDITIONS}
+    uncond = paired_diff(col("viscous_learn", "share_rate"), col("viscous_nolearn", "share_rate"))
+    cond = paired_diff(col("viscous_learn", "share_given_encounter"),
+                       col("viscous_nolearn", "share_given_encounter"))
+    rel = lambda d, base: d["mean"] / base["mean"] if base["mean"] else float("nan")
+    dist = paired_diff(col("viscous_learn", "enc_dist") + col("viscous_nolearn", "enc_dist"),
+                       col("viscous_learn", "share_dist") + col("viscous_nolearn", "share_dist"))
+    kin_close = paired_diff(col("viscous_learn", "enc_dist_nonkin") + col("viscous_nolearn", "enc_dist_nonkin"),
+                            col("viscous_learn", "enc_dist_kin") + col("viscous_nolearn", "enc_dist_kin"))
+    h5 = paired_diff(col("viscous_nolearn", "share_gene"), col("mixed_nolearn", "share_gene"))
+    res.update({
+        "experiment": "crowding_and_spatial_kin", "version": __version__,
+        "design": {"seeds": seeds, "ticks": ticks, "base": BASE,
+                   "conditions": {k: {"viscous": v, "learning": l} for k, (v, l) in CONDITIONS.items()}},
+        "tests": {"learning_effect_on_share_rate(viscous)": uncond,
+                  "H9_learning_effect_on_share_given_encounter(viscous)": cond,
+                  "H10a_enc_dist_minus_share_dist(viscous)": dist,
+                  "H10b_nonkin_minus_kin_enc_dist(viscous)": kin_close,
+                  "H5_rerun_viscous_minus_mixed_share_gene": h5},
+        "verdict": {
+            "H9_supported": bool(cond["lo"] <= 0 <= cond["hi"] and cond["mean"] < 0.5 * uncond["mean"]),
+            "H9_conditional_effect_fraction": rel(cond, uncond),
+            "H10a_supported": bool(dist["lo"] > 0),
+            "H10b_supported": bool(kin_close["lo"] > 0),
+            "H5_rerun_supported": bool(h5["lo"] > 0)},
+    })
+    return res
 
 
 def scarcity_aggression(seeds: int = 6, ticks: int = 6000) -> dict:
@@ -337,9 +402,33 @@ def write_generic_report(res: dict, out: Path, title: str) -> Path:
     return p
 
 
+def write_c2_report(res: dict, out: Path) -> Path:
+    out.mkdir(parents=True, exist_ok=True)
+    f = lambda c: f"{c['mean']:.4f} [{c['lo']:.4f}, {c['hi']:.4f}]"
+    for m, t in (("share_gene", "Innate share drive"), ("share_rate", "Share rate"),
+                 ("aggr_gene", "Heritable aggression gain"), ("pop", "Population"),
+                 ("generation", "Mean generation")):
+        (out / f"series_{m}.svg").write_text(line_svg(res["raw"], m, t))
+    L = ["# Experiment C2 — crowding and spatial kin cues", "",
+         f"NeuralMind {res['version']} · {time.strftime('%Y-%m-%d %H:%M')} · "
+         "mean [95% bootstrap CI] over seeds, final 25% of each run.", "",
+         f"Design: `{json.dumps(res['design'])}`", "",
+         "| condition | " + " | ".join(C2_METRICS) + " |", "|---|" + "---|" * len(C2_METRICS)]
+    for n, c in res["summary"].items():
+        L.append(f"| {n} | " + " | ".join(f(c[m]) for m in C2_METRICS) + " |")
+    L += ["", "![](series_share_gene.svg) ![](series_share_rate.svg) ![](series_generation.svg)",
+          "![](series_aggr_gene.svg) ![](series_pop.svg)", "", "## Pre-registered tests", ""]
+    L += [f"- {k}: {f(v)}" for k, v in res["tests"].items()]
+    L += ["", f"Verdict: `{json.dumps(res['verdict'])}`"]
+    p = out / "REPORT.md"
+    p.write_text("\n".join(L))
+    (out / "results.json").write_text(json.dumps(res, indent=1, default=float))
+    return p
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--experiment", choices=["kin", "scarcity"], default="kin")
+    ap.add_argument("--experiment", choices=["kin", "scarcity", "c2"], default="kin")
     ap.add_argument("--seeds", type=int, default=6)
     ap.add_argument("--ticks", type=int, default=6000)
     ap.add_argument("--out", default="results/evolution_kin")
@@ -350,7 +439,10 @@ def main(argv=None) -> int:
         k, v = kv.split("=")
         extra[k] = (v.lower() == "true") if v.lower() in ("true", "false") else float(v) if "." in v else int(v)
     t0 = time.perf_counter()
-    if a.experiment == "scarcity":
+    if a.experiment == "c2":
+        res = crowding_and_spatial_kin(a.seeds, a.ticks)
+        p = write_c2_report(res, Path(a.out))
+    elif a.experiment == "scarcity":
         res = scarcity_aggression(a.seeds, a.ticks)
         p = write_generic_report(res, Path(a.out), "Experiment D — does aggression evolve under scarcity?")
     else:

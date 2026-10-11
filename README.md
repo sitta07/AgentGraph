@@ -1,3 +1,90 @@
+# NeuralMind — a local-first computational brain-simulation laboratory
+
+> **This repository is being transformed from the original *AgentGraph* LLM app
+> into *NeuralMind*, a scientifically-grounded platform for experimenting with
+> computational models of neurons, learning, memory, and affect-related
+> dynamics.** The original AgentGraph application is preserved below and still
+> works; the new NeuralMind engine lives in the `neuralmind/` package.
+
+**What NeuralMind is:** a transparent, reproducible neural simulator you can run
+on an ordinary laptop with **no GPU and no API key**. It implements leaky
+integrate-and-fire neurons, spike-timing-dependent plasticity, reward-modulated
+(three-factor) learning, and a low-dimensional affect/motivation layer, plus a
+set of runnable, tested experiments.
+
+**What NeuralMind is *not*:** a biologically complete brain, a conscious or
+sentient system, or evidence of subjective feeling. It uses deliberately
+simplified, documented approximations — see
+[`docs/research/SCIENTIFIC_EVIDENCE.md`](docs/research/SCIENTIFIC_EVIDENCE.md),
+which separates established findings from hypotheses and engineering choices.
+
+## Quickstart (NeuralMind)
+
+```bash
+# 1. From the repository root, create an isolated environment.
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+# 2. Install the only runtime/test dependencies (NumPy + pytest).
+pip install -r requirements-neuralmind.txt
+
+# 3. Run the test suite (should report "passed").
+python -m pytest tests/ -q
+
+# 4. List and run experiments.
+python -m neuralmind.cli list
+python -m neuralmind.cli run reward_learning --seed 0 --save
+python -m neuralmind.cli run reward_learning --seed 0 --no-learning   # baseline control
+python -m neuralmind.cli runs            # list saved runs
+python -m neuralmind.cli show 1          # inspect a saved run as JSON
+
+# 5. Benchmark the engine (real runtime + memory numbers).
+python -m neuralmind.bench --sizes 50 100 200 400 --steps 500
+```
+
+### Worked example: does reward change behaviour?
+
+`reward_learning` builds a context population projecting to two competing action
+populations (lateral inhibition = soft winner-take-all). A TD(0) reward
+prediction error modulates STDP via eligibility traces (three-factor learning).
+
+```bash
+python -m neuralmind.cli run reward_learning --seed 0                # with learning
+python -m neuralmind.cli run reward_learning --seed 0 --no-learning  # baseline
+```
+
+You should see `final_selection_rate` near chance (~0.4–0.6) **without** learning
+and clearly higher (~0.8–0.95) **with** learning — i.e. the agent learns to pick
+the rewarded action. Results are deterministic for a given `--seed`.
+
+### Available experiments
+
+| Name | Question | Status |
+|---|---|---|
+| `reward_learning` | Does reward-modulated STDP shift action selection? | validated (qualitative) |
+| `threat_avoidance` | Does a CS paired with an aversive US acquire a defensive response? | validated (qualitative) |
+| `pain_response` | Does a nociceptive-like input scale with intensity and recover? | exploratory |
+| `forgetting` | Does a new memory retroactively interfere with an old one? | exploratory |
+
+### Package layout
+
+```
+neuralmind/
+  core/        LIF neurons, synapses, STDP, SpikingNetwork
+  affect/      reward prediction error (TD), affect state variables
+  experiments/ reward_learning, threat_avoidance, pain_response, forgetting
+  persistence/ SQLite experiment store (save / reload / list)
+  knowledge/   local, source-cited document index (Subsystem B)
+  bench.py     runtime + memory benchmark harness
+  cli.py       command-line runner
+docs/          research report, reuse matrix, scientific evidence, ADRs, status
+tests/         pytest suite
+```
+
+See [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) for the
+current state, acceptance-criteria tracking, and next tasks.
+
+---
+
 # AgentGraph: AI Architecture Consultant
 
 <div align="center">

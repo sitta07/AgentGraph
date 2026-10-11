@@ -34,6 +34,7 @@ from neuralmind.experiments.forgetting import (
     ForgettingConfig,
     ForgettingExperiment,
 )
+from neuralmind.knowledge.index import KnowledgeIndex
 from neuralmind.persistence.store import ExperimentStore
 
 REGISTRY = {
@@ -103,6 +104,30 @@ def _show(args: argparse.Namespace) -> int:
     return 0
 
 
+def _search(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    idx = KnowledgeIndex()
+    root = Path(args.path)
+    files = ([root] if root.is_file()
+             else sorted(p for ext in ("*.md", "*.txt") for p in root.rglob(ext)))
+    for f in files:
+        try:
+            idx.ingest_file(f)
+        except OSError:
+            continue
+    print(f"indexed {len(idx)} passages from {len(files)} file(s)")
+    results = idx.search(args.query, top_k=args.top_k)
+    if not results:
+        print("(no matches)")
+        return 0
+    for r in results:
+        print(f"\n[{r.score:.3f}] {r.citation}")
+        snippet = " ".join(r.text.split())[:200]
+        print(f"    {snippet}")
+    return 0
+
+
 def _list(_args: argparse.Namespace) -> int:
     print("available experiments:")
     for name in REGISTRY:
@@ -137,6 +162,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("id", type=int)
     sp.add_argument("--db", default="neuralmind_experiments.sqlite")
     sp.set_defaults(func=_show)
+
+    sp = sub.add_parser("search", help="keyword-search local docs with source citations")
+    sp.add_argument("query")
+    sp.add_argument("--path", default="docs", help="file or directory to index")
+    sp.add_argument("--top-k", type=int, default=5)
+    sp.set_defaults(func=_search)
     return p
 
 

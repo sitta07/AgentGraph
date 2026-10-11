@@ -106,7 +106,7 @@ neuralmind-study studies/my_study.json # run a registered study
 | **Does spatial structure prevent extinction?** (F) | Exploratory in C2: well-mixed populations went extinct in 7/12 runs vs 2/12 (p = 0.09, not significant). Now re-tested with 12 seeds. | registered · queued |
 | **Is learned sharing a reciprocity loop driven by gift rewards?** (G) | ablation of the gift reward | registered · queued |
 | **Does an aggression gene evolve under scarcity?** (D, [write-up](docs/research/FINDINGS_D.md)) | The gene rose under scarcity (+0.75 [0.37, 1.04]), but **attack behaviour did not change**. Scarce worlds also ran 2× more generations, so drift has not been ruled out. | completed; neutral-marker control **D2** registered |
-| **Baldwin effect vs hiding effect** (E): does learning speed up or shield the evolution of innate ability? | pre-registered as competing predictions | running |
+| **Baldwin effect vs hiding effect** (E, [write-up](docs/research/FINDINGS_E.md)): does learning speed up or shield the evolution of innate ability? | **Hiding effect.** Without learning, evolution more than doubled innate foraging (+5.5 [3.3, 7.6]). With learning, innate ability stayed near founder level (−4.4 [−7.0, −1.5] vs no learning), even across more generations. | completed |
 | Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode (≈ +40%) | real but noisy |
 
 The full ranked agenda of open questions is in

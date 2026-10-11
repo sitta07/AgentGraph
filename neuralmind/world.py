@@ -474,7 +474,17 @@ class World2D:
         return [[round(float(x), 4), round(float(y), 4)] for x, y in self.hazards]
 
     # ---- stepping -------------------------------------------------------
-    def _advance_agent(self, ag: Agent, learning: bool) -> dict:
+    def observe(self, ag: Agent) -> np.ndarray:
+        """The agent's current egocentric sensor vector (what its brain sees)."""
+        if not self.cfg.social:
+            return ag.sense(self.food, self.hazards)
+        others = [o for o in self.agents if o is not ag and o.alive]
+        others_pos = np.array([o.pos for o in others]) if others else np.empty((0, 2))
+        heard = [q for (i, q) in getattr(self, "_signals_prev", []) if i != ag.id]
+        return ag.sense(self.food, self.hazards, others_pos,
+                        np.array(heard) if heard else np.empty((0, 2)))
+
+    def _advance_agent(self, ag: Agent, learning: bool, forced: int | None = None) -> dict:
         c = self.cfg
         others = [o for o in self.agents if o is not ag and o.alive] if c.social else []
         if c.social:
@@ -485,7 +495,12 @@ class World2D:
             sensors = ag.sense(self.food, self.hazards, others_pos, heard)
         else:
             sensors = ag.sense(self.food, self.hazards)
-        action, scores, _ = ag.decide(sensors, self.rng)
+        if forced is None:
+            action, scores, _ = ag.decide(sensors, self.rng)
+        else:                        # externally controlled (e.g. an RL policy)
+            action, scores = int(forced), np.zeros(len(ag.actions))
+            if not 0 <= action < len(ag.actions):
+                raise ValueError(f"action {action} out of range for agent {ag.id}")
         ag.move(action)
 
         # eating (shared food)
@@ -528,8 +543,8 @@ class World2D:
         reward = primary + shaped
         ag.total_reward += reward
 
-        rpe = ag.learn_and_affect(reward, sensors, in_hazard, learning, hurt=hurt,
-                                  primary=primary)
+        rpe = ag.learn_and_affect(reward, sensors, in_hazard,
+                                  learning and forced is None, hurt=hurt, primary=primary)
         if ag.energy <= 0:
             ag.alive = False
         ag.last_action, ag.last_scores = action, scores
@@ -601,14 +616,18 @@ class World2D:
             self.events.append({"type": "signal", "src": ag.id})
         return r, hurt
 
-    def step(self, learning: bool = True) -> dict:
-        """Advance every living agent by one world tick; return a frame."""
+    def step(self, learning: bool = True, actions: dict | None = None) -> dict:
+        """Advance every living agent by one world tick; return a frame.
+
+        ``actions`` optionally maps agent id -> action index for agents driven
+        by an external policy; all other agents are driven by their own SNN."""
+        actions = actions or {}
         self.events = []
         self._signals_now = []
         results = {}
         for ag in self.agents:
             if ag.alive:
-                results[ag.id] = self._advance_agent(ag, learning)
+                results[ag.id] = self._advance_agent(ag, learning, actions.get(ag.id))
             else:
                 results[ag.id] = {"action": ag.last_action, "scores": ag.last_scores,
                                   "reward": 0.0, "rpe": 0.0}

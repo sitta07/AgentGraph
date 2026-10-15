@@ -1,0 +1,23 @@
+{
+  "id": "N2_lamarck_bias_compounding",
+  "title": "Does Lamarckian inheritance compound the learning bias across generations?",
+  "question": "In Experiment N (not pre-registered as a hypothesis), Lamarckian populations attacked 2-3x more and went extinct in 9/16 runs vs 2/16 Darwinian. Inheriting learned weights may pass on the locomotion weakening found in I-K, so it accumulates over generations. Does that replicate on fresh seeds, and does a stimulus-specific critic (which should remove the bias) prevent it?",
+  "background": "share_gene is the inborn mean weight into 'share' divided by the inborn mean weight into locomotion; a rise means inherited wiring shifts toward social actions. The state critic is the intervention from Experiment R (critic='state'). Static world, viscous. Seeds 1300-1311 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1300,
+  "ticks": 12000,
+  "base": {"viscous": true},
+  "conditions": {
+    "darwin":        {"config": {"lamarckian": false}, "learning": true},
+    "lamarck":       {"config": {"lamarckian": true},  "learning": true},
+    "lamarck_state": {"config": {"lamarckian": true, "critic": "state"}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H28a", "statement": "Lamarckian populations die out sooner", "metric": "survival_ticks", "a": "lamarck", "b": "darwin", "direction": "less"},
+    {"id": "H28b", "statement": "Lamarckian populations go extinct more often", "metric": "extinct01", "a": "lamarck", "b": "darwin", "direction": "greater"},
+    {"id": "H28c", "statement": "Inherited wiring shifts toward social actions under Lamarckian inheritance", "metric": "share_gene", "a": "lamarck", "b": "darwin", "direction": "greater"},
+    {"id": "H28d", "statement": "A state critic lets Lamarckian populations survive longer", "metric": "survival_ticks", "a": "lamarck_state", "b": "lamarck", "direction": "greater"},
+    {"id": "H28e", "statement": "A state critic reduces the inherited shift toward social actions", "metric": "share_gene", "a": "lamarck", "b": "lamarck_state", "direction": "greater"}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "T_learning_rules",
+  "title": "Can any simple change to the learning rule make lifetime learning pay in an evolving population?",
+  "question": "P and R found that agents learning during their lifetime eat less than agents with fixed, evolved wiring (scalar critic -31%, per-state critic about -15%). Starting from the per-state critic, do two further changes close the gap: crediting only the executed action, or a four-times lower learning rate?",
+  "background": "R: food per agent-tick 0.035 scalar, 0.042 state, 0.050 no learning (viscous, 8000 ticks). credit_chosen_only cut about half of the learned signalling rise in I. lr=0.2 is a quarter of the default 0.8. No pilot was run for this study; directions come from R and I only. Survival is not tested because no viscous population went extinct within 8000 ticks in P or R. Seeds 1700-1707 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 1700,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "scalar":       {"config": {"critic": "scalar"}, "learning": true},
+    "state":        {"config": {"critic": "state"}, "learning": true},
+    "state_chosen": {"config": {"critic": "state", "credit_chosen_only": true}, "learning": true},
+    "state_slow":   {"config": {"critic": "state", "lr": 0.2}, "learning": true},
+    "nolearn":      {"config": {"critic": "scalar"}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H32a", "statement": "Replication of R: a per-state critic forages better than the scalar critic", "metric": "food_rate", "a": "state", "b": "scalar", "direction": "greater"},
+    {"id": "H32b", "statement": "Crediting only the executed action improves foraging over the per-state critic alone", "metric": "food_rate", "a": "state_chosen", "b": "state", "direction": "greater"},
+    {"id": "H32c", "statement": "A lower learning rate improves foraging over the per-state critic alone", "metric": "food_rate", "a": "state_slow", "b": "state", "direction": "greater"},
+    {"id": "H32d", "statement": "Learning still costs foraging with state critic plus chosen-only credit", "metric": "food_rate", "a": "state_chosen", "b": "nolearn", "direction": "less"},
+    {"id": "H32e", "statement": "Learning still costs foraging with state critic plus a low learning rate", "metric": "food_rate", "a": "state_slow", "b": "nolearn", "direction": "less"}
+  ]
+}

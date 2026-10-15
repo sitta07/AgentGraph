@@ -49,6 +49,7 @@ from pathlib import Path
 import numpy as np
 
 from neuralmind import __version__
+from neuralmind.research.invasion import QPopulation, invader_share
 from neuralmind.research.stats import g_test_p, mean_ci, mutual_information, paired_diff
 from neuralmind.world import World2D, WorldConfig
 
@@ -93,15 +94,26 @@ def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
 
 
 def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25,
-                  sample_every: int = 100, early: int = 6000) -> dict:
-    """Run one evolving population; return time series + final-window metrics."""
+                  sample_every: int = 100, early: int = 6000,
+                  invader: dict | None = None) -> dict:
+    """Run one evolving population; return time series + final-window metrics.
+
+    ``invader`` = {"founders": k, "mode": "label" | "q_fresh" | "q_inherit"}
+    marks the lineages of the first k founders. In the q modes those lineages
+    are driven by tabular Q-learners (see ``invasion.py``); "label" only
+    tracks them, as a neutral-drift control."""
     w = World2D(WorldConfig(**{**BASE, "max_ticks": ticks + 1, **cfg_kw}))
+    qpop = None
+    if invader:
+        qpop = QPopulation(invader["founders"], len(w.agents[0].actions), w.cfg.seed,
+                           inherit=invader["mode"] == "q_inherit")
+    drive = qpop is not None and invader["mode"] != "label"
     start_final = int(ticks * (1 - window))
     acts, alive_ticks = Counter(), 0
     enc_ticks, enc_kin = 0, 0
     share_events, share_kin = 0, 0
     series = {"t": [], "pop": [], "share_gene": [], "aggr_gene": [],
-              "generation": [], "share_rate": [], "attack_rate": []}
+              "generation": [], "share_rate": [], "attack_rate": [], "invader_share": []}
     win = Counter(); win_ticks = 0
     # communication: does signalling carry information about the signaller's
     # state, and does hearing a signal change what the listener does?
@@ -115,7 +127,9 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     born_early, parents = set(), set()
     eaten0, eaten1 = {}, {}                   # agent id -> food eaten at first / last tick seen in the final window
     for t in range(ticks):
-        frame = w.step(learning=learning)
+        frame = w.step(learning=learning, actions=qpop.act(w) if drive else None)
+        if drive:
+            qpop.learn(w, frame)
         live = [a for a in w.agents if a.alive]
         if t < early:
             ids = {a.id for a in live}
@@ -184,6 +198,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             n = max(1, win_ticks)
             series["share_rate"].append(win["share"] / n)
             series["attack_rate"].append(win["attack"] / n)
+            series["invader_share"].append(invader_share(w, qpop) if qpop else float("nan"))
             win = Counter(); win_ticks = 0
     live = [a for a in w.agents if a.alive]
     n = max(1, alive_ticks)
@@ -234,6 +249,11 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "mi_heard_action": mutual_information(heard_action),
         "p_heard_action": g_test_p(heard_action),
         "births": w.births,
+        "invader_share": invader_share(w, qpop) if qpop else float("nan"),
+        "invader_share_mean": (float(np.nanmean(series["invader_share"]))
+                               if qpop and series["invader_share"] else float("nan")),
+        "invader_lost01": (float(not any(qpop.controls(a) for a in live))
+                           if qpop else float("nan")),
         **_demography(dem, born_early, parents),
         "series": series,
     }
@@ -251,8 +271,8 @@ def _demography(dem: Counter, born_early: set, parents: set) -> dict:
 
 
 def _job(args):
-    cfg_kw, ticks, learning = args
-    return run_evolution(cfg_kw, ticks, learning)
+    cfg_kw, ticks, learning, *invader = args
+    return run_evolution(cfg_kw, ticks, learning, invader=invader[0] if invader else None)
 
 
 METRICS = ("share_gene", "aggr_gene", "share_rate", "attack_rate", "share_to_kin",
@@ -261,12 +281,12 @@ METRICS = ("share_gene", "aggr_gene", "share_rate", "attack_rate", "share_to_kin
 
 def run_conditions(conditions: dict, seeds: int, ticks: int, seed_start: int = 0) -> dict:
     """Generic multi-seed runner. ``conditions`` maps a name to
-    ``(world_config_overrides, learning)``. Seeds are shared across conditions
-    so differences can be analysed as paired."""
+    ``(world_config_overrides, learning)`` or ``(overrides, learning, invader)``.
+    Seeds are shared across conditions so differences can be analysed as paired."""
     jobs, keys = [], []
-    for name, (over, learn) in conditions.items():
+    for name, (over, learn, *inv) in conditions.items():
         for s in range(seed_start, seed_start + seeds):
-            jobs.append(({"seed": s, **over}, ticks, learn))
+            jobs.append(({"seed": s, **over}, ticks, learn, *inv))
             keys.append((name, s))
     workers = max(1, (os.cpu_count() or 2) - 1)
     with ProcessPoolExecutor(max_workers=workers) as ex:

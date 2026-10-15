@@ -112,7 +112,8 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
     ticks = ticks or spec.get("ticks", 6000)
     seed_start = int(spec.get("seed_start", 0))
     prereg = preregistration(path)
-    conds = {n: ({**spec.get("base", {}), **c.get("config", {})}, bool(c.get("learning", True)))
+    conds = {n: ({**spec.get("base", {}), **c.get("config", {})}, bool(c.get("learning", True)),
+                 c.get("invader"))
              for n, c in spec["conditions"].items()}
     res = run_conditions(conds, seeds, ticks, seed_start)
     metrics = sorted(k for k, v in res["raw"][next(iter(conds))][0].items()
@@ -142,6 +143,8 @@ def write(res: dict, out: Path) -> Path:
     charts = [("share_gene", "Innate share drive"), ("aggr_gene", "Heritable aggression gain"),
               ("share_rate", "Share rate"), ("attack_rate", "Attack rate"),
               ("pop", "Population"), ("generation", "Mean generation")]
+    if any(c.get("invader") for c in res["design"]["conditions"].values()):
+        charts.append(("invader_share", "Share of population in marked lineages"))
     for m, t in charts:
         (out / f"series_{m}.svg").write_text(line_svg(res["raw"], m, t))
     pr = res["preregistration"]
@@ -161,7 +164,7 @@ def write(res: dict, out: Path) -> Path:
         L.append(f"| {h['id']} | {h['statement']} | {f(res['tests'][key])} | **{res['verdict'][h['id']]}** |")
     shown = [m for m in ("innate_foraging", "share_gene", "aggr_gene", "share_rate",
                          "attack_rate", "signal_rate", "share_given_encounter", "encounter_rate",
-                         "drift_social_minus_loco",
+                         "drift_social_minus_loco", "invader_share",
                          "final_pop", "max_generation") if m in next(iter(res["summary"].values()))]
     L += ["", "## Conditions", "", "| condition | " + " | ".join(shown) + " |",
           "|---|" + "---|" * len(shown)]

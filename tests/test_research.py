@@ -99,3 +99,17 @@ def test_mutual_information_and_g_test():
     assert g_test_p([[50, 0], [0, 50]]) < 1e-10
     assert g_test_p([[25, 25], [25, 25]]) > 0.99
     assert 0.0 <= g_test_p([[10, 20, 30], [30, 20, 10]]) < 0.01
+
+
+def test_q_invaders_drive_their_lineages_only():
+    from neuralmind.research.evolution import run_evolution
+    from neuralmind.research.invasion import N_BITS, state_index
+    assert state_index(np.zeros(11)) == 0 and state_index(np.ones(11)) == (1 << N_BITS) - 1
+    kw = {"seed": 0, "n_agents": 6, "max_pop": 12}
+    lab = run_evolution(kw, ticks=150, learning=True, invader={"founders": 3, "mode": "label"})
+    plain = run_evolution(kw, ticks=150, learning=True)
+    assert lab["final_pop"] == plain["final_pop"] and lab["attack_rate"] == plain["attack_rate"]
+    assert 0 <= lab["invader_share"] <= 1
+    q = run_evolution(kw, ticks=150, learning=True, invader={"founders": 3, "mode": "q_inherit"})
+    assert 0 <= q["invader_share"] <= 1 and np.isfinite(q["invader_share_mean"])
+    assert np.isnan(plain["invader_share"])

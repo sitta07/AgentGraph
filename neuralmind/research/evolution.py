@@ -66,6 +66,12 @@ def share_gene(ag) -> float:
     return float(w["share"].mean() / max(1e-9, loco))
 
 
+def weight_drift(ag) -> dict:
+    """Lifetime change of input weights per action: mean learned / mean innate − 1."""
+    cur = {cn.post: cn.weights.mean() for cn in ag._plastic}
+    return {a: float(cur[a] / max(1e-9, ag.genome["w"][a].mean()) - 1.0) for a in cur}
+
+
 def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
                     ticks: int = 300) -> int:
     """Assay a genome: food eaten alone in a fresh world with learning OFF.
@@ -160,6 +166,11 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
              for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
     pops = np.array(series["pop"], dtype=float)
+    drift = [weight_drift(a) for a in live]
+    mean_drift = lambda acts: (float(np.mean([np.mean([d[x] for x in acts]) for d in drift]))
+                               if drift else float("nan"))
+    loco = ("left", "forward", "right")
+    social = ("attack", "share", "signal")
     return {
         "pop_cv": float(pops.std() / pops.mean()) if pops.size and pops.mean() > 0 else float("nan"),
         "pop_min": float(pops.min()) if pops.size else float("nan"),
@@ -177,6 +188,10 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
                         if live else float("nan")),
         "share_rate": acts["share"] / n if alive_ticks else float("nan"),
         "attack_rate": acts["attack"] / n if alive_ticks else float("nan"),
+        "signal_rate": acts["signal"] / n if alive_ticks else float("nan"),
+        "drift_loco": mean_drift(loco),
+        **{f"drift_{x}": mean_drift((x,)) for x in social},
+        "drift_social_minus_loco": mean_drift(social) - mean_drift(loco),
         "share_to_kin": share_kin / share_events if share_events else float("nan"),
         "encounter_kin": enc_kin / enc_ticks if enc_ticks else float("nan"),
         "share_events": share_events,

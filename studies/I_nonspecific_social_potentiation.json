@@ -1,0 +1,24 @@
+{
+  "id": "I_nonspecific_social_potentiation",
+  "title": "Does lifetime learning strengthen every social action, rewarded or not?",
+  "question": "In Experiments E and G, learning raised attacks ~11x and sharing ~2x, and the gift-reward loop explained only ~22% of the sharing rise. Is this a non-specific effect of the learning rule: reward reaching the input weights of every action population that was active, not just the executed one?",
+  "background": "Each action population has its own plastic sensory input with potentiation-only eligibility (a_minus = 0), and a global RPE is applied to all of them. Non-executed populations that spiked still collect eligibility, so they are strengthened whenever the RPE is positive. Signalling has a cost and no reward pathway, so a reward-specific learner should not increase it. Intervention: credit_chosen_only applies the RPE only to the executed action's input weights. Seeds 200-207 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 200,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "learn_all":    {"config": {"credit_chosen_only": false}, "learning": true},
+    "learn_chosen": {"config": {"credit_chosen_only": true},  "learning": true},
+    "nolearn":      {"config": {"credit_chosen_only": false}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H18a", "statement": "Learning raises signalling, an action with only a cost", "metric": "signal_rate", "a": "learn_all", "b": "nolearn", "direction": "greater"},
+    {"id": "H18b", "statement": "Under learning, input weights to social actions grow more over a lifetime than those to locomotion", "metric": "drift_social_minus_loco", "a": "learn_all", "b": 0, "direction": "greater"},
+    {"id": "H18c", "statement": "Crediting only the executed action lowers the attack rate", "metric": "attack_rate", "a": "learn_all", "b": "learn_chosen", "direction": "greater"},
+    {"id": "H18d", "statement": "Crediting only the executed action lowers sharing given a neighbour in reach", "metric": "share_given_encounter", "a": "learn_all", "b": "learn_chosen", "direction": "greater"},
+    {"id": "H18e", "statement": "Crediting only the executed action lowers signalling", "metric": "signal_rate", "a": "learn_all", "b": "learn_chosen", "direction": "greater"},
+    {"id": "H18f", "statement": "Replication of E/G: learning raises the attack rate", "metric": "attack_rate", "a": "learn_all", "b": "nolearn", "direction": "greater"}
+  ]
+}

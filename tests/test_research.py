@@ -58,6 +58,16 @@ def test_evolution_run_produces_births_and_series():
     assert not r["extinct"] or r["final_pop"] == 0
 
 
+def test_evolution_reports_weight_drift_and_signal_rate():
+    from neuralmind.research.evolution import run_evolution
+    on = run_evolution({"seed": 0, "n_agents": 6, "max_pop": 12}, ticks=120, learning=True)
+    off = run_evolution({"seed": 0, "n_agents": 6, "max_pop": 12}, ticks=120, learning=False)
+    for k in ("signal_rate", "drift_loco", "drift_attack", "drift_share", "drift_signal",
+              "drift_social_minus_loco"):
+        assert np.isfinite(on[k]), k
+    assert off["drift_loco"] == 0 and off["drift_social_minus_loco"] == 0
+
+
 def test_relatedness_genealogy():
     from neuralmind.world import World2D, WorldConfig
     w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True))

@@ -42,3 +42,42 @@ seeds 100–115, which have never been run.
   well-mixed worlds.
 - Related theory: local dispersal favours restraint and avoids a tragedy of
   the commons (Kerr et al. 2006).
+
+## F2: independent replication on fresh seeds
+
+**Status:** completed 2026-10-15. 32 runs: 2 conditions × 16 seeds (100–115,
+never run before) × 18000 ticks. Pre-registered at commit `435ab42`, spec
+unchanged, no deviations. Report:
+[`results/F2_viscosity_extinction_replication/`](../../results/F2_viscosity_extinction_replication/REPORT.md).
+
+| Hypothesis | Result | Verdict |
+|---|---|---|
+| H14r: well-mixed populations go extinct more often | **13/16 vs 7/16**, difference +0.375 [0.0, 0.69] (Fisher p = 0.033 one-sided, 0.066 two-sided) | **not supported** by the registered rule (the CI lower bound is exactly 0) |
+| H14br: well-mixed populations die out sooner | −3140 ticks [−5183, −1084] (12890 vs 16031) | supported |
+| H17: well-mixed population sizes are more volatile (CV) | +0.058 [0.012, 0.108] | supported by the registered rule, **but confounded** (see below) |
+
+**H17 is confounded by extinction itself.** The CV is computed over the whole
+run, including the final collapse to zero, so populations that die get a
+higher CV for that reason alone. Over the first 6000 ticks, before any
+population died (the earliest extinction was at tick 7332), the CVs are equal:
+0.073 vs 0.073, difference +0.0007 [−0.0005, 0.0025]. This check was not
+pre-registered. As far as we can tell, there is **no evidence of boom-bust
+dynamics before the collapse**.
+
+**What replicated and what did not.**
+
+- The direction replicated: well-mixed populations died more often and
+  sooner.
+- The size of the effect did not. In F2, viscous populations also went
+  extinct often (7/16, compared with 1/12 in F), and the extinction-count
+  test missed the registered threshold.
+- Pooling every fresh seed (F seeds 6–11 plus F2) gives 17/22 vs 7/22,
+  two-sided Fisher p = 0.006. This pooling was decided after seeing the data,
+  so treat it as descriptive.
+- Survival time is the more sensitive measure, and it replicated.
+
+**Updated interpretation.** Spatial structure delays extinction in this world,
+and probably makes it less likely, but it does not prevent it. The mechanism
+is still unknown. Volatility before the collapse is not it. A next step would
+be to measure *what* collapses first: food depletion, attack-driven deaths, or
+failed reproduction.

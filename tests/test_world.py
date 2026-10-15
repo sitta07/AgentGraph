@@ -264,3 +264,28 @@ def test_evolving_world_is_open_ended():
     for _ in range(60):
         w.step(True)
     assert any(a.alive for a in w.agents)
+
+
+def test_credit_chosen_only_changes_only_the_executed_action():
+    for flag in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, credit_chosen_only=flag))
+        ag = w.agents[0]
+        for cn in ag._plastic:
+            cn._stdp.eligibility[:] = 0.5
+        before = {cn.post: cn.weights.copy() for cn in ag._plastic}
+        ag.learn_and_affect(1.0, np.zeros(ag.n_sensors), False, True,
+                            action=ag.actions.index("share"))
+        changed = {cn.post for cn in ag._plastic if not np.array_equal(cn.weights, before[cn.post])}
+        assert changed == ({"share"} if flag else set(ag.actions))
+
+
+def test_frozen_inputs_never_change():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True,
+                            frozen_inputs=("left", "forward", "right")))
+    ag = w.agents[0]
+    for cn in ag._plastic:
+        cn._stdp.eligibility[:] = 0.5
+    before = {cn.post: cn.weights.copy() for cn in ag._plastic}
+    ag.learn_and_affect(1.0, np.zeros(ag.n_sensors), False, True, action=0)
+    changed = {cn.post for cn in ag._plastic if not np.array_equal(cn.weights, before[cn.post])}
+    assert changed == {"attack", "share", "signal"}

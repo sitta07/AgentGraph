@@ -160,7 +160,8 @@ def write(res: dict, out: Path) -> Path:
         key = f"{h['id']}: {h['metric']} ({h['a']} − {h['b']})"
         L.append(f"| {h['id']} | {h['statement']} | {f(res['tests'][key])} | **{res['verdict'][h['id']]}** |")
     shown = [m for m in ("innate_foraging", "share_gene", "aggr_gene", "share_rate",
-                         "attack_rate", "share_given_encounter", "encounter_rate",
+                         "attack_rate", "signal_rate", "share_given_encounter", "encounter_rate",
+                         "drift_social_minus_loco",
                          "final_pop", "max_generation") if m in next(iter(res["summary"].values()))]
     L += ["", "## Conditions", "", "| condition | " + " | ".join(shown) + " |",
           "|---|" + "---|" * len(shown)]

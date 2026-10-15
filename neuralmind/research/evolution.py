@@ -253,6 +253,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_given_encounter": enc_acts["share"] / enc_ticks if enc_ticks else float("nan"),
         "attack_given_encounter": enc_acts["attack"] / enc_ticks if enc_ticks else float("nan"),
         "encounter_rate": enc_ticks / n if alive_ticks else float("nan"),
+        "food_blocked_frac": (w.food_blocked / (w.food_blocked + w.eaten_total)
+                              if w.food_blocked + w.eaten_total else float("nan")),
         "enc_dist": float(np.mean(enc_d)) if enc_d else float("nan"),
         "enc_dist_kin": float(np.mean(enc_d_kin)) if enc_d_kin else float("nan"),
         "enc_dist_nonkin": float(np.mean(enc_d_non)) if enc_d_non else float("nan"),

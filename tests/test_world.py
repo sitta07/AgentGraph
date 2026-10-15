@@ -376,3 +376,4 @@ def test_cooperative_food_needs_a_partner():
         n = a.food_eaten
         w._advance_agent(a, learning=False, forced=a.actions.index("attack"))
         assert (a.food_eaten > n) == partner
+        assert w.food_blocked == (0 if partner else 1)

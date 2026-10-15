@@ -435,6 +435,7 @@ class World2D:
         self.next_id = len(self.agents)
         self.births = 0
         self.eaten_total = 0
+        self.food_blocked = 0            # food reached but not eaten: no partner within coop_radius
         # Genealogy of every agent that ever lived (kept after bodies are pruned).
         self.registry: dict[int, dict] = {}
         for ag in self.agents:
@@ -549,6 +550,7 @@ class World2D:
             if hit and c.coop_radius > 0 and not any(
                     o.alive and o is not ag and np.linalg.norm(o.pos - ag.pos) < c.coop_radius
                     for o in self.agents):
+                self.food_blocked += len(hit)
                 hit = []
             if hit:
                 eaten = len(hit)

@@ -113,3 +113,12 @@ def test_q_invaders_drive_their_lineages_only():
     q = run_evolution(kw, ticks=150, learning=True, invader={"founders": 3, "mode": "q_inherit"})
     assert 0 <= q["invader_share"] <= 1 and np.isfinite(q["invader_share_mean"])
     assert np.isnan(plain["invader_share"])
+
+
+def test_drift_probe_restores_learning_rule_and_reports_all_tick_kinds():
+    from neuralmind.research.drift_probe import probe
+    from neuralmind.world import Agent
+    before = Agent.learn_and_affect
+    r = probe(seed=0, ticks=60, cfg={"n_agents": 4, "max_pop": 8})
+    assert Agent.learn_and_affect is before
+    assert sum(r["updates"].get(k, 0) for k in ("eat", "pain", "shaping")) > 0

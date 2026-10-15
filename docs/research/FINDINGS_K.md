@@ -61,3 +61,38 @@ How much of the learning effect is left when locomotion sums are held fixed
   are about 1.2 × 11 per row, so a single weight is unlikely to come near
   that limit, but we did not check it.
 - One ecology, viscous populations, 8 seeds.
+
+## Exploratory: why does locomotion drive fall?
+
+[`drift_probe.py`](../../neuralmind/research/drift_probe.py) logs every
+update `lr · RPE · eligibility` and splits it by tick type. We ran 3
+unregistered seeds (900–902) for 2000 ticks each.
+
+**Totals per seed.** Units are summed over all agents and synapses, so only
+the sign and the relative size within a seed are meaningful.
+
+| | seed 900 | seed 901 | seed 902 |
+|---|---|---|---|
+| locomotion, eating ticks | +2071 | +1588 | +1844 |
+| locomotion, pain ticks | −2120 | −1727 | −2182 |
+| locomotion, shaping-only ticks | −2465 | −3274 | −3220 |
+| social, all ticks | −442 | −317 | −231 |
+| updates with negative RPE | 59% | 57% | 58% |
+| locomotion / social eligibility | 8.7× | 8.1× | 8.5× |
+
+**What the probe shows.**
+
+- The reward predictor's baseline includes rare, large food rewards, so on
+  most ticks the RPE is negative. This is true even when agents are only
+  receiving the small shaped reward.
+- The eligibility rule is potentiation-only, and its trace scales with how
+  much a population fires.
+- Locomotion fires about 8× more than the social populations. It therefore
+  absorbs most of those negative updates.
+
+**Candidate mechanism (untested).** The learning rule produces
+activity-dependent depression: the most-used pathways weaken most, which
+hands action-selection share to rarely used actions. This is a hypothesis
+from three exploratory seeds, not a confirmed result. A pre-registered test
+would subtract a per-population activity baseline from the eligibility, or
+use a zero-mean RPE, and predict that the social rise disappears.

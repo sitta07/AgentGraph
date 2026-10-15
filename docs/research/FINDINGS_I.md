@@ -76,8 +76,8 @@ Innate foraging was lower in learning populations: 7.9 vs 12.4,
   H18a was therefore not a blind prediction about direction. The seeds used
   here are new.
 
-## Next step
+## Follow-up
 
-Test the locomotion-weakening explanation directly. Freeze plasticity on the
-locomotion inputs only. If the explanation is right, the learning-induced rise
-in attack and signal rates should shrink.
+Experiment J froze plasticity on the locomotion inputs. Learned attack,
+signal and share rates then fell to their no-learning levels
+([findings](FINDINGS_J.md)).

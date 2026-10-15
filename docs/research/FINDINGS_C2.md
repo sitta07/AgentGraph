@@ -53,3 +53,10 @@ conditions with similar extinction counts, except H5 (mixed_nolearn lost 2/6).
 - **G:** a new mechanism for the learning effect on sharing. A gift reward
   reinforces the recipient's active share pathway, a learned reciprocity loop.
   It is tested by ablating the gift reward.
+
+## Update (Experiment J, 2026-10-15)
+
+When the locomotion input weights are frozen, the learning effect on sharing
+disappears ([J](FINDINGS_J.md)). The extra sharing under learning is best
+explained as a side effect of locomotion weights weakening, not as learned
+sharing.

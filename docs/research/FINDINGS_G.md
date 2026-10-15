@@ -31,3 +31,10 @@ The `learn_gift` and `nolearn` conditions use exactly the same configuration
 and seeds as `learn` and `nolearn` in Experiment E. The two separate runs
 produced **identical numbers** (for example, innate foraging 5.354 and 9.729).
 This confirms determinism across independent invocations.
+
+## Update (Experiment J, 2026-10-15)
+
+When the locomotion input weights are frozen, the learning effect on sharing
+disappears ([J](FINDINGS_J.md)). The extra sharing under learning is best
+explained as a side effect of locomotion weights weakening, not as learned
+sharing.

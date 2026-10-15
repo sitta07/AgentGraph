@@ -320,3 +320,17 @@ def test_deaf_agents_hear_nothing():
         ag = w.agents[0]
         s = ag.sense(w.food, w.hazards, np.empty((0, 2)), np.array([ag.pos]))
         assert (s[-1] == 0) == deaf
+
+
+def test_positive_rpe_only_ignores_negative_errors():
+    for flag in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, positive_rpe_only=flag))
+        ag = w.agents[0]
+        ag.learn_and_affect(1.0, np.zeros(ag.n_sensors), False, True, action=0)
+        for cn in ag._plastic:
+            cn._stdp.eligibility[:] = 0.5
+        before = {cn.post: cn.weights.copy() for cn in ag._plastic}
+        rpe = ag.learn_and_affect(-1.0, np.zeros(ag.n_sensors), False, True, action=0)
+        assert rpe < 0
+        same = all(np.array_equal(cn.weights, before[cn.post]) for cn in ag._plastic)
+        assert same == flag

@@ -97,6 +97,7 @@ class WorldConfig:
     normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     deaf: bool = False             # True: the heard-signal sensor always reads 0
+    positive_rpe_only: bool = False  # True: negative reward-prediction errors change no weights
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -340,7 +341,7 @@ class Agent:
         rpe = self.predictor.update(reward)
         affect_rpe = (self.primary_predictor.update(primary)
                       if (c.affect_from_primary and primary is not None) else rpe)
-        if learning:
+        if learning and not (c.positive_rpe_only and rpe < 0):
             chosen = self.actions[action] if (c.credit_chosen_only and action is not None) else None
             for cn in self._plastic:
                 if cn.post not in c.frozen_inputs and chosen in (None, cn.post):

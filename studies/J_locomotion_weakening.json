@@ -1,0 +1,23 @@
+{
+  "id": "J_locomotion_weakening",
+  "title": "Does learning raise social actions by weakening locomotion?",
+  "question": "In Experiment I, every input weight fell over a lifetime and locomotion weights fell the most, even when credit went only to the executed action. Action choice is a spike-count competition, so weaker locomotion could let every social action win more often. If locomotion inputs are frozen and only social inputs may learn, does the learning-induced rise in attacking, signalling and sharing shrink?",
+  "background": "Experiment I: under learning, drift (learned/innate - 1) was -0.032 for locomotion and -0.004 to -0.011 for social actions. Crediting only the executed action removed none of the attack rise and about half of the signalling rise. Intervention: frozen_inputs = [left, forward, right] keeps locomotion input weights at their innate values while social inputs keep learning. Caveat: this also removes all lifetime learning of foraging. Seeds 300-307 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 300,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "learn_all":    {"config": {}, "learning": true},
+    "frozen_loco":  {"config": {"frozen_inputs": ["left", "forward", "right"]}, "learning": true},
+    "nolearn":      {"config": {}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H19a", "statement": "Freezing locomotion inputs lowers the attack rate", "metric": "attack_rate", "a": "learn_all", "b": "frozen_loco", "direction": "greater"},
+    {"id": "H19b", "statement": "Freezing locomotion inputs lowers signalling", "metric": "signal_rate", "a": "learn_all", "b": "frozen_loco", "direction": "greater"},
+    {"id": "H19c", "statement": "Freezing locomotion inputs lowers sharing given a neighbour in reach", "metric": "share_given_encounter", "a": "learn_all", "b": "frozen_loco", "direction": "greater"},
+    {"id": "H19d", "statement": "With locomotion frozen, learning no longer raises the attack rate above no-learning", "metric": "attack_rate", "a": "frozen_loco", "b": "nolearn", "direction": "none"},
+    {"id": "H19m", "statement": "Manipulation check: social inputs drift up relative to locomotion under learn_all (replicates I's H18b)", "metric": "drift_social_minus_loco", "a": "learn_all", "b": 0, "direction": "greater"}
+  ]
+}

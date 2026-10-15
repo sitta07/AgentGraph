@@ -93,6 +93,7 @@ class WorldConfig:
     gift_reward: bool = True       # recipients' learning reward counts energy received as a gift
     w_social_scale: float = 0.85   # initial input-weight scale for social actions
     credit_chosen_only: bool = False  # True: reward changes only the executed action's input weights
+    frozen_inputs: tuple = ()      # action names whose input weights never learn
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -331,13 +332,10 @@ class Agent:
         affect_rpe = (self.primary_predictor.update(primary)
                       if (c.affect_from_primary and primary is not None) else rpe)
         if learning:
-            if c.credit_chosen_only and action is not None:
-                chosen = self.actions[action]
-                for cn in self._plastic:
-                    if cn.post == chosen:
-                        cn.apply_reward(c.lr * rpe)
-            else:
-                self.net.apply_reward(c.lr * rpe)
+            chosen = self.actions[action] if (c.credit_chosen_only and action is not None) else None
+            for cn in self._plastic:
+                if cn.post not in c.frozen_inputs and chosen in (None, cn.post):
+                    cn.apply_reward(c.lr * rpe)
             if c.normalize:
                 self._normalize()
         self.net.clear_eligibility()

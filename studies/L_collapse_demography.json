@@ -1,0 +1,22 @@
+{
+  "id": "L_collapse_demography",
+  "title": "What differs between well-mixed and viscous populations before well-mixed ones collapse?",
+  "question": "F and F2 found that well-mixed populations die out sooner, but their population sizes were not more volatile before collapse. In the first 6000 ticks, before any population has died out, do well-mixed populations differ in birth rate, death rate, cause of death (killed, starved, old age) or offspring success?",
+  "background": "F2 (seeds 100-115): extinctions 13/16 vs 7/16; the earliest extinction was at tick 7332; population CV over ticks 0-6000 was 0.073 in both conditions. All metrics here are measured over ticks 0-6000 only, so they precede the collapse. Offspring success is the fraction of agents born before tick 4500 that reproduced at least once before tick 6000. Seeds 500-515 have never been run.",
+  "simulator": "evolution",
+  "seeds": 16,
+  "seed_start": 500,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "mixed":   {"config": {"viscous": false}, "learning": true},
+    "viscous": {"config": {"viscous": true},  "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H21a", "statement": "Before collapse, well-mixed populations have a lower birth rate per agent-tick", "metric": "early_birth_rate", "a": "mixed", "b": "viscous", "direction": "less"},
+    {"id": "H21b", "statement": "Before collapse, a larger fraction of well-mixed deaths are killings", "metric": "early_frac_killed", "a": "mixed", "b": "viscous", "direction": "greater"},
+    {"id": "H21c", "statement": "Before collapse, a larger fraction of well-mixed deaths are starvation", "metric": "early_frac_starved", "a": "mixed", "b": "viscous", "direction": "greater"},
+    {"id": "H21d", "statement": "Before collapse, fewer well-mixed offspring go on to reproduce", "metric": "early_offspring_success", "a": "mixed", "b": "viscous", "direction": "less"},
+    {"id": "H14b3", "statement": "Third test: well-mixed populations die out sooner", "metric": "survival_ticks", "a": "mixed", "b": "viscous", "direction": "less"}
+  ]
+}

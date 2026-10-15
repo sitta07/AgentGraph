@@ -68,6 +68,16 @@ def test_evolution_reports_weight_drift_and_signal_rate():
     assert off["drift_loco"] == 0 and off["drift_social_minus_loco"] == 0
 
 
+def test_early_demography_accounts_for_every_death():
+    from neuralmind.research.evolution import run_evolution
+    r = run_evolution({"seed": 0, "n_agents": 8, "max_pop": 16, "max_age": 200},
+                      ticks=600, learning=True, early=500)
+    total = r["early_frac_killed"] + r["early_frac_starved"] + r["early_frac_old_age"]
+    assert abs(total - 1.0) < 1e-9
+    assert r["early_frac_old_age"] > 0 and 0 < r["early_birth_rate"] < 1
+    assert 0 <= r["early_offspring_success"] <= 1
+
+
 def test_relatedness_genealogy():
     from neuralmind.world import World2D, WorldConfig
     w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True))

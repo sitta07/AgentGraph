@@ -90,7 +90,7 @@ def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
 
 
 def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25,
-                  sample_every: int = 100) -> dict:
+                  sample_every: int = 100, early: int = 6000) -> dict:
     """Run one evolving population; return time series + final-window metrics."""
     w = World2D(WorldConfig(**{**BASE, "max_ticks": ticks + 1, **cfg_kw}))
     start_final = int(ticks * (1 - window))
@@ -106,9 +106,27 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     enc_acts = Counter()                      # actions on ticks with a neighbour in reach
     enc_d, enc_d_kin, enc_d_non, share_d = [], [], [], []
     heard_action = np.zeros((2, 6))
+    # demography before `early` ticks: deaths by cause, births, offspring success
+    dem = Counter()
+    prev_ids = {a.id for a in w.agents if a.alive}
+    born_early, parents = set(), set()
     for t in range(ticks):
         frame = w.step(learning=learning)
         live = [a for a in w.agents if a.alive]
+        if t < early:
+            ids = {a.id for a in live}
+            killed = {e["dst"] for e in frame["events"] if e["type"] == "death"}
+            old = {e["src"] for e in frame["events"] if e["type"] == "old_age"}
+            for e in frame["events"]:
+                if e["type"] == "birth":
+                    dem["births"] += 1
+                    parents.add(e["src"])
+                    if t < early - w.cfg.max_age:
+                        born_early.add(e["dst"])
+            for i in prev_ids - ids:
+                dem["killed" if i in killed else "old_age" if i in old else "starved"] += 1
+            dem["agent_ticks"] += len(live)
+            prev_ids = ids
         if not live:
             break
         names = {a["id"]: a["action_name"] for a in frame["agents"] if a["alive"]}
@@ -208,8 +226,20 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "mi_heard_action": mutual_information(heard_action),
         "p_heard_action": g_test_p(heard_action),
         "births": w.births,
+        **_demography(dem, born_early, parents),
         "series": series,
     }
+
+
+def _demography(dem: Counter, born_early: set, parents: set) -> dict:
+    deaths = dem["killed"] + dem["old_age"] + dem["starved"]
+    frac = lambda k: dem[k] / deaths if deaths else float("nan")
+    return {"early_birth_rate": dem["births"] / dem["agent_ticks"] if dem["agent_ticks"] else float("nan"),
+            "early_death_rate": deaths / dem["agent_ticks"] if dem["agent_ticks"] else float("nan"),
+            "early_frac_killed": frac("killed"), "early_frac_starved": frac("starved"),
+            "early_frac_old_age": frac("old_age"),
+            "early_offspring_success": (len(born_early & parents) / len(born_early)
+                                        if born_early else float("nan"))}
 
 
 def _job(args):

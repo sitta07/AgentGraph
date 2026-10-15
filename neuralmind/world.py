@@ -95,6 +95,7 @@ class WorldConfig:
     credit_chosen_only: bool = False  # True: reward changes only the executed action's input weights
     frozen_inputs: tuple = ()      # action names whose input weights never learn
     normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
+    mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -163,6 +164,7 @@ class Agent:
         self.signaling = False
         self.pending_hurt = 0.0     # energy lost to attackers since last tick
         self.pending_gift = 0.0     # energy received from sharers since last tick
+        self.mirrored = False       # environment shift: left/right sensor bins swapped
 
     def build_net(self, rng: np.random.Generator, genome: dict | None = None) -> None:
         c = self.cfg
@@ -242,6 +244,8 @@ class Agent:
               signals: np.ndarray | None = None) -> np.ndarray:
         food_s = self._bin_signals(food)
         threat_s = self._bin_signals(hazards)
+        if self.mirrored:
+            food_s, threat_s = food_s[::-1], threat_s[::-1]
         hunger = float(np.clip(1.0 - self.energy / self.cfg.e0, 0.0, 1.0))
         base = [food_s, threat_s, [hunger]]
         if self.cfg.social:
@@ -253,7 +257,8 @@ class Agent:
                 d = float(np.linalg.norm(q - self.pos))
                 if d <= self.cfg.signal_range:
                     heard += 1.0 - d / self.cfg.signal_range
-            base += [self._bin_signals(others), [min(1.0, heard)]]
+            other_s = self._bin_signals(others)
+            base += [other_s[::-1] if self.mirrored else other_s, [min(1.0, heard)]]
         return np.concatenate(base)
 
     def nearest_food_dist(self, food: np.ndarray) -> float:
@@ -646,6 +651,9 @@ class World2D:
         self.events = []
         self._signals_now = []
         results = {}
+        mirrored = 0 <= self.cfg.mirror_at <= self.t
+        for ag in self.agents:
+            ag.mirrored = mirrored
         for ag in self.agents:
             if ag.alive:
                 results[ag.id] = self._advance_agent(ag, learning, actions.get(ag.id))

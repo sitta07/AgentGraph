@@ -76,8 +76,11 @@ def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
                     ticks: int = 300) -> int:
     """Assay a genome: food eaten alone in a fresh world with learning OFF.
     Measures what the innate wiring can do without any lifetime learning."""
+    # the assay runs in the environment the population ended in
+    shifted = 0 <= cfg.mirror_at < cfg.max_ticks
     solo = WorldConfig(**{**cfg.as_dict(), "n_agents": 1, "evolve": False,
-                          "seed": seed, "max_ticks": ticks + 1})
+                          "seed": seed, "max_ticks": ticks + 1,
+                          "mirror_at": 0 if shifted else -1})
     w = World2D(solo)
     ag = w.agents[0]
     ag.aggr_gain = aggr_gain
@@ -110,6 +113,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     dem = Counter()
     prev_ids = {a.id for a in w.agents if a.alive}
     born_early, parents = set(), set()
+    eaten0, eaten1 = {}, {}                   # agent id -> food eaten at first / last tick seen in the final window
     for t in range(ticks):
         frame = w.step(learning=learning)
         live = [a for a in w.agents if a.alive]
@@ -137,6 +141,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             win[nm] += 1; win_ticks += 1
             if t >= start_final:
                 acts[nm] += 1; alive_ticks += 1
+                eaten0.setdefault(a.id, a.food_eaten)
+                eaten1[a.id] = a.food_eaten
         if t >= start_final:
             # kin structure of encounters (pairs within reach) vs of shares
             pos = np.array([a.pos for a in live])
@@ -181,6 +187,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             win = Counter(); win_ticks = 0
     live = [a for a in w.agents if a.alive]
     n = max(1, alive_ticks)
+    food_final = sum(eaten1[i] - eaten0[i] for i in eaten1)
     assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
              for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
     pops = np.array(series["pop"], dtype=float)
@@ -207,6 +214,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_rate": acts["share"] / n if alive_ticks else float("nan"),
         "attack_rate": acts["attack"] / n if alive_ticks else float("nan"),
         "signal_rate": acts["signal"] / n if alive_ticks else float("nan"),
+        "food_rate": food_final / n if alive_ticks else float("nan"),
         "drift_loco": mean_drift(loco),
         **{f"drift_{x}": mean_drift((x,)) for x in social},
         "drift_social_minus_loco": mean_drift(social) - mean_drift(loco),

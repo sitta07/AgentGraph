@@ -300,3 +300,15 @@ def test_normalized_inputs_keep_innate_row_sums_but_still_learn():
     ag.learn_and_affect(1.0, np.zeros(ag.n_sensors), False, True, action=1)
     assert np.allclose(cn.weights.sum(axis=1), rows)
     assert not np.allclose(cn.weights, before)
+
+
+def test_mirror_swaps_left_and_right_sensing_from_the_given_tick():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, mirror_at=1))
+    ag = w.agents[0]
+    w.food = np.array([ag.pos + 0.1 * np.array([math.cos(ag.heading + 0.9), math.sin(ag.heading + 0.9)])])
+    before = w.observe(ag)[0:3]
+    ag.mirrored = True
+    assert np.allclose(w.observe(ag)[0:3], before[::-1]) and before[0] != before[2]
+    w2 = World2D(WorldConfig(seed=0, n_agents=1, social=True, mirror_at=1))
+    w2.step(); assert not w2.agents[0].mirrored
+    w2.step(); assert w2.agents[0].mirrored

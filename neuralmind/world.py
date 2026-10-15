@@ -94,6 +94,7 @@ class WorldConfig:
     w_social_scale: float = 0.85   # initial input-weight scale for social actions
     credit_chosen_only: bool = False  # True: reward changes only the executed action's input weights
     frozen_inputs: tuple = ()      # action names whose input weights never learn
+    normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -195,6 +196,8 @@ class Agent:
         self.genome = {"w": {cn.post: cn.weights.copy() for cn in self._plastic},
                        "aggression_gain": self.aggr_gain}
         self._row_budget = c.w_init * self.n_sensors
+        self._innate_rows = {cn.post: cn.weights.sum(axis=1, keepdims=True)
+                             for cn in self._plastic}
         self._node_order = list(net.populations)
         self._node_offsets, off = {}, 0
         for p in self._node_order:
@@ -336,6 +339,9 @@ class Agent:
             for cn in self._plastic:
                 if cn.post not in c.frozen_inputs and chosen in (None, cn.post):
                     cn.apply_reward(c.lr * rpe)
+                    if cn.post in c.normalized_inputs:
+                        rs = cn.weights.sum(axis=1, keepdims=True)
+                        cn.weights *= self._innate_rows[cn.post] / np.maximum(rs, 1e-9)
             if c.normalize:
                 self._normalize()
         self.net.clear_eligibility()

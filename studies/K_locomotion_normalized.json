@@ -1,0 +1,23 @@
+{
+  "id": "K_locomotion_normalized",
+  "title": "Is it the weakening of locomotion, rather than other foraging changes, that frees social actions?",
+  "question": "Experiment J froze all locomotion learning, which also removed lifetime foraging learning. Here the locomotion inputs keep learning (weights can be redistributed across sensors) but each locomotion neuron's total input is held at its innate value, so locomotion cannot weaken overall. Does the learning-induced rise in attacking, signalling and sharing disappear?",
+  "background": "Experiment I: under learning, locomotion input weights fell by ~3-4% over a lifetime, more than social inputs. Experiment J: freezing locomotion inputs removed the rise in all social actions. Intervention: normalized_inputs = [left, forward, right] rescales each locomotion neuron's input row back to its innate sum after every weight update. Seeds 400-407 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 400,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "learn_all":  {"config": {}, "learning": true},
+    "loco_norm":  {"config": {"normalized_inputs": ["left", "forward", "right"]}, "learning": true},
+    "nolearn":    {"config": {}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H20a", "statement": "Holding locomotion input sums fixed lowers the attack rate", "metric": "attack_rate", "a": "learn_all", "b": "loco_norm", "direction": "greater"},
+    {"id": "H20b", "statement": "Holding locomotion input sums fixed lowers signalling", "metric": "signal_rate", "a": "learn_all", "b": "loco_norm", "direction": "greater"},
+    {"id": "H20c", "statement": "Holding locomotion input sums fixed lowers sharing given a neighbour in reach", "metric": "share_given_encounter", "a": "learn_all", "b": "loco_norm", "direction": "greater"},
+    {"id": "H20d", "statement": "With locomotion sums fixed, learning no longer raises the attack rate above no-learning", "metric": "attack_rate", "a": "loco_norm", "b": "nolearn", "direction": "none"},
+    {"id": "H20e", "statement": "With locomotion sums fixed, learning no longer raises signalling above no-learning", "metric": "signal_rate", "a": "loco_norm", "b": "nolearn", "direction": "none"}
+  ]
+}

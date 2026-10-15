@@ -289,3 +289,14 @@ def test_frozen_inputs_never_change():
     ag.learn_and_affect(1.0, np.zeros(ag.n_sensors), False, True, action=0)
     changed = {cn.post for cn in ag._plastic if not np.array_equal(cn.weights, before[cn.post])}
     assert changed == {"attack", "share", "signal"}
+
+
+def test_normalized_inputs_keep_innate_row_sums_but_still_learn():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, normalized_inputs=("forward",)))
+    ag = w.agents[0]
+    cn = next(c for c in ag._plastic if c.post == "forward")
+    rows, before = cn.weights.sum(axis=1), cn.weights.copy()
+    cn._stdp.eligibility[:] = np.linspace(0, 1, cn.weights.size).reshape(cn.weights.shape)
+    ag.learn_and_affect(1.0, np.zeros(ag.n_sensors), False, True, action=1)
+    assert np.allclose(cn.weights.sum(axis=1), rows)
+    assert not np.allclose(cn.weights, before)

@@ -145,6 +145,8 @@ def test_lab_lists_committed_studies(client):
     for s in d["studies"]:
         assert isinstance(s["verdict"], dict)
         for ci in s["tests"].values():
+            if ci["mean"] is None:   # a test with no data (e.g. every pair went extinct)
+                continue
             assert ci["lo"] <= ci["mean"] <= ci["hi"]
 
 
@@ -182,3 +184,12 @@ def test_session_accepts_mechanism_switches(client):
     assert cfg["credit_chosen_only"] is True and cfg["deaf"] is True
     assert cfg["frozen_inputs"] == ["left", "forward"]
     assert cfg["mirror_at"] == 12
+
+
+def test_social_session_with_new_bool_toggles(client):
+    r = client.post("/api/session", json={"seed": 3, "social": True, "evolve": True,
+                                          "directional_hearing": True, "no_filial_gain": True,
+                                          "viscous": False, "born_near_stranger": True})
+    assert r.status_code == 200
+    s = client.post("/api/step", json={"n": 5, "learning": True})
+    assert s.status_code == 200

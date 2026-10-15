@@ -19,11 +19,14 @@ function badge(key, val) {
 }
 
 function fmt(v) {
+  if (v == null) return "n/a";
   const a = Math.abs(v);
   return a !== 0 && (a < 0.01 || a >= 1000) ? v.toExponential(2) : v.toFixed(a < 1 ? 4 : 2);
 }
 
 function ciBar(ci) {
+  if (ci.mean == null || ci.lo == null || ci.hi == null)
+    return `<div class="num">no data</div>`;
   const m = Math.max(Math.abs(ci.lo), Math.abs(ci.hi), 1e-12) * 1.1;
   const X = (v) => 50 + 50 * v / m;
   const cls = ci.lo > 0 ? "pos" : ci.hi < 0 ? "neg" : "";

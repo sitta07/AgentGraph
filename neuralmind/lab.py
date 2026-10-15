@@ -11,6 +11,7 @@ it appears next to the committed studies.
 from __future__ import annotations
 
 import json
+import math
 import threading
 import time
 import traceback
@@ -34,6 +35,17 @@ STUDY_TITLES = {
     "crowding_and_spatial_kin": "Crowding and spatial kin cues (follow-up)",
     "scarcity_aggression": "Does a heritable aggression gene evolve under scarcity?",
 }
+
+
+def _finite(x):
+    """Replace NaN/inf with None so the payload is valid JSON."""
+    if isinstance(x, float):
+        return x if math.isfinite(x) else None
+    if isinstance(x, dict):
+        return {k: _finite(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_finite(v) for v in x]
+    return x
 
 
 def _cards_from(name: str, data: dict) -> list[dict]:
@@ -77,7 +89,7 @@ def studies():
                 card["modified"] = time.strftime("%Y-%m-%d %H:%M",
                                                  time.localtime(f.stat().st_mtime))
                 out.append(card)
-    return {"studies": out}
+    return {"studies": _finite(out)}
 
 
 @router.get("/report/{folder}")

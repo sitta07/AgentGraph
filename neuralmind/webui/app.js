@@ -90,7 +90,10 @@ const TOGGLES = [["social", "Social (see others, attack, share, signal)"],
   ["lamarckian", "Offspring inherit learned weights (Lamarckian)"],
   ["credit_chosen_only", "Reward only the executed action (Exp. I)"],
   ["positive_rpe_only", "Ignore negative reward errors (Exp. P)"],
-  ["deaf", "Nobody can hear signals (Exp. M)"]];
+  ["deaf", "Nobody can hear signals (Exp. M)"],
+  ["directional_hearing", "Hear which side a call comes from (Exp. S)"],
+  ["born_near_stranger", "Newborns placed beside a non-relative (Exp. Q; needs viscous off)"],
+  ["no_filial_gain", "No energy from attacking own offspring (Exp. Q3)"]];
 const LOCO = ["left", "forward", "right"];
 const LOCO_TOGGLES = [["frozen_inputs", "Freeze locomotion learning (Exp. J)"],
   ["normalized_inputs", "Hold locomotion drive fixed (Exp. K)"]];

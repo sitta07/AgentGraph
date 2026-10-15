@@ -1,0 +1,22 @@
+{
+  "id": "Q3_filial_energy_recycling",
+  "title": "Do viscous populations persist because parents recycle energy by killing their offspring?",
+  "question": "In Q2, 42% of killings in viscous populations were parents killing their own offspring, and viscous populations still survived longest (6/12 extinct vs 12/12 when newborns were placed beside a stranger). An attack transfers the victim's energy to the attacker, so a parent recovers part of its reproductive investment. If that recycling explains persistence, removing the energy gain from attacks on one's own offspring (the offspring still loses the energy) should make viscous populations die out sooner.",
+  "background": "Intervention: no_filial_gain=True gives the attacker no energy and no reward from an attack on its own offspring; all other attacks are unchanged. Q2 (ticks 0-6000, viscous): early birth rate 0.0039 vs 0.0030 stranger. The stranger condition is a reference only; no hypothesis uses it except as context. No pilot was run. Seeds 1800-1811 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1800,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "viscous":        {"config": {"viscous": true}, "learning": true},
+    "viscous_nogain": {"config": {"viscous": true, "no_filial_gain": true}, "learning": true},
+    "stranger":       {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H33a", "statement": "Without energy from killing own offspring, viscous populations die out sooner", "metric": "survival_ticks", "a": "viscous_nogain", "b": "viscous", "direction": "less"},
+    {"id": "H33b", "statement": "Without energy from killing own offspring, viscous populations go extinct more often", "metric": "extinct01", "a": "viscous_nogain", "b": "viscous", "direction": "greater"},
+    {"id": "H33c", "statement": "Without energy from killing own offspring, the early birth rate falls", "metric": "early_birth_rate", "a": "viscous_nogain", "b": "viscous", "direction": "less"},
+    {"id": "H33d", "statement": "Manipulation check: parents still kill their offspring in at least 10% of killings when it yields no energy", "metric": "early_frac_kills_offspring", "a": "viscous_nogain", "b": 0.1, "direction": "greater"}
+  ]
+}

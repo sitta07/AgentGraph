@@ -116,6 +116,7 @@ class WorldConfig:
     trait_sigma: float = 0.2       # mutation s.d. of the heritable aggression gain
     birth_radius: float = 0.04     # offspring scatter around the parent
     viscous: bool = True           # True: born near parent; False: born anywhere
+    no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
@@ -635,8 +636,9 @@ class World2D:
                 target.energy -= amt
                 target.pending_hurt += amt
                 target.attacked += 1
-                ag.energy += amt
-                r += c.r_eat * amt * unit * (1.0 - c.r_prosocial)
+                gain = 0.0 if (c.no_filial_gain and target.parent == ag.id) else amt
+                ag.energy += gain
+                r += c.r_eat * gain * unit * (1.0 - c.r_prosocial)
                 self.events.append({"type": "attack", "src": ag.id, "dst": target.id,
                                     "amount": round(amt, 3)})
                 if target.energy <= 0:

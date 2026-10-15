@@ -377,3 +377,18 @@ def test_cooperative_food_needs_a_partner():
         w._advance_agent(a, learning=False, forced=a.actions.index("attack"))
         assert (a.food_eaten > n) == partner
         assert w.food_blocked == (0 if partner else 1)
+
+
+def test_no_filial_gain_blocks_energy_from_own_offspring():
+    after = {}
+    for own in (True, False):
+        w = World2D(WorldConfig(seed=0, n_agents=2, social=True, n_hazard=0, no_filial_gain=True))
+        a, b = w.agents
+        b.parent = a.id if own else None
+        b.pos = a.pos + np.array([0.02, 0.0])
+        w.food = np.empty((0, 2))
+        e_b = b.energy
+        w._advance_agent(a, learning=False, forced=a.actions.index("attack"))
+        assert b.energy < e_b
+        after[own] = a.energy
+    assert after[False] - after[True] == pytest.approx(w.cfg.steal, abs=1e-6)

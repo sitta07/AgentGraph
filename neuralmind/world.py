@@ -97,6 +97,8 @@ class WorldConfig:
     normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     deaf: bool = False             # True: the heard-signal sensor always reads 0
+    directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
+    coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
     positive_rpe_only: bool = False  # True: negative reward-prediction errors change no weights
     critic: str = "scalar"         # "scalar": one reward expectation; "state": one per binarised sensor state
     # True: affect (and the frustration->aggression drive) follows the RPE of
@@ -132,7 +134,8 @@ class Agent:
         self.id = aid
         self.net: SpikingNetwork | None = None
         self.actions = ACTIONS + (SOCIAL_ACTIONS if cfg.social else ())
-        self.n_sensors = N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
+        self.n_sensors = (N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
+                          + (3 if cfg.social and cfg.directional_hearing else 0))
         # heritable trait + genealogy (used by evolution; harmless otherwise)
         self.aggr_gain = float(cfg.aggression_gain)
         self.neutral_gene = float(cfg.aggression_gain)   # drift control; never read by behaviour
@@ -263,6 +266,10 @@ class Agent:
                     heard += 1.0 - d / self.cfg.signal_range
             other_s = self._bin_signals(others)
             base += [other_s[::-1] if self.mirrored else other_s, [min(1.0, heard)]]
+            if self.cfg.directional_hearing:
+                callers = np.empty((0, 2)) if self.cfg.deaf else signals
+                call_s = self._bin_signals(callers)
+                base += [call_s[::-1] if self.mirrored else call_s]
         return np.concatenate(base)
 
     def nearest_food_dist(self, food: np.ndarray) -> float:
@@ -537,6 +544,10 @@ class World2D:
         if len(self.food):
             d = np.linalg.norm(self.food - ag.pos, axis=1)
             hit = list(np.nonzero(d < c.eat_radius)[0])
+            if hit and c.coop_radius > 0 and not any(
+                    o.alive and o is not ag and np.linalg.norm(o.pos - ag.pos) < c.coop_radius
+                    for o in self.agents):
+                hit = []
             if hit:
                 eaten = len(hit)
                 if self.deprive:

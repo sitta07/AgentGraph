@@ -355,3 +355,24 @@ def test_state_critic_keeps_separate_expectations_per_sensor_state():
         ag.learn_and_affect(1.0, a, False, False)
     assert ag.learn_and_affect(1.0, a, False, False) < 0.01   # predicted in state a
     assert ag.learn_and_affect(1.0, b, False, False) > 0.9    # novel state b
+
+
+def test_directional_hearing_locates_callers_and_respects_deaf():
+    for deaf in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, directional_hearing=True, deaf=deaf))
+        ag = w.agents[0]
+        caller = ag.pos + 0.1 * np.array([math.cos(ag.heading), math.sin(ag.heading)])
+        s = ag.sense(w.food, w.hazards, np.empty((0, 2)), np.array([caller]))
+        assert s.shape == (ag.n_sensors,) == (14,)
+        assert (s[12] > 0) != deaf and s[12] >= max(s[11], s[13])
+
+
+def test_cooperative_food_needs_a_partner():
+    for partner in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=2, social=True, coop_radius=0.15, n_hazard=0))
+        a, b = w.agents
+        b.pos = a.pos + (np.array([0.05, 0.0]) if partner else np.array([0.6, 0.6]))
+        w.food = np.array([a.pos.copy()])
+        n = a.food_eaten
+        w._advance_agent(a, learning=False, forced=a.actions.index("attack"))
+        assert (a.food_eaten > n) == partner

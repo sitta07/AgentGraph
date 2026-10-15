@@ -312,3 +312,11 @@ def test_mirror_swaps_left_and_right_sensing_from_the_given_tick():
     w2 = World2D(WorldConfig(seed=0, n_agents=1, social=True, mirror_at=1))
     w2.step(); assert not w2.agents[0].mirrored
     w2.step(); assert w2.agents[0].mirrored
+
+
+def test_deaf_agents_hear_nothing():
+    for deaf in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, deaf=deaf))
+        ag = w.agents[0]
+        s = ag.sense(w.food, w.hazards, np.empty((0, 2)), np.array([ag.pos]))
+        assert (s[-1] == 0) == deaf

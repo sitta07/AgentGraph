@@ -96,6 +96,7 @@ class WorldConfig:
     frozen_inputs: tuple = ()      # action names whose input weights never learn
     normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
+    deaf: bool = False             # True: the heard-signal sensor always reads 0
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -253,7 +254,7 @@ class Agent:
             others = np.empty((0, 2)) if others is None else others
             signals = np.empty((0, 2)) if signals is None else signals
             heard = 0.0
-            for q in signals:
+            for q in ([] if self.cfg.deaf else signals):
                 d = float(np.linalg.norm(q - self.pos))
                 if d <= self.cfg.signal_range:
                     heard += 1.0 - d / self.cfg.signal_range

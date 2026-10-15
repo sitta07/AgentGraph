@@ -113,8 +113,9 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     enc_ticks, enc_kin = 0, 0
     share_events, share_kin = 0, 0
     series = {"t": [], "pop": [], "share_gene": [], "aggr_gene": [],
-              "generation": [], "share_rate": [], "attack_rate": [], "invader_share": []}
+              "generation": [], "share_rate": [], "attack_rate": [], "invader_share": [], "food_rate": []}
     win = Counter(); win_ticks = 0
+    eaten_mark = 0
     # communication: does signalling carry information about the signaller's
     # state, and does hearing a signal change what the listener does?
     tab = {k: np.zeros((2, 2)) for k in ("food", "threat", "hunger")}
@@ -199,6 +200,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             series["share_rate"].append(win["share"] / n)
             series["attack_rate"].append(win["attack"] / n)
             series["invader_share"].append(invader_share(w, qpop) if qpop else float("nan"))
+            series["food_rate"].append((w.eaten_total - eaten_mark) / n)
+            eaten_mark = w.eaten_total
             win = Counter(); win_ticks = 0
     live = [a for a in w.agents if a.alive]
     n = max(1, alive_ticks)
@@ -249,6 +252,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "mi_heard_action": mutual_information(heard_action),
         "p_heard_action": g_test_p(heard_action),
         "births": w.births,
+        **_shift_recovery(series, w.cfg.mirror_every),
         "invader_share": invader_share(w, qpop) if qpop else float("nan"),
         "invader_share_mean": (float(np.nanmean(series["invader_share"]))
                                if qpop and series["invader_share"] else float("nan")),
@@ -257,6 +261,27 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         **_demography(dem, born_early, parents),
         "series": series,
     }
+
+
+def _shift_recovery(series: dict, every: int) -> dict:
+    """Food per agent-tick in the first quarter after each sensory flip vs the
+    last quarter before it, averaged over flips."""
+    nan = float("nan")
+    if every <= 0:
+        return {"food_rate_pre_shift": nan, "food_rate_post_shift": nan, "shift_drop": nan}
+    t, f = np.array(series["t"]), np.array(series["food_rate"], dtype=float)
+    q = every // 4
+    pre, post = [], []
+    for k in range(1, int(t.max()) // every + 1 if t.size else 0):
+        b = k * every
+        a_ = f[(t >= b - q) & (t < b)]
+        p_ = f[(t > b) & (t <= b + q)]
+        if a_.size and p_.size:
+            pre.append(a_.mean()); post.append(p_.mean())
+    if not pre:
+        return {"food_rate_pre_shift": nan, "food_rate_post_shift": nan, "shift_drop": nan}
+    return {"food_rate_pre_shift": float(np.mean(pre)), "food_rate_post_shift": float(np.mean(post)),
+            "shift_drop": float(np.mean(pre) - np.mean(post))}
 
 
 def _demography(dem: Counter, born_early: set, parents: set) -> dict:

@@ -122,3 +122,14 @@ def test_drift_probe_restores_learning_rule_and_reports_all_tick_kinds():
     r = probe(seed=0, ticks=60, cfg={"n_agents": 4, "max_pop": 8})
     assert Agent.learn_and_affect is before
     assert sum(r["updates"].get(k, 0) for k in ("eat", "pain", "shaping")) > 0
+
+
+def test_periodic_shift_reports_drop_after_each_flip():
+    from neuralmind.research.evolution import _shift_recovery, run_evolution
+    series = {"t": list(range(0, 4000, 100)),
+              "food_rate": [0.05 if (t % 1000) >= 250 else 0.01 for t in range(0, 4000, 100)]}
+    r = _shift_recovery(series, 1000)
+    assert r["shift_drop"] > 0.03
+    out = run_evolution({"seed": 0, "n_agents": 6, "max_pop": 12, "mirror_every": 100},
+                        ticks=400, learning=False, sample_every=20)
+    assert np.isfinite(out["shift_drop"]) and len(out["series"]["food_rate"]) == 20

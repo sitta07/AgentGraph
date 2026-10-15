@@ -96,6 +96,7 @@ class WorldConfig:
     frozen_inputs: tuple = ()      # action names whose input weights never learn
     normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
+    mirror_every: int = 0          # >0: left/right sensing flips every this many ticks
     deaf: bool = False             # True: the heard-signal sensor always reads 0
     directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
     coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
@@ -433,6 +434,7 @@ class World2D:
         self.affect = a0.affect
         self.next_id = len(self.agents)
         self.births = 0
+        self.eaten_total = 0
         # Genealogy of every agent that ever lived (kept after bodies are pruned).
         self.registry: dict[int, dict] = {}
         for ag in self.agents:
@@ -556,6 +558,7 @@ class World2D:
                     for idx in hit:
                         self.food[idx] = self._scatter(1)[0]
         ag.food_eaten += eaten
+        self.eaten_total += eaten
         ag.energy += eaten * c.food_energy
 
         in_hazard = False
@@ -668,6 +671,8 @@ class World2D:
         self._signals_now = []
         results = {}
         mirrored = 0 <= self.cfg.mirror_at <= self.t
+        if self.cfg.mirror_every > 0:
+            mirrored = (self.t // self.cfg.mirror_every) % 2 == 1
         for ag in self.agents:
             ag.mirrored = mirrored
         for ag in self.agents:

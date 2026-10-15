@@ -26,13 +26,21 @@
 - **Same result as M.** Signals carry about 0.0002–0.0003 bits about food,
   threat or hunger, with or without hearing. The added need for a partner did
   not change that within ~14 generations.
-- **The partner requirement probably did not bind.** Populations are viscous,
-  and an agent had a neighbour within 0.08 on 48% of ticks. A partner within
-  0.15 is therefore usually present without any coordination. Food per
-  agent-tick (0.044) was close to normal worlds. So there was still little
-  reason to call others. This is the most likely reason S failed as a test.
-  The manipulation was not checked in advance; a direct measure (the share
-  of food blocked by the partner rule) would have caught it.
+- **The partner rule did bind, so this is a real negative result.** S did not
+  measure blocked food. A follow-up pilot (unregistered seed 9996, ticks
+  0–4000, same settings) added `food_blocked_frac`: 42% of the food that
+  agents reached was blocked because no partner was within 0.15. Well-mixed
+  populations gave 38%; a radius of 0.10 blocked 74%. So eating did depend
+  on having a partner, and signals still did not come to carry information
+  about food.
+  - An earlier draft of this page guessed that the rule did not bind,
+    because encounters within 0.08 were common (48% of ticks). The pilot
+    contradicts that guess.
+- Possible reasons, untested:
+  - any agent can serve as a partner, so a call about food helps no more
+    than staying near others;
+  - without learning, about 14 generations of selection may be too few;
+  - a single binary call neuron may be too coarse to carry a code.
 
 ## Also observed (not pre-registered)
 
@@ -51,6 +59,6 @@
 
 ## Next step
 
-Before another signalling study, make the partner rule bind and check it
-with a manipulation measure. For example: well-mixed placement or a lower
-density, and log how many food items are blocked for lack of a partner.
+A future signalling study should make the benefit specific to the caller.
+For example, food that only the caller can see, so that a listener must
+reach it. It should also log `food_blocked_frac` as a manipulation check.

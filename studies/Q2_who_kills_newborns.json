@@ -1,0 +1,23 @@
+{
+  "id": "Q2_who_kills_newborns",
+  "title": "Who kills newborns, and does it explain why viscosity protects populations?",
+  "question": "Q found (not pre-registered) that populations whose newborns were placed beside a non-relative went extinct in 11/12 runs, against 3/12 when newborns were placed beside their parent. Is that because non-relatives kill newborns? This study logs every killing in the first 6000 ticks: whether the killer is a relative, whether it is the victim's parent, and whether the victim is young (age < 150 ticks).",
+  "background": "A pilot on unregistered seed 9997 (3000 ticks, one run per placement) leaned against the stranger-attack idea: 62% (stranger) and 74% (viscous) of kills hit young agents, who made up 33% and 28% of agent-ticks; 59% of kills in the viscous run were of relatives. H31b is the mechanism Q suggested and is registered in that direction even though the pilot does not favour it. early_young_kill_excess = share of kills with a young victim minus the share of agent-ticks spent young. Seeds 1600-1611 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1600,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "mixed":    {"config": {"viscous": false}, "learning": true},
+    "stranger": {"config": {"viscous": false, "born_near_stranger": true}, "learning": true},
+    "viscous":  {"config": {"viscous": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H31a", "statement": "Young agents are killed more often than their share of the population (viscous)", "metric": "early_young_kill_excess", "a": "viscous", "b": 0, "direction": "greater"},
+    {"id": "H31a2", "statement": "Young agents are killed more often than their share of the population (stranger)", "metric": "early_young_kill_excess", "a": "stranger", "b": 0, "direction": "greater"},
+    {"id": "H31b", "statement": "Newborns placed beside a stranger are killed more (excess young kills higher than when placed beside the parent)", "metric": "early_young_kill_excess", "a": "stranger", "b": "viscous", "direction": "greater"},
+    {"id": "H31c", "statement": "Replication of Q (post hoc there): populations whose newborns sit beside a stranger die out sooner than viscous ones", "metric": "survival_ticks", "a": "stranger", "b": "viscous", "direction": "less"},
+    {"id": "H31d", "statement": "In viscous populations, parents kill their own offspring in at least 10% of killings", "metric": "early_frac_kills_offspring", "a": "viscous", "b": 0.1, "direction": "greater"}
+  ]
+}

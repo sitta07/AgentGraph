@@ -125,6 +125,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     # demography before `early` ticks: deaths by cause, births, offspring success
     dem = Counter()
     prev_ids = {a.id for a in w.agents if a.alive}
+    prev_agents = {a.id: a for a in w.agents if a.alive}
+    young_age = 150                           # "newborn" for the kill log: first 10% of max_age
     born_early, parents = set(), set()
     eaten0, eaten1 = {}, {}                   # agent id -> food eaten at first / last tick seen in the final window
     for t in range(ticks):
@@ -136,7 +138,14 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             ids = {a.id for a in live}
             killed = {e["dst"] for e in frame["events"] if e["type"] == "death"}
             old = {e["src"] for e in frame["events"] if e["type"] == "old_age"}
+            by_id = {**prev_agents, **{a.id: a for a in live}}
             for e in frame["events"]:
+                if e["type"] == "death" and e["src"] in by_id and e["dst"] in by_id:
+                    killer, victim = by_id[e["src"]], by_id[e["dst"]]
+                    dem["kills_kin"] += w.relatedness(killer, victim) > 0
+                    dem["kills_young"] += victim.age < young_age
+                    dem["kills_offspring"] += victim.parent == killer.id
+                    dem["kills_logged"] += 1
                 if e["type"] == "birth":
                     dem["births"] += 1
                     parents.add(e["src"])
@@ -145,7 +154,9 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             for i in prev_ids - ids:
                 dem["killed" if i in killed else "old_age" if i in old else "starved"] += 1
             dem["agent_ticks"] += len(live)
+            dem["young_ticks"] += sum(a.age < young_age for a in live)
             prev_ids = ids
+            prev_agents = {a.id: a for a in live}
         if not live:
             break
         names = {a["id"]: a["action_name"] for a in frame["agents"] if a["alive"]}
@@ -287,10 +298,19 @@ def _shift_recovery(series: dict, every: int) -> dict:
 def _demography(dem: Counter, born_early: set, parents: set) -> dict:
     deaths = dem["killed"] + dem["old_age"] + dem["starved"]
     frac = lambda k: dem[k] / deaths if deaths else float("nan")
+    kills_young = dem["kills_young"] / dem["kills_logged"] if dem["kills_logged"] else float("nan")
+    young = dem["young_ticks"] / dem["agent_ticks"] if dem["agent_ticks"] else float("nan")
     return {"early_birth_rate": dem["births"] / dem["agent_ticks"] if dem["agent_ticks"] else float("nan"),
             "early_death_rate": deaths / dem["agent_ticks"] if dem["agent_ticks"] else float("nan"),
             "early_frac_killed": frac("killed"), "early_frac_starved": frac("starved"),
             "early_frac_old_age": frac("old_age"),
+            "early_frac_kills_kin": (dem["kills_kin"] / dem["kills_logged"]
+                                     if dem["kills_logged"] else float("nan")),
+            "early_frac_kills_young": kills_young,
+            "early_frac_young": young,
+            "early_young_kill_excess": kills_young - young,
+            "early_frac_kills_offspring": (dem["kills_offspring"] / dem["kills_logged"]
+                                           if dem["kills_logged"] else float("nan")),
             "early_offspring_success": (len(born_early & parents) / len(born_early)
                                         if born_early else float("nan"))}
 

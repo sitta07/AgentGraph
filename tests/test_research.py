@@ -76,6 +76,9 @@ def test_early_demography_accounts_for_every_death():
     assert abs(total - 1.0) < 1e-9
     assert r["early_frac_old_age"] > 0 and 0 < r["early_birth_rate"] < 1
     assert 0 <= r["early_offspring_success"] <= 1
+    for k in ("early_frac_kills_kin", "early_frac_kills_young", "early_frac_young",
+              "early_frac_kills_offspring"):
+        assert np.isnan(r[k]) or 0 <= r[k] <= 1, k
 
 
 def test_relatedness_genealogy():

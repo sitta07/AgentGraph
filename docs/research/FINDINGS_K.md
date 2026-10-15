@@ -96,3 +96,30 @@ hands action-selection share to rarely used actions. This is a hypothesis
 from three exploratory seeds, not a confirmed result. A pre-registered test
 would subtract a per-population activity baseline from the eligibility, or
 use a zero-mean RPE, and predict that the social rise disappears.
+
+## Relation to the literature
+
+What we found matches a known property of reward-modulated STDP.
+**Frémaux, Sprekeler & Gerstner (2010)**, *J. Neurosci.* 30(40):13326–13337,
+show that these rules split into two parts:
+
+- a term that tracks the covariance between firing and reward, which does
+  the useful learning;
+- an **unsupervised, Hebbian-like bias term**, which is harmful.
+
+The bias goes away only if the reward signal has zero mean *for each
+stimulus or task*, which requires a critic that predicts reward per stimulus.
+
+Our agents have one scalar reward predictor per agent. It is not conditioned
+on the stimulus or on the action, so the bias term remains. In our world the
+bias works as activity-dependent depression of the most-used pathways.
+
+**What is known and what is new here.** The bias itself is known. What these
+experiments add is its *ecological* consequence. In a multi-agent world the
+bias showed up as a rise in aggression, sharing and signalling. It looked
+like learned social behaviour, and it fooled our own first analyses (C, C2,
+G). We have not found an earlier report of this specific confound in
+artificial-life studies. Our literature search was not exhaustive, though.
+
+Sources: [PMC6634722](https://pmc.ncbi.nlm.nih.gov/articles/PMC6634722),
+[EPFL record](https://infoscience.epfl.ch/record/153015).

@@ -44,12 +44,14 @@ alone, but the survival-time difference replicated in all three.
   share of starvation deaths, and a lower birth rate per agent. A population
   whose birth rate is barely above its death rate has a smaller margin, so
   chance runs of deaths are more likely to end it.
-- **Candidate explanation, not tested.** In viscous worlds a newborn appears
-  next to its parent, often inside a food-rich patch the parent found, so
-  local energy is recycled faster within families, including through theft
-  between neighbours. In well-mixed worlds newborns land at random with
-  little energy and starve more often. A direct test would place well-mixed
-  newborns next to food, or viscous newborns away from it.
+- **Food patches cannot explain it.** Food respawns uniformly at random, so
+  a newborn next to its parent is not in a richer area.
+- **What viscous placement does change:** newborns start next to *someone*,
+  and that someone is a relative. Energy can then move locally, through
+  theft and sharing among neighbours, and the faster turnover follows.
+- **Two candidate explanations, not yet separated:** relatedness (kin
+  structure) or local density (being near anyone). Experiment Q separates
+  them by placing well-mixed newborns next to a random unrelated agent.
 
 ## Limits
 

@@ -112,6 +112,7 @@ class WorldConfig:
     trait_sigma: float = 0.2       # mutation s.d. of the heritable aggression gain
     birth_radius: float = 0.04     # offspring scatter around the parent
     viscous: bool = True           # True: born near parent; False: born anywhere
+    born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
     seed: int = 0
@@ -711,8 +712,14 @@ class World2D:
         c, rng = self.cfg, self.rng
         child = Agent(c, self.next_id)
         self.next_id += 1
+        strangers = ([a for a in self.agents if a.alive and a is not parent
+                      and self.relatedness(parent, a) == 0.0]
+                     if (c.born_near_stranger and not c.viscous) else [])
         if c.viscous:
             pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
+        elif strangers:
+            host = strangers[int(rng.integers(len(strangers)))]
+            pos = host.pos + rng.normal(0.0, c.birth_radius, size=2)
         else:
             pos = rng.uniform(0.05, c.size - 0.05, size=2)
         child.spawn(np.clip(pos, 0.01, c.size - 0.01), float(rng.uniform(0, 2 * math.pi)))

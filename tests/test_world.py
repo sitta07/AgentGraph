@@ -334,3 +334,14 @@ def test_positive_rpe_only_ignores_negative_errors():
         assert rpe < 0
         same = all(np.array_equal(cn.weights, before[cn.post]) for cn in ag._plastic)
         assert same == flag
+
+
+def test_born_near_stranger_places_newborn_next_to_a_non_relative():
+    w = World2D(WorldConfig(seed=0, n_agents=3, social=True, evolve=True,
+                            viscous=False, born_near_stranger=True))
+    p = w.agents[0]
+    p.energy = 2.0
+    c = w._birth(p)
+    others = [a for a in w.agents if a is not p and a is not c]
+    d = min(np.linalg.norm(c.pos - a.pos) for a in others)
+    assert d < 0.2 and np.linalg.norm(c.pos - p.pos) > d

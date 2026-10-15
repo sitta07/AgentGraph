@@ -119,6 +119,10 @@ neuralmind-study studies/my_study.json # run a registered study
 | **Baldwin effect vs hiding effect** (E, [write-up](docs/research/FINDINGS_E.md)): does learning speed up or shield the evolution of innate ability? | **Hiding effect.** Without learning, evolution more than doubled innate foraging (+5.5 [3.3, 7.6]). With learning, innate ability stayed near founder level (−4.4 [−7.0, −1.5] vs no learning), even across more generations. | completed |
 | Foraging: trained vs untrained agent, 60 held-out worlds | 4.85 vs 3.45 food per episode (≈ +40%). Single agent only; in evolving populations learning *lowered* foraging (P). | real but noisy |
 
+How C–R fit together (learned social behaviour as a side effect of the
+learning rule) is summarised in
+[`docs/research/SYNTHESIS_LEARNING_SIDE_EFFECT.md`](docs/research/SYNTHESIS_LEARNING_SIDE_EFFECT.md).
+
 The full ranked agenda of open questions is in
 [`docs/research/RESEARCH_AGENDA.md`](docs/research/RESEARCH_AGENDA.md).
 

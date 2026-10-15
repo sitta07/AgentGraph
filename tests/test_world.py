@@ -345,3 +345,13 @@ def test_born_near_stranger_places_newborn_next_to_a_non_relative():
     others = [a for a in w.agents if a is not p and a is not c]
     d = min(np.linalg.norm(c.pos - a.pos) for a in others)
     assert d < 0.2 and np.linalg.norm(c.pos - p.pos) > d
+
+
+def test_state_critic_keeps_separate_expectations_per_sensor_state():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, critic="state"))
+    ag = w.agents[0]
+    a, b = np.zeros(ag.n_sensors), np.ones(ag.n_sensors)
+    for _ in range(50):
+        ag.learn_and_affect(1.0, a, False, False)
+    assert ag.learn_and_affect(1.0, a, False, False) < 0.01   # predicted in state a
+    assert ag.learn_and_affect(1.0, b, False, False) > 0.9    # novel state b

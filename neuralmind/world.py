@@ -98,6 +98,7 @@ class WorldConfig:
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     deaf: bool = False             # True: the heard-signal sensor always reads 0
     positive_rpe_only: bool = False  # True: negative reward-prediction errors change no weights
+    critic: str = "scalar"         # "scalar": one reward expectation; "state": one per binarised sensor state
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -339,7 +340,8 @@ class Agent:
                          in_hazard: bool, learning: bool, hurt: bool = False,
                          primary: float | None = None, action: int | None = None) -> float:
         c = self.cfg
-        rpe = self.predictor.update(reward)
+        key = tuple(np.asarray(sensors) > 0.2) if c.critic == "state" else "_"
+        rpe = self.predictor.update(reward, key)
         affect_rpe = (self.primary_predictor.update(primary)
                       if (c.affect_from_primary and primary is not None) else rpe)
         if learning and not (c.positive_rpe_only and rpe < 0):
@@ -355,7 +357,7 @@ class Agent:
         self.net.clear_eligibility()
         self.affect.update(rpe=affect_rpe, threat_cue=float(max(sensors[3:6])),
                            pain=1.0 if (in_hazard or hurt) else 0.0,
-                           reward_expectation=float(np.clip(self.predictor.value(), 0, 1)))
+                           reward_expectation=float(np.clip(self.predictor.value(key), 0, 1)))
         return rpe
 
     def neural_glow(self) -> list[float]:

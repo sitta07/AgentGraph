@@ -74,6 +74,9 @@ class Session:
             if k == "reward_mode":
                 kwargs[k] = v if v in ("align", "approach") else "align"
                 continue
+            if k == "critic":
+                kwargs[k] = v if v in ("scalar", "state") else "scalar"
+                continue
             if isinstance(getattr(WorldConfig, k, None), bool):
                 kwargs[k] = bool(v)
                 continue

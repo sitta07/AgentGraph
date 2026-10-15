@@ -100,7 +100,9 @@ function buildControls(cfg, bounds) {
      <input type="checkbox" id="t_${k}" ${cfg[k] ? "checked" : ""}> ${l}</label>`).join("")
     + LOCO_TOGGLES.map(([k, l]) =>
     `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
-     <input type="checkbox" id="t_${k}" ${(cfg[k] || []).length ? "checked" : ""}> ${l}</label>`).join("");
+     <input type="checkbox" id="t_${k}" ${(cfg[k] || []).length ? "checked" : ""}> ${l}</label>`).join("")
+    + `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
+     <input type="checkbox" id="t_critic" ${cfg.critic === "state" ? "checked" : ""}> Reward expectation per sensor state (Exp. R)</label>`;
   $("envCtls").innerHTML = ENV_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
   $("neuroCtls").innerHTML = NEURO_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
   for (const [k, , dp] of [...ENV_FIELDS, ...NEURO_FIELDS]) {
@@ -115,6 +117,7 @@ function gatherControls() {
   }
   for (const [k] of TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked; }
   for (const [k] of LOCO_TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked ? LOCO : []; }
+  { const el = $("t_critic"); if (el) o.critic = el.checked ? "state" : "scalar"; }
   if (o.evolve) o.social = true;   // evolution experiments run with the social layer
   o.learning = S.learning;
   return o;

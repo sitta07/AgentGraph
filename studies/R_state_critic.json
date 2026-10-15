@@ -1,0 +1,23 @@
+{
+  "id": "R_state_critic",
+  "title": "Does a stimulus-specific critic remove the side effect of learning on social behaviour?",
+  "question": "Frémaux, Sprekeler & Gerstner (2010) show that reward-modulated STDP carries an unsupervised bias term unless the reward expectation is subtracted per stimulus. Our agents use one scalar expectation. If the expectation is kept separately for each binarised sensor state, does the learning-induced rise in attacking, signalling and sharing shrink, and does foraging improve?",
+  "background": "Experiments I-K traced the rise in social actions under learning to a fall in total locomotion drive; an exploratory probe found ~58% of updates carry a negative RPE, absorbed mostly by the busiest (locomotion) pathways. Intervention: critic='state' keys the TD(0) reward expectation by the sensor vector thresholded at 0.2 (up to 2048 states for social agents). Seeds 1200-1207 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 1200,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "scalar":  {"config": {"critic": "scalar"}, "learning": true},
+    "state":   {"config": {"critic": "state"},  "learning": true},
+    "nolearn": {"config": {"critic": "scalar"}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H27a", "statement": "A state critic lowers the attack rate", "metric": "attack_rate", "a": "scalar", "b": "state", "direction": "greater"},
+    {"id": "H27b", "statement": "A state critic lowers signalling", "metric": "signal_rate", "a": "scalar", "b": "state", "direction": "greater"},
+    {"id": "H27c", "statement": "A state critic lowers sharing given a neighbour in reach", "metric": "share_given_encounter", "a": "scalar", "b": "state", "direction": "greater"},
+    {"id": "H27d", "statement": "A state critic reduces the drift of social relative to locomotion inputs", "metric": "drift_social_minus_loco", "a": "scalar", "b": "state", "direction": "greater"},
+    {"id": "H27e", "statement": "A state critic improves realised foraging", "metric": "food_rate", "a": "state", "b": "scalar", "direction": "greater"}
+  ]
+}

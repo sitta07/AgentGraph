@@ -26,6 +26,7 @@ studies complete.
 | 18 | Can lifetime learning pay if the decision dynamics are fixed (32 ms window, state cleared, normalised weights)? | V follow-up probes: lock-in, short window, runaway potentiation. | W: single agents, each fix ablated; falsified if trained ≤ untrained. | ~15 min | **done: yes, 5.7×, all three fixes necessary** ([W](FINDINGS_W.md)); social worlds open (mass killing in pilot) |
 | 19 | Does learning pay in evolving social populations once the decision dynamics are fixed? | W: 5.7× for single agents; social pilot died out under the shared-budget normalisation. | X: innate-sum normalisation, learn vs no learn vs scrambled vs default. | ~2 h | **done: no** ([X](FINDINGS_X.md)); fixed dynamics raise attacks ~15× and shorten lives to ~150 ticks; next: lengthen lives (costlier attacks) |
 | 20 | Does learning fail in populations because lives are too short? | X: estimated mean life ~150 ticks vs 20000 training ticks in W. | Y: single agents, training budgets 150–20000 ticks. | ~25 min | **done: no, not alone** ([Y](FINDINGS_Y.md)); learning pays after 150 ticks (+26%), 2.6× after 500; next: social world without evolution |
+| 21 | What blocks lifetime learning among other agents? | X, Y: learning fails in social populations, not because lives are short. | Z: solo vs 12 non-social vs 12 social vs 12 social without theft, no evolution. | ~1.8 h | **done: not crowding, not theft** ([Z](FINDINGS_Z.md)); next: a social agent alone, to test its extra actions and sensors |
 
 ## Principles
 

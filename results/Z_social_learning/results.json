@@ -1,0 +1,1337 @@
+{
+ "experiment": "Z_social_learning",
+ "title": "What stops lifetime learning from paying among other agents?",
+ "question": "W and Y showed that a single agent with the fixed decision dynamics learns sensory foraging fast (2.6x after 500 ticks, 4.4x after 1500). X found that learning did not pay in evolving social populations, and Y ruled out short lives as the whole explanation. Here there is no evolution: a fixed group of agents learns together for 1500 ticks, and agent 0 is then tested frozen among its frozen peers. The conditions separate the presence of other foragers from the social actions, and theft from the other social actions.",
+ "background": "All conditions use substeps=32, reset_each_decision, normalize with normalize_to='innate'. solo: one agent, 8 food, non-social. crowd12: 12 non-social agents, 24 food (competition for food only). social12: 12 social agents (attack, share, signal), 24 food. social12_nosteal: as social12 with steal=0, so an attack takes no energy: the attacker gains nothing and the target loses nothing, but the attacker still pays the attack cost. Each run trains all agents for 1500 ticks (3 episodes of 500), freezes them, and tests agent 0 on 8 held-out worlds with its trained peers; the untrained baseline is a fresh untrained group on the same worlds. learning_gain = trained_food - untrained_food for agent 0. Exploratory pilot (seeds 720-723, worlds 9600-9605): learning_gain +15.5 solo and -4.0 social12 (all four seeds negative); crowd12 and social12_nosteal were not piloted. Interpretation rule, fixed in advance: social actions (not crowding) block learning if H43a and H43b are supported; theft is the cause if H43c is also supported. Seeds 830-841 and worlds 9300-9307 have never been run.",
+ "hypotheses": [
+  {
+   "id": "H43a",
+   "statement": "In a social group, learning lowers foraging (trained eat less than untrained)",
+   "metric": "learning_gain",
+   "a": "social12",
+   "b": 0,
+   "direction": "less"
+  },
+  {
+   "id": "H43b",
+   "statement": "Among non-social foragers, learning still pays",
+   "metric": "learning_gain",
+   "a": "crowd12",
+   "b": 0,
+   "direction": "greater"
+  },
+  {
+   "id": "H43c",
+   "statement": "Removing theft restores part of the learning gain (nosteal beats social12)",
+   "metric": "learning_gain",
+   "a": "social12_nosteal",
+   "b": "social12",
+   "direction": "greater"
+  },
+  {
+   "id": "H43d",
+   "statement": "In a social group, learning raises agent 0's attack rate (trained minus untrained)",
+   "metric": "attack_gain",
+   "a": "social12",
+   "b": 0,
+   "direction": "greater"
+  },
+  {
+   "id": "H43e",
+   "statement": "Replication of W/Y: solo learning pays",
+   "metric": "learning_gain",
+   "a": "solo",
+   "b": 0,
+   "direction": "greater"
+  }
+ ],
+ "version": "0.2.0",
+ "preregistration": {
+  "spec_path": "studies/Z_social_learning.json",
+  "commit": "a98ba24577e3033599b2d037de4d198176205ab1",
+  "committed_at": "2026-10-17T03:31:20+07:00",
+  "modified_since_commit": false,
+  "preregistered": true
+ },
+ "deviations": {},
+ "design": {
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 830,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9300,
+  "base": {
+   "substeps": 32,
+   "reset_each_decision": true,
+   "normalize": true,
+   "normalize_to": "innate"
+  },
+  "conditions": {
+   "solo": {
+    "config": {},
+    "train_ticks": 1500
+   },
+   "crowd12": {
+    "config": {
+     "n_agents": 12,
+     "n_food": 24
+    },
+    "train_ticks": 1500
+   },
+   "social12": {
+    "config": {
+     "social": true,
+     "n_agents": 12,
+     "n_food": 24
+    },
+    "train_ticks": 1500
+   },
+   "social12_nosteal": {
+    "config": {
+     "social": true,
+     "n_agents": 12,
+     "n_food": 24,
+     "steal": 0.0
+    },
+    "train_ticks": 1500
+   }
+  }
+ },
+ "summary": {
+  "solo": {
+   "attack_gain": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "collapsed01": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "learning_gain": {
+    "mean": 8.260416666666666,
+    "lo": 6.1875,
+    "hi": 10.187760416666665,
+    "n": 12
+   },
+   "sense_gain": {
+    "mean": 11.875,
+    "lo": 9.69765625,
+    "hi": 13.875260416666665,
+    "n": 12
+   },
+   "train_food_first_quarter": {
+    "mean": 5.916666666666667,
+    "lo": 3.5,
+    "hi": 8.416666666666666,
+    "n": 12
+   },
+   "train_food_last_quarter": {
+    "mean": 16.333333333333332,
+    "lo": 13.083333333333334,
+    "hi": 19.083333333333332,
+    "n": 12
+   },
+   "train_ticks_run": {
+    "mean": 1500.0,
+    "lo": 1500.0,
+    "hi": 1500.0,
+    "n": 12
+   },
+   "trained_attack_frac": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "trained_food": {
+    "mean": 15.260416666666666,
+    "lo": 13.1875,
+    "hi": 17.187760416666666,
+    "n": 12
+   },
+   "trained_food_scrambled": {
+    "mean": 3.3854166666666665,
+    "lo": 2.8854166666666665,
+    "hi": 3.8125,
+    "n": 12
+   },
+   "trained_forward_frac": {
+    "mean": 0.3293467410562774,
+    "lo": 0.29598741313449656,
+    "hi": 0.3620351997402316,
+    "n": 12
+   },
+   "untrained_attack_frac": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "untrained_food": {
+    "mean": 7.0,
+    "lo": 7.0,
+    "hi": 7.0,
+    "n": 12
+   },
+   "untrained_food_scrambled": {
+    "mean": 2.625,
+    "lo": 2.625,
+    "hi": 2.625,
+    "n": 12
+   },
+   "untrained_forward_frac": {
+    "mean": 0.3371479672950261,
+    "lo": 0.3371479672950261,
+    "hi": 0.3371479672950261,
+    "n": 12
+   }
+  },
+  "crowd12": {
+   "attack_gain": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "collapsed01": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "learning_gain": {
+    "mean": 6.895833333333333,
+    "lo": 3.625,
+    "hi": 10.479166666666666,
+    "n": 12
+   },
+   "sense_gain": {
+    "mean": 8.614583333333334,
+    "lo": 5.8015625,
+    "hi": 11.72942708333333,
+    "n": 12
+   },
+   "train_food_first_quarter": {
+    "mean": 20.5,
+    "lo": 17.083333333333332,
+    "hi": 23.585416666666653,
+    "n": 12
+   },
+   "train_food_last_quarter": {
+    "mean": 21.916666666666668,
+    "lo": 15.664583333333333,
+    "hi": 28.00208333333332,
+    "n": 12
+   },
+   "train_ticks_run": {
+    "mean": 1500.0,
+    "lo": 1500.0,
+    "hi": 1500.0,
+    "n": 12
+   },
+   "trained_attack_frac": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "trained_food": {
+    "mean": 23.395833333333332,
+    "lo": 20.125,
+    "hi": 26.979166666666668,
+    "n": 12
+   },
+   "trained_food_scrambled": {
+    "mean": 14.78125,
+    "lo": 13.478645833333333,
+    "hi": 16.145833333333332,
+    "n": 12
+   },
+   "trained_forward_frac": {
+    "mean": 0.3986339763080246,
+    "lo": 0.3231978646936435,
+    "hi": 0.4773359539927291,
+    "n": 12
+   },
+   "untrained_attack_frac": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "untrained_food": {
+    "mean": 16.5,
+    "lo": 16.5,
+    "hi": 16.5,
+    "n": 12
+   },
+   "untrained_food_scrambled": {
+    "mean": 17.375,
+    "lo": 17.375,
+    "hi": 17.375,
+    "n": 12
+   },
+   "untrained_forward_frac": {
+    "mean": 0.32751923076923084,
+    "lo": 0.32751923076923084,
+    "hi": 0.32751923076923084,
+    "n": 12
+   }
+  },
+  "social12": {
+   "attack_gain": {
+    "mean": 0.04824429043085989,
+    "lo": 0.02046887529079913,
+    "hi": 0.07629616999717616,
+    "n": 12
+   },
+   "collapsed01": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "learning_gain": {
+    "mean": -2.8229166666666665,
+    "lo": -5.885677083333333,
+    "hi": 0.5106770833333318,
+    "n": 12
+   },
+   "sense_gain": {
+    "mean": 1.5520833333333333,
+    "lo": -1.6041666666666667,
+    "hi": 5.135416666666667,
+    "n": 12
+   },
+   "train_food_first_quarter": {
+    "mean": 13.333333333333334,
+    "lo": 9.08125,
+    "hi": 17.916666666666668,
+    "n": 12
+   },
+   "train_food_last_quarter": {
+    "mean": 6.75,
+    "lo": 3.25,
+    "hi": 10.583333333333334,
+    "n": 12
+   },
+   "train_ticks_run": {
+    "mean": 1500.0,
+    "lo": 1500.0,
+    "hi": 1500.0,
+    "n": 12
+   },
+   "trained_attack_frac": {
+    "mean": 0.11151348086149386,
+    "lo": 0.08373806572143311,
+    "hi": 0.1395653604278101,
+    "n": 12
+   },
+   "trained_food": {
+    "mean": 10.677083333333334,
+    "lo": 7.614322916666667,
+    "hi": 14.01067708333333,
+    "n": 12
+   },
+   "trained_food_scrambled": {
+    "mean": 9.125,
+    "lo": 8.260416666666666,
+    "hi": 10.0,
+    "n": 12
+   },
+   "trained_forward_frac": {
+    "mean": 0.3159256676081439,
+    "lo": 0.2308222007205621,
+    "hi": 0.4065792035323879,
+    "n": 12
+   },
+   "untrained_attack_frac": {
+    "mean": 0.06326919043063396,
+    "lo": 0.06326919043063396,
+    "hi": 0.06326919043063396,
+    "n": 12
+   },
+   "untrained_food": {
+    "mean": 13.5,
+    "lo": 13.5,
+    "hi": 13.5,
+    "n": 12
+   },
+   "untrained_food_scrambled": {
+    "mean": 11.75,
+    "lo": 11.75,
+    "hi": 11.75,
+    "n": 12
+   },
+   "untrained_forward_frac": {
+    "mean": 0.3094596124774442,
+    "lo": 0.3094596124774442,
+    "hi": 0.3094596124774442,
+    "n": 12
+   }
+  },
+  "social12_nosteal": {
+   "attack_gain": {
+    "mean": 0.01776429937067017,
+    "lo": 0.001622772187459347,
+    "hi": 0.0331288054084605,
+    "n": 12
+   },
+   "collapsed01": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12
+   },
+   "learning_gain": {
+    "mean": -2.4166666666666665,
+    "lo": -4.917708333333334,
+    "hi": 0.0,
+    "n": 12
+   },
+   "sense_gain": {
+    "mean": 1.3541666666666667,
+    "lo": -1.5002604166666667,
+    "hi": 4.083593749999999,
+    "n": 12
+   },
+   "train_food_first_quarter": {
+    "mean": 15.5,
+    "lo": 11.833333333333334,
+    "hi": 19.416666666666668,
+    "n": 12
+   },
+   "train_food_last_quarter": {
+    "mean": 13.416666666666666,
+    "lo": 7.75,
+    "hi": 19.16874999999999,
+    "n": 12
+   },
+   "train_ticks_run": {
+    "mean": 1500.0,
+    "lo": 1500.0,
+    "hi": 1500.0,
+    "n": 12
+   },
+   "trained_attack_frac": {
+    "mean": 0.11348251970965323,
+    "lo": 0.09734099252644242,
+    "hi": 0.12884702574744356,
+    "n": 12
+   },
+   "trained_food": {
+    "mean": 10.583333333333334,
+    "lo": 8.082291666666666,
+    "hi": 13.0,
+    "n": 12
+   },
+   "trained_food_scrambled": {
+    "mean": 9.229166666666666,
+    "lo": 8.062239583333334,
+    "hi": 10.322916666666666,
+    "n": 12
+   },
+   "trained_forward_frac": {
+    "mean": 0.2912024977926269,
+    "lo": 0.25100030581675575,
+    "hi": 0.332864484969964,
+    "n": 12
+   },
+   "untrained_attack_frac": {
+    "mean": 0.09571822033898304,
+    "lo": 0.09571822033898304,
+    "hi": 0.09571822033898304,
+    "n": 12
+   },
+   "untrained_food": {
+    "mean": 13.0,
+    "lo": 13.0,
+    "hi": 13.0,
+    "n": 12
+   },
+   "untrained_food_scrambled": {
+    "mean": 12.5,
+    "lo": 12.5,
+    "hi": 12.5,
+    "n": 12
+   },
+   "untrained_forward_frac": {
+    "mean": 0.3044067796610169,
+    "lo": 0.3044067796610169,
+    "hi": 0.3044067796610169,
+    "n": 12
+   }
+  }
+ },
+ "tests": {
+  "H43a: learning_gain (social12 \u2212 0)": {
+   "mean": -2.8229166666666665,
+   "lo": -5.885677083333333,
+   "hi": 0.5106770833333318,
+   "n": 12
+  },
+  "H43b: learning_gain (crowd12 \u2212 0)": {
+   "mean": 6.895833333333333,
+   "lo": 3.625,
+   "hi": 10.479166666666666,
+   "n": 12
+  },
+  "H43c: learning_gain (social12_nosteal \u2212 social12)": {
+   "mean": 0.40625,
+   "lo": -2.9065104166666664,
+   "hi": 3.8854166666666665,
+   "n": 12
+  },
+  "H43d: attack_gain (social12 \u2212 0)": {
+   "mean": 0.04824429043085989,
+   "lo": 0.02046887529079913,
+   "hi": 0.07629616999717616,
+   "n": 12
+  },
+  "H43e: learning_gain (solo \u2212 0)": {
+   "mean": 8.260416666666666,
+   "lo": 6.1875,
+   "hi": 10.187760416666665,
+   "n": 12
+  }
+ },
+ "verdict": {
+  "H43a": "not supported",
+  "H43b": "supported",
+  "H43c": "not supported",
+  "H43d": "supported",
+  "H43e": "supported"
+ },
+ "raw": {
+  "solo": [
+   {
+    "trained_food": 7.875,
+    "trained_food_scrambled": 3.375,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 0.875,
+    "sense_gain": 4.5,
+    "trained_forward_frac": 0.2658614827201784,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 12.0,
+    "train_food_last_quarter": 17.0
+   },
+   {
+    "trained_food": 10.5,
+    "trained_food_scrambled": 4.25,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 3.5,
+    "sense_gain": 6.25,
+    "trained_forward_frac": 0.24490081290418092,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 5.0,
+    "train_food_last_quarter": 19.0
+   },
+   {
+    "trained_food": 17.125,
+    "trained_food_scrambled": 1.625,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 10.125,
+    "sense_gain": 15.5,
+    "trained_forward_frac": 0.42425,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 8.0,
+    "train_food_last_quarter": 19.0
+   },
+   {
+    "trained_food": 21.0,
+    "trained_food_scrambled": 3.25,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 14.0,
+    "sense_gain": 17.75,
+    "trained_forward_frac": 0.393,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 1.0,
+    "train_food_last_quarter": 13.0
+   },
+   {
+    "trained_food": 13.25,
+    "trained_food_scrambled": 2.0,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 6.25,
+    "sense_gain": 11.25,
+    "trained_forward_frac": 0.28273148148148153,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 7.0,
+    "train_food_last_quarter": 22.0
+   },
+   {
+    "trained_food": 17.875,
+    "trained_food_scrambled": 3.625,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 10.875,
+    "sense_gain": 14.25,
+    "trained_forward_frac": 0.34144444444444444,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 12.0,
+    "train_food_last_quarter": 21.0
+   },
+   {
+    "trained_food": 16.625,
+    "trained_food_scrambled": 3.125,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 9.625,
+    "sense_gain": 13.5,
+    "trained_forward_frac": 0.2368307064627222,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 11.0,
+    "train_food_last_quarter": 21.0
+   },
+   {
+    "trained_food": 18.75,
+    "trained_food_scrambled": 3.375,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 11.75,
+    "sense_gain": 15.375,
+    "trained_forward_frac": 0.34425,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 2.0,
+    "train_food_last_quarter": 20.0
+   },
+   {
+    "trained_food": 15.625,
+    "trained_food_scrambled": 4.125,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 8.625,
+    "sense_gain": 11.5,
+    "trained_forward_frac": 0.31064648531535866,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 9.0,
+    "train_food_last_quarter": 15.0
+   },
+   {
+    "trained_food": 12.875,
+    "trained_food_scrambled": 4.0,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 5.875,
+    "sense_gain": 8.875,
+    "trained_forward_frac": 0.3517102680793571,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 1.0,
+    "train_food_last_quarter": 16.0
+   },
+   {
+    "trained_food": 15.5,
+    "trained_food_scrambled": 4.5,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 8.5,
+    "sense_gain": 11.0,
+    "trained_forward_frac": 0.3765,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 0.0,
+    "train_food_last_quarter": 11.0
+   },
+   {
+    "trained_food": 16.125,
+    "trained_food_scrambled": 3.375,
+    "untrained_food": 7.0,
+    "untrained_food_scrambled": 2.625,
+    "learning_gain": 9.125,
+    "sense_gain": 12.75,
+    "trained_forward_frac": 0.38003521126760564,
+    "untrained_forward_frac": 0.3371479672950261,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 3.0,
+    "train_food_last_quarter": 2.0
+   }
+  ],
+  "crowd12": [
+   {
+    "trained_food": 35.875,
+    "trained_food_scrambled": 17.875,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 19.375,
+    "sense_gain": 18.0,
+    "trained_forward_frac": 0.5735925838169021,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 18.0,
+    "train_food_last_quarter": 32.0
+   },
+   {
+    "trained_food": 14.75,
+    "trained_food_scrambled": 11.375,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": -1.75,
+    "sense_gain": 3.375,
+    "trained_forward_frac": 0.21243510462157325,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 29.0,
+    "train_food_last_quarter": 35.0
+   },
+   {
+    "trained_food": 18.125,
+    "trained_food_scrambled": 14.75,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 1.625,
+    "sense_gain": 3.375,
+    "trained_forward_frac": 0.40785101641006594,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 11.0,
+    "train_food_last_quarter": 17.0
+   },
+   {
+    "trained_food": 31.0,
+    "trained_food_scrambled": 16.125,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 14.5,
+    "sense_gain": 14.875,
+    "trained_forward_frac": 0.515,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 28.0,
+    "train_food_last_quarter": 32.0
+   },
+   {
+    "trained_food": 18.5,
+    "trained_food_scrambled": 14.875,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 2.0,
+    "sense_gain": 3.625,
+    "trained_forward_frac": 0.2323440057429808,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 23.0,
+    "train_food_last_quarter": 2.0
+   },
+   {
+    "trained_food": 25.75,
+    "trained_food_scrambled": 16.125,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 9.25,
+    "sense_gain": 9.625,
+    "trained_forward_frac": 0.41825,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 20.0,
+    "train_food_last_quarter": 15.0
+   },
+   {
+    "trained_food": 29.25,
+    "trained_food_scrambled": 13.5,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 12.75,
+    "sense_gain": 15.75,
+    "trained_forward_frac": 0.5655,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 26.0,
+    "train_food_last_quarter": 26.0
+   },
+   {
+    "trained_food": 24.375,
+    "trained_food_scrambled": 19.125,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 7.875,
+    "sense_gain": 5.25,
+    "trained_forward_frac": 0.4306101694915254,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 24.0,
+    "train_food_last_quarter": 27.0
+   },
+   {
+    "trained_food": 16.0,
+    "trained_food_scrambled": 16.375,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": -0.5,
+    "sense_gain": -0.375,
+    "trained_forward_frac": 0.3069940476190476,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 20.0,
+    "train_food_last_quarter": 6.0
+   },
+   {
+    "trained_food": 19.0,
+    "trained_food_scrambled": 11.0,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 2.5,
+    "sense_gain": 8.0,
+    "trained_forward_frac": 0.24752640202928772,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 15.0,
+    "train_food_last_quarter": 10.0
+   },
+   {
+    "trained_food": 26.75,
+    "trained_food_scrambled": 14.625,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 10.25,
+    "sense_gain": 12.125,
+    "trained_forward_frac": 0.6167543859649123,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 21.0,
+    "train_food_last_quarter": 38.0
+   },
+   {
+    "trained_food": 21.375,
+    "trained_food_scrambled": 11.625,
+    "untrained_food": 16.5,
+    "untrained_food_scrambled": 17.375,
+    "learning_gain": 4.875,
+    "sense_gain": 9.75,
+    "trained_forward_frac": 0.25675000000000003,
+    "untrained_forward_frac": 0.3275192307692308,
+    "trained_attack_frac": 0.0,
+    "untrained_attack_frac": 0.0,
+    "attack_gain": 0.0,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 11.0,
+    "train_food_last_quarter": 23.0
+   }
+  ],
+  "social12": [
+   {
+    "trained_food": 21.5,
+    "trained_food_scrambled": 9.75,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": 8.0,
+    "sense_gain": 11.75,
+    "trained_forward_frac": 0.10425,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.059000000000000004,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": -0.004269190430633958,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 6.0,
+    "train_food_last_quarter": 18.0
+   },
+   {
+    "trained_food": 4.0,
+    "trained_food_scrambled": 10.25,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -9.5,
+    "sense_gain": -6.25,
+    "trained_forward_frac": 0.3287126917941158,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.11284056186115447,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.04957137143052051,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 6.0,
+    "train_food_last_quarter": 1.0
+   },
+   {
+    "trained_food": 10.75,
+    "trained_food_scrambled": 11.5,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -2.75,
+    "sense_gain": -0.75,
+    "trained_forward_frac": 0.18683244558368112,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.05841183027594385,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": -0.004857360154690113,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 7.0,
+    "train_food_last_quarter": 3.0
+   },
+   {
+    "trained_food": 3.75,
+    "trained_food_scrambled": 7.0,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -9.75,
+    "sense_gain": -3.25,
+    "trained_forward_frac": 0.15957077187781957,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.12121719713707466,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.057948006706440694,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 22.0,
+    "train_food_last_quarter": 13.0
+   },
+   {
+    "trained_food": 21.5,
+    "trained_food_scrambled": 6.625,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": 8.0,
+    "sense_gain": 14.875,
+    "trained_forward_frac": 0.4492771084337349,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.07404819277108435,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.010779002340450386,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 12.0,
+    "train_food_last_quarter": 0.0
+   },
+   {
+    "trained_food": 11.125,
+    "trained_food_scrambled": 7.625,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -2.375,
+    "sense_gain": 3.5,
+    "trained_forward_frac": 0.5122984084215924,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.19885018592349957,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.13558099549286562,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 17.0,
+    "train_food_last_quarter": 1.0
+   },
+   {
+    "trained_food": 5.625,
+    "trained_food_scrambled": 9.375,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -7.875,
+    "sense_gain": -3.75,
+    "trained_forward_frac": 0.3010214361555923,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.0637569309403427,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.00048774050970873395,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 4.0,
+    "train_food_last_quarter": 3.0
+   },
+   {
+    "trained_food": 6.75,
+    "trained_food_scrambled": 8.125,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -6.75,
+    "sense_gain": -1.375,
+    "trained_forward_frac": 0.19125116290500346,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.1133013419268056,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.05003215149617164,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 20.0,
+    "train_food_last_quarter": 1.0
+   },
+   {
+    "trained_food": 14.5,
+    "trained_food_scrambled": 8.5,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": 1.0,
+    "sense_gain": 6.0,
+    "trained_forward_frac": 0.33449002850404275,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.12767100195711145,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.06440181152647749,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 16.0,
+    "train_food_last_quarter": 7.0
+   },
+   {
+    "trained_food": 11.75,
+    "trained_food_scrambled": 11.75,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -1.75,
+    "sense_gain": 0.0,
+    "trained_forward_frac": 0.668429966671004,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.06049758564670865,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": -0.0027716047839253105,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 26.0,
+    "train_food_last_quarter": 15.0
+   },
+   {
+    "trained_food": 10.625,
+    "trained_food_scrambled": 10.375,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -2.875,
+    "sense_gain": 0.25,
+    "trained_forward_frac": 0.3191356923554528,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.19729314317953653,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.13402395274890255,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 2.0,
+    "train_food_last_quarter": 16.0
+   },
+   {
+    "trained_food": 6.25,
+    "trained_food_scrambled": 8.625,
+    "untrained_food": 13.5,
+    "untrained_food_scrambled": 11.75,
+    "learning_gain": -7.25,
+    "sense_gain": -2.375,
+    "trained_forward_frac": 0.235838298595688,
+    "untrained_forward_frac": 0.30945961247744413,
+    "trained_attack_frac": 0.1512737987186644,
+    "untrained_attack_frac": 0.06326919043063396,
+    "attack_gain": 0.08800460828803043,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 22.0,
+    "train_food_last_quarter": 3.0
+   }
+  ],
+  "social12_nosteal": [
+   {
+    "trained_food": 10.75,
+    "trained_food_scrambled": 9.375,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -2.25,
+    "sense_gain": 1.375,
+    "trained_forward_frac": 0.30785436809888833,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.10328440690676605,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.00756618656778299,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 26.0,
+    "train_food_last_quarter": 20.0
+   },
+   {
+    "trained_food": 10.75,
+    "trained_food_scrambled": 5.0,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -2.25,
+    "sense_gain": 5.75,
+    "trained_forward_frac": 0.28835646940318427,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.10897580086790756,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.013257580528924506,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 15.0,
+    "train_food_last_quarter": 14.0
+   },
+   {
+    "trained_food": 13.25,
+    "trained_food_scrambled": 6.75,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": 0.25,
+    "sense_gain": 6.5,
+    "trained_forward_frac": 0.367814915447192,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.13866296889660873,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.04294474855762567,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 10.0,
+    "train_food_last_quarter": 5.0
+   },
+   {
+    "trained_food": 15.625,
+    "trained_food_scrambled": 11.875,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": 2.625,
+    "sense_gain": 3.75,
+    "trained_forward_frac": 0.43433351391699615,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.07033215490182199,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": -0.02538606543716107,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 19.0,
+    "train_food_last_quarter": 29.0
+   },
+   {
+    "trained_food": 14.625,
+    "trained_food_scrambled": 7.125,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": 1.625,
+    "sense_gain": 7.5,
+    "trained_forward_frac": 0.21125,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.048,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": -0.047718220338983056,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 18.0,
+    "train_food_last_quarter": 21.0
+   },
+   {
+    "trained_food": 5.25,
+    "trained_food_scrambled": 10.375,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -7.75,
+    "sense_gain": -5.125,
+    "trained_forward_frac": 0.2946883340795309,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.15561536124013461,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.05989714090115156,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 17.0,
+    "train_food_last_quarter": 4.0
+   },
+   {
+    "trained_food": 4.375,
+    "trained_food_scrambled": 7.625,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -8.625,
+    "sense_gain": -3.25,
+    "trained_forward_frac": 0.2793798885096719,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.13487055291223612,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.03915233257325307,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 10.0,
+    "train_food_last_quarter": 20.0
+   },
+   {
+    "trained_food": 2.75,
+    "trained_food_scrambled": 10.75,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -10.25,
+    "sense_gain": -8.0,
+    "trained_forward_frac": 0.17236236754416281,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.13015030700999114,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.03443208667100808,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 28.0,
+    "train_food_last_quarter": 1.0
+   },
+   {
+    "trained_food": 17.125,
+    "trained_food_scrambled": 9.625,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": 4.125,
+    "sense_gain": 7.5,
+    "trained_forward_frac": 0.30121031746031746,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.10653072196620583,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.010812501627222776,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 16.0,
+    "train_food_last_quarter": 28.0
+   },
+   {
+    "trained_food": 10.25,
+    "trained_food_scrambled": 10.25,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -2.75,
+    "sense_gain": 0.0,
+    "trained_forward_frac": 0.36344333420499564,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.14096184059819633,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.045243620259213274,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 3.0,
+    "train_food_last_quarter": 0.0
+   },
+   {
+    "trained_food": 12.75,
+    "trained_food_scrambled": 9.875,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -0.25,
+    "sense_gain": 2.875,
+    "trained_forward_frac": 0.1788169597094858,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.13231706358334044,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": 0.03659884324435739,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 17.0,
+    "train_food_last_quarter": 18.0
+   },
+   {
+    "trained_food": 9.5,
+    "trained_food_scrambled": 12.125,
+    "untrained_food": 13.0,
+    "untrained_food_scrambled": 12.5,
+    "learning_gain": -3.5,
+    "sense_gain": -2.625,
+    "trained_forward_frac": 0.29491950513709825,
+    "untrained_forward_frac": 0.304406779661017,
+    "trained_attack_frac": 0.0920890576326299,
+    "untrained_attack_frac": 0.09571822033898306,
+    "attack_gain": -0.0036291627063531617,
+    "collapsed01": 0.0,
+    "train_ticks_run": 1500.0,
+    "train_food_first_quarter": 7.0,
+    "train_food_last_quarter": 1.0
+   }
+  ]
+ }
+}

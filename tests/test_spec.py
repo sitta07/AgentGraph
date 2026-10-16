@@ -76,6 +76,7 @@ def test_single_agent_simulator_end_to_end(tmp_path):
     res = run(load(p), p)
     r = res["raw"]["a"][0]
     assert r["learning_gain"] == r["trained_food"] - r["untrained_food"]
+    assert r["trained_attack_frac"] == r["untrained_attack_frac"] == r["attack_gain"] == 0.0
     assert res["design"]["train_episodes"] == 2
     assert "trained_food" in write(res, tmp_path / "out").read_text()
 

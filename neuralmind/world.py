@@ -122,6 +122,7 @@ class WorldConfig:
     no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
     filial_attack_redirect: bool = False  # True: an attack whose nearest target is your own offspring hits the nearest other agent in reach instead
     no_filial_attack: bool = False  # True: an attack on your own offspring has no effect (the attacker still pays)
+    no_family_interaction: bool = False  # True: attacks and shares between a parent and its offspring, either way, have no effect (the actor still pays)
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
@@ -643,6 +644,10 @@ class World2D:
             j = int(np.argmin(d))
             if d[j] <= c.attack_radius:
                 target = others[j]
+        if c.no_family_interaction and target is not None and ag.id == target.parent:
+            target = None
+        if c.no_family_interaction and target is not None and target.id == ag.parent:
+            target = None
         if name == "attack":
             ag.attacks += 1
             ag.energy -= c.attack_cost

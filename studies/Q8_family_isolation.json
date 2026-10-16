@@ -1,0 +1,22 @@
+{
+  "id": "Q8_family_isolation",
+  "title": "Does placement beside the parent protect populations through parent–offspring interaction?",
+  "question": "Newborns placed beside their parent protect evolving populations (stranger placement went extinct in 67/72 runs vs 22/72 beside the parent over Q, Q2, Q3, Q5, Q6, Q7). Six accounts are ruled out: local density, energy recycling, gradual spread, relatedness in general, parental culling (Q6) and the aggression sink (Q7). Q4 found that moving newborns only 0.15 from the parent removed most of the protection, while the reach for attacks and sharing is 0.08. So the protection may need parent and newborn to interact. Q6 and Q7 changed only the parent's attacks on its offspring; the newborn's actions on its parent and sharing in both directions were left intact.",
+  "background": "Intervention: no_family_interaction=True. Attacks and shares between a parent and its own offspring, in either direction, have no effect (an attacker still pays the attack cost; a blocked share costs nothing). Siblings and other relatives still interact. Newborns are placed beside the parent. stranger is a reference only. Interpretation rule, fixed in advance: protection works through parent-offspring interaction if H44a or H44b is supported; if neither is, it works some other way (for example sensing or spatial clustering). H44c and H44d are manipulation checks. No pilot was run. Seeds 2500-2511 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2500,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":          {"config": {"viscous": true}, "learning": true},
+    "parent_isolated": {"config": {"viscous": true, "no_family_interaction": true}, "learning": true},
+    "stranger":        {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H44a", "statement": "With parent-offspring interaction blocked, populations beside the parent die out sooner", "metric": "survival_ticks", "a": "parent_isolated", "b": "parent", "direction": "less"},
+    {"id": "H44b", "statement": "With parent-offspring interaction blocked, populations go extinct more often", "metric": "extinct01", "a": "parent_isolated", "b": "parent", "direction": "greater"},
+    {"id": "H44c", "statement": "Manipulation check: kills of own offspring fall below 5% of kills", "metric": "early_frac_kills_offspring", "a": "parent_isolated", "b": 0.05, "direction": "less"},
+    {"id": "H44d", "statement": "Manipulation check: blocking lowers the share of gifts that go to kin", "metric": "share_to_kin", "a": "parent_isolated", "b": "parent", "direction": "less"}
+  ]
+}

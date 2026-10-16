@@ -1,0 +1,22 @@
+{
+  "id": "Q6_parental_culling",
+  "title": "Do parents protect their population by culling their own newborns?",
+  "question": "Placing newborns beside their own parent protects evolving populations, while placing them beside another relative or a stranger does not (Q5: 2/12 vs 10/12 vs 12/12 extinct). Beside the parent, 42% of killings are parents killing their own offspring. Q3 showed the energy parents gain from those kills does not explain the protection, but the killing itself still happened. If parental culling holds population growth below the level that leads to a crash, making attacks on one's own offspring ineffective should remove the protection.",
+  "background": "Intervention: no_filial_attack=True makes an attack whose nearest target is the attacker's own offspring have no effect (the attacker still pays the attack cost; nothing is stolen and the offspring is not hurt). Placement is beside the parent in both main conditions. stranger is a reference only. Interpretation rule, fixed in advance: parental culling is supported as a mechanism if H39a or H39b is supported; if neither, the parent protects its offspring some other way. H39c tests the predicted route (larger population swings without culling). H39d is the manipulation check. No pilot was run. Seeds 2200-2211 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2200,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":          {"config": {"viscous": true}, "learning": true},
+    "parent_noattack": {"config": {"viscous": true, "no_filial_attack": true}, "learning": true},
+    "stranger":        {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H39a", "statement": "Without effective attacks on own offspring, populations placed beside the parent die out sooner", "metric": "survival_ticks", "a": "parent_noattack", "b": "parent", "direction": "less"},
+    {"id": "H39b", "statement": "Without effective attacks on own offspring, populations go extinct more often", "metric": "extinct01", "a": "parent_noattack", "b": "parent", "direction": "greater"},
+    {"id": "H39c", "statement": "Without culling, population size swings more (coefficient of variation)", "metric": "pop_cv", "a": "parent_noattack", "b": "parent", "direction": "greater"},
+    {"id": "H39d", "statement": "Manipulation check: kills of own offspring fall below 5% of kills", "metric": "early_frac_kills_offspring", "a": "parent_noattack", "b": 0.05, "direction": "less"}
+  ]
+}

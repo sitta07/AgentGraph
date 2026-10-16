@@ -371,6 +371,18 @@ def test_birth_distance_places_newborn_at_that_distance_from_parent():
     assert np.allclose(dists, 0.3)
 
 
+def test_born_near_relative_places_newborn_beside_a_relative_not_the_parent():
+    w = World2D(WorldConfig(seed=0, n_agents=3, social=True, evolve=True,
+                            viscous=False, born_near_relative=True))
+    p = w.agents[0]
+    p.energy = 3.0
+    first = w._birth(p)
+    assert w.birth_fallbacks == 1 and np.linalg.norm(first.pos - p.pos) < 0.2
+    first.pos = np.array([0.9, 0.9]); p.pos = np.array([0.1, 0.1])
+    second = w._birth(p)
+    assert w.birth_fallbacks == 1 and np.linalg.norm(second.pos - first.pos) < 0.2
+
+
 def test_state_critic_keeps_separate_expectations_per_sensor_state():
     w = World2D(WorldConfig(seed=0, n_agents=1, social=True, critic="state"))
     ag = w.agents[0]

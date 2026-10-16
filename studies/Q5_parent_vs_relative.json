@@ -1,0 +1,23 @@
+{
+  "id": "Q5_parent_vs_relative",
+  "title": "Does it matter that a newborn starts beside its parent, or beside any relative?",
+  "question": "Viscous placement protects populations (4 replications). Placing newborns beside a stranger (Q-Q3, pooled 34/36 vs 13/36 extinct) or just 0.15 away from the parent (Q4, 8/12 vs 2/12) removes most of that protection. Density, killing of newborns by strangers, energy recycling and gradual spatial spread have been ruled out. What harmful placements share is that the newborn does not start beside its own parent. This study separates the parent from relatives in general by placing newborns beside a random living relative other than the parent.",
+  "background": "Intervention: born_near_relative=True (with viscous=False) places each newborn at the viscous scatter (s.d. 0.04) around a random living agent with recorded relatedness > 0 to the parent, excluding the parent. If no such agent exists (for example a founder's first child), the newborn is placed beside the parent; birth_fallback_frac records how often. Fallbacks make the relative condition more parent-like, which biases against finding a parent-specific effect. Interpretation rule, fixed in advance: kin neighbourhood is supported if H37a or H37b is supported and neither H37c nor H37d; a parent-specific effect is supported if H37c or H37d is supported and neither H37a nor H37b; both if at least one of each pair; otherwise inconclusive. H37e is the manipulation check. No pilot was run. Seeds 2100-2111 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2100,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":   {"config": {"viscous": true}, "learning": true},
+    "relative": {"config": {"viscous": false, "born_near_relative": true}, "learning": true},
+    "stranger": {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H37a", "statement": "Kin neighbourhood: placement beside a relative survives longer than placement beside a stranger", "metric": "survival_ticks", "a": "relative", "b": "stranger", "direction": "greater"},
+    {"id": "H37b", "statement": "Kin neighbourhood: placement beside a relative goes extinct less often than beside a stranger", "metric": "extinct01", "a": "relative", "b": "stranger", "direction": "less"},
+    {"id": "H37c", "statement": "Parent-specific: placement beside the parent survives longer than beside another relative", "metric": "survival_ticks", "a": "parent", "b": "relative", "direction": "greater"},
+    {"id": "H37d", "statement": "Parent-specific: placement beside the parent goes extinct less often than beside another relative", "metric": "extinct01", "a": "parent", "b": "relative", "direction": "less"},
+    {"id": "H37e", "statement": "Manipulation check: fewer than half of births in the relative condition fall back to the parent", "metric": "birth_fallback_frac", "a": "relative", "b": 0.5, "direction": "less"}
+  ]
+}

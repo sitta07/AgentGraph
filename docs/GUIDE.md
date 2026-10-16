@@ -563,8 +563,9 @@ innate wiring does not measurably use the senses at all.
   search, so this is a statement about that search, not a claim of novelty.
 - **Every number can be checked.** Registered specs, raw data and reports are
   in the repo. Any study can be rerun from the browser on an ordinary laptop.
-- **Learning that works, after a chain of honest failures.** Twenty studies
-  found that learning never paid. Following the failures down to the
+- **Learning that works, after a chain of honest failures.** P, R and T
+  found that lifetime learning lowered foraging under every rule tried.
+  Following the failures down to the
   decision dynamics (V) produced a configuration in which it pays about 5.7×
   and every agent learns real sensory foraging (W). You can train one in the
   browser.

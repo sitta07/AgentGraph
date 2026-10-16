@@ -265,7 +265,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "mi_heard_action": mutual_information(heard_action),
         "p_heard_action": g_test_p(heard_action),
         "births": w.births,
-        **_shift_recovery(series, w.cfg.mirror_every),
+        **_shift_recovery(series, w.cfg.mirror_every or w.cfg.swap_every),
         "invader_share": invader_share(w, qpop) if qpop else float("nan"),
         "invader_share_mean": (float(np.nanmean(series["invader_share"]))
                                if qpop and series["invader_share"] else float("nan")),

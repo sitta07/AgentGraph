@@ -97,6 +97,7 @@ class WorldConfig:
     normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     mirror_every: int = 0          # >0: left/right sensing flips every this many ticks
+    swap_every: int = 0            # >0: food and hazard sensor channels swap every this many ticks
     deaf: bool = False             # True: the heard-signal sensor always reads 0
     directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
     coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
@@ -175,6 +176,7 @@ class Agent:
         self.pending_hurt = 0.0     # energy lost to attackers since last tick
         self.pending_gift = 0.0     # energy received from sharers since last tick
         self.mirrored = False       # environment shift: left/right sensor bins swapped
+        self.swapped = False        # environment shift: food and hazard channels swapped
 
     def build_net(self, rng: np.random.Generator, genome: dict | None = None) -> None:
         c = self.cfg
@@ -256,6 +258,8 @@ class Agent:
         threat_s = self._bin_signals(hazards)
         if self.mirrored:
             food_s, threat_s = food_s[::-1], threat_s[::-1]
+        if self.swapped:
+            food_s, threat_s = threat_s, food_s
         hunger = float(np.clip(1.0 - self.energy / self.cfg.e0, 0.0, 1.0))
         base = [food_s, threat_s, [hunger]]
         if self.cfg.social:
@@ -678,8 +682,10 @@ class World2D:
         mirrored = 0 <= self.cfg.mirror_at <= self.t
         if self.cfg.mirror_every > 0:
             mirrored = (self.t // self.cfg.mirror_every) % 2 == 1
+        swapped = self.cfg.swap_every > 0 and (self.t // self.cfg.swap_every) % 2 == 1
         for ag in self.agents:
             ag.mirrored = mirrored
+            ag.swapped = swapped
         for ag in self.agents:
             if ag.alive:
                 results[ag.id] = self._advance_agent(ag, learning, actions.get(ag.id))

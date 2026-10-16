@@ -74,14 +74,15 @@ def weight_drift(ag) -> dict:
 
 
 def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
-                    ticks: int = 300) -> int:
+                    ticks: int = 300, scramble: bool | None = None) -> int:
     """Assay a genome: food eaten alone in a fresh world with learning OFF.
     Measures what the innate wiring can do without any lifetime learning."""
     # the assay runs in the environment the population ended in
     shifted = 0 <= cfg.mirror_at < cfg.max_ticks
     solo = WorldConfig(**{**cfg.as_dict(), "n_agents": 1, "evolve": False,
                           "seed": seed, "max_ticks": ticks + 1,
-                          "mirror_at": 0 if shifted else -1})
+                          "mirror_at": 0 if shifted else -1,
+                          "scramble_senses": cfg.scramble_senses if scramble is None else scramble})
     w = World2D(solo)
     ag = w.agents[0]
     ag.aggr_gain = aggr_gain
@@ -217,8 +218,13 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
     live = [a for a in w.agents if a.alive]
     n = max(1, alive_ticks)
     food_final = sum(eaten1[i] - eaten0[i] for i in eaten1)
+    sample = sorted(live, key=lambda a: a.id)[:8]
     assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
-             for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
+             for i, a in enumerate(sample)]
+    sighted = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i, scramble=False)
+               for i, a in enumerate(sample)]
+    blind = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i, scramble=True)
+             for i, a in enumerate(sample)]
     pops = np.array(series["pop"], dtype=float)
     drift = [weight_drift(a) for a in live]
     mean_drift = lambda acts: (float(np.mean([np.mean([d[x] for x in acts]) for d in drift]))
@@ -231,6 +237,9 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "extinct01": float(not live),
         "survival_ticks": float(t + 1),
         "innate_foraging": float(np.mean(assay)) if assay else float("nan"),
+        "innate_foraging_sighted": float(np.mean(sighted)) if sighted else float("nan"),
+        "innate_foraging_scrambled": float(np.mean(blind)) if blind else float("nan"),
+        "sense_gain": float(np.mean(sighted) - np.mean(blind)) if sighted else float("nan"),
         "extinct": not live,
         "ticks_run": t + 1,
         "final_pop": len(live),

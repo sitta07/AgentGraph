@@ -533,7 +533,7 @@ works** scenario in the Playground runs this configuration.
 | Can Q-learners invade an SNN population? (O) | No advantage either way, but lineage fate is all-or-nothing. |
 | Why does being born beside the parent protect populations? (Q–Q6) | Still open, but narrowed. Stranger placement: 56/60 extinct vs 18/60 beside the parent. Ruled out: local density (Q), strangers killing newborns (Q2), energy recycling (Q3), gradual spatial spread (Q4: just 0.15 away already gives 8/12 vs 2/12), relatedness in general (Q5: beside another relative 10/12), and parental culling (Q6). Q7 tests whether newborns absorb aggression. |
 | Do evolving agents use their senses? (V) | No, not measurably: scrambled senses changed neither food rate nor evolved innate foraging. |
-| Can lifetime learning pay? (W) | Yes, for single agents once the decision dynamics are fixed (≈5.7×). In social evolving worlds the first attempt caused mass killing; X tests a corrected version. |
+| Can lifetime learning pay? (W) | Yes, for single agents once the decision dynamics are fixed (≈5.7×). In evolving social populations it still does not pay (X): the fixed dynamics raise attacks ~15× and lives become too short to learn. |
 
 The clearest positive result is W: once decisions last 32 ms, start from a
 cleared state, and use normalised input weights, a trained single agent eats

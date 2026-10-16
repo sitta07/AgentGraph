@@ -3,108 +3,153 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NeuralMind — Discovery Lab</title>
+<title>NeuralMind Discovery Lab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/common.css">
 <style>
-  :root{--bg:#0b0d12;--panel:#12151c;--panel2:#171b24;--ink:#e8ecf3;--muted:#8a93a6;
-    --grid:#232a36;--accent:#6d9bff;--good:#49d6a6;--bad:#e0734f;--warn:#e0a63b}
-  *{box-sizing:border-box} html,body{margin:0}
-  body{background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
-  a{color:var(--accent);text-decoration:none}
-  header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--grid);flex-wrap:wrap}
-  header h1{font-size:16px;margin:0} .tag{color:var(--muted);font-size:12px}
-  nav{display:flex;gap:6px;margin-left:auto}
-  nav a{padding:6px 12px;border-radius:8px;border:1px solid var(--grid);color:var(--ink);font-size:13px}
-  nav a.on{background:var(--accent);border-color:var(--accent);color:#fff}
-  main{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
-  .lead{color:var(--muted);max-width:820px;margin:0 0 18px}
-  .panel{background:var(--panel);border:1px solid var(--grid);border-radius:12px;padding:14px;margin-bottom:16px}
-  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;font-weight:600}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  select,input[type=number]{background:var(--panel2);color:var(--ink);border:1px solid var(--grid);border-radius:8px;padding:7px 9px;font-size:13px}
-  input[type=number]{width:90px}
-  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
-  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--grid);font-weight:500}
-  button:disabled{opacity:.45;cursor:default}
-  .note{color:var(--muted);font-size:12px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px}
+  main{max-width:1180px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:22px;margin:0 0 6px}
+  .lead{color:var(--muted);max-width:780px;margin:0 0 14px;font-size:14.5px}
+  .summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .stat-tile{background:var(--panel);border:1px solid var(--grid);border-radius:10px;padding:8px 14px;min-width:140px}
+  .stat-tile b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+  .stat-tile span{font-size:12.5px;color:var(--muted)}
+  .stat-tile.yes b{color:var(--good)} .stat-tile.no b{color:var(--bad-ink)}
+  .howto{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:center;margin-bottom:16px}
+  .howto ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted)}
+  .howto li b{color:var(--ink);font-weight:600}
+  @media (max-width:640px){.howto{grid-template-columns:1fr}}
+
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .toolbar input[type=search]{flex:1;min-width:200px;max-width:380px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:13px;font-weight:500;border-radius:999px;padding:4px 12px;min-height:30px;
+    background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .chip[aria-pressed=true]{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
+  #count{font-size:13px;color:var(--muted);margin-left:auto}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr));gap:16px;align-items:start}
   .card h3{margin:0 0 4px;font-size:16px;line-height:1.35}
-  .meta{color:var(--muted);font-size:12px;margin-bottom:10px}
+  .meta{color:var(--muted);font-size:12px;margin-bottom:8px;word-break:break-word}
   .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
   .badge{font-size:12px;border-radius:999px;padding:3px 10px;border:1px solid var(--grid)}
   .badge.yes{background:rgba(73,214,166,.12);border-color:rgba(73,214,166,.5);color:var(--good)}
-  .badge.no{background:rgba(224,115,79,.10);border-color:rgba(224,115,79,.45);color:#f0a088}
+  .badge.no{background:rgba(224,115,79,.10);border-color:rgba(224,115,79,.45);color:var(--bad-ink)}
   .badge.val{color:var(--muted)}
-  .test{display:grid;grid-template-columns:1fr 190px;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--grid);font-size:12.5px}
+  .test{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:10px;align-items:center;padding:6px 0;
+    border-top:1px solid var(--grid);font-size:13px}
   .test .name{color:#cfd6e4;word-break:break-word}
+  @media (max-width:520px){.test{grid-template-columns:1fr}}
   .ci{position:relative;height:18px}
-  .ci .zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#5b6472}
-  .ci .bar{position:absolute;top:6px;height:6px;border-radius:3px;background:var(--accent);opacity:.55}
+  .ci .zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#7b8597}
+  .ci .bar{position:absolute;top:6px;height:6px;border-radius:3px;background:var(--accent);opacity:.6}
   .ci .dot{position:absolute;top:3px;width:12px;height:12px;border-radius:50%;margin-left:-6px;background:var(--accent)}
   .ci.pos .bar,.ci.pos .dot{background:var(--good)} .ci.neg .bar,.ci.neg .dot{background:var(--bad)}
-  .num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px;margin-top:2px}
+  .num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;margin-top:2px}
+  .more{margin-top:6px;font-size:12.5px}
   .charts{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:4px}
-  .charts img{height:150px;border-radius:8px;background:#fff;cursor:zoom-in}
+  .charts a{flex:none}
+  .charts img{height:150px;border-radius:8px;background:#fff;display:block}
+  .card-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:13px}
+  .empty{color:var(--muted);padding:30px;text-align:center;grid-column:1/-1}
+
+  .run-section{margin-top:28px}
+  .run-section>h2{font-size:18px;margin:0 0 4px}
+  .form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+  .field input[type=number]{width:110px}
+  #estimate{margin:8px 0 0}
+  #runErr{color:var(--bad-ink);font-size:13px;margin:8px 0 0}
+  #runErr:empty{display:none}
   .jobs{margin-top:10px;font-size:13px}
-  .job{display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px solid var(--grid)}
-  .dotst{width:9px;height:9px;border-radius:50%} .running{background:var(--warn);animation:p 1s infinite alternate}
-  .done{background:var(--good)} .error{background:var(--bad)} @keyframes p{to{opacity:.3}}
-  dialog{background:var(--panel);color:var(--ink);border:1px solid var(--grid);border-radius:14px;max-width:min(1100px,94vw);width:100%;padding:0}
-  dialog::backdrop{background:rgba(0,0,0,.6)}
-  .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--grid)}
+  .job{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--grid);flex-wrap:wrap}
+  .dotst{width:10px;height:10px;border-radius:50%;flex:none;background:#5b6472}
+  .dotst.running{background:var(--warn);animation:pulse 1s infinite alternate}
+  .dotst.done{background:var(--good)} .dotst.error{background:var(--bad)}
+  @keyframes pulse{to{opacity:.3}}
+  details.specs{margin-top:16px}
+  details.specs>summary{cursor:pointer;font-weight:600;padding:4px 0}
+  .spec{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--grid);flex-wrap:wrap}
+  .spec>div{flex:1;min-width:220px}
+
+  #dlg{width:min(1100px,calc(100vw - 32px))}
   .md{padding:4px 18px 18px;max-height:78vh;overflow:auto}
   .md table{border-collapse:collapse;font-size:12px;margin:8px 0;display:block;overflow-x:auto}
   .md td,.md th{border:1px solid var(--grid);padding:4px 7px;white-space:nowrap}
   .md img{max-width:100%;background:#fff;border-radius:8px;margin:4px}
   .md code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px;word-break:break-all}
-  .empty{color:var(--muted);padding:30px;text-align:center}
-  @media (max-width:640px){.grid{grid-template-columns:1fr}.test{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header>
-  <h1>🧠 NeuralMind</h1><span class="tag">Discovery Lab</span>
-  <nav><a href="/">Playground</a><a href="/lab" class="on">Discovery Lab</a></nav>
+<header class="site-head">
+  <p class="brand">🧠 NeuralMind</p>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/">Playground</a>
+    <a href="/lab" aria-current="page">Discovery Lab</a>
+  </nav>
 </header>
 <main>
-  <p class="lead">Every card is a <b>pre-registered</b> study: the hypotheses and
-    their falsification rules were fixed before running. Results are shown as
-    means with 95% bootstrap confidence intervals over seeds. A hypothesis only
-    counts as supported if its interval excludes zero in the predicted direction.
-    Negative results stay on the board.</p>
+  <h1>Discovery Lab</h1>
+  <p class="lead">Each card is a study whose hypotheses and pass/fail rules were fixed before it ran.
+    Results show the mean effect over seeds with a 95% confidence interval, and negative results stay on the board.</p>
 
-  <div class="panel">
-    <h2>Registered studies (studies/*.json)</h2>
-    <p class="note" style="margin-top:0">A study is registered by committing its spec — question,
-      conditions, metrics and decision rules — <b>before</b> it is run. The commit hash is the proof.</p>
-    <div id="specs" class="jobs"></div>
-  </div>
+  <div class="summary" id="summary" aria-live="polite"></div>
 
-  <div class="panel">
-    <h2>Run a replication</h2>
-    <div class="row">
-      <select id="kind"></select>
-      <label class="note">seeds <input type="number" id="seeds" value="3" min="2" max="20"></label>
-      <label class="note">ticks <input type="number" id="ticks" value="1500" min="200" max="20000" step="100"></label>
-      <button id="runBtn">▶ Run</button>
-      <span class="note">Runs locally on all CPU cores; small settings finish in ~1–3 min.
-        The new study appears below when done.</span>
+  <section class="panel howto" aria-labelledby="howTitle">
+    <div>
+      <h2 id="howTitle" style="font-size:15px;margin:0 0 8px">How to read a card</h2>
+      <div id="legendBar"></div>
     </div>
-    <div class="jobs" id="jobs"></div>
-  </div>
+    <ul>
+      <li><b>Dot</b> is the mean difference between conditions. <b>Bar</b> is its 95% confidence interval. The thin line is zero.</li>
+      <li><b style="color:var(--good)">Green</b>: the whole interval is above zero. <b style="color:var(--bad-ink)">Red</b>: the whole interval is below zero. <b style="color:var(--accent)">Blue</b>: it crosses zero, so no clear effect.</li>
+      <li>A hypothesis counts as supported only if its interval excludes zero in the predicted direction.</li>
+    </ul>
+  </section>
 
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Search titles and questions" aria-label="Search studies">
+    <div class="chips" role="group" aria-label="Filter studies" id="chips"></div>
+    <span id="count" role="status"></span>
+  </div>
   <div class="grid" id="studies"><div class="empty">Loading studies…</div></div>
+
+  <section class="run-section" aria-labelledby="runTitle">
+    <h2 id="runTitle">Run studies yourself</h2>
+    <p class="sub">Everything runs on your machine using all CPU cores. New results appear in the list above when they finish.</p>
+    <div class="panel">
+      <h2 style="font-size:15px">Run a replication</h2>
+      <div class="form">
+        <label class="field">Study type <select id="kind"></select></label>
+        <label class="field">Seeds <input type="number" id="seeds" value="3" min="2" max="20"></label>
+        <label class="field">Ticks per seed <input type="number" id="ticks" value="1500" min="200" max="20000" step="100"></label>
+        <button id="runBtn">▶ Run</button>
+      </div>
+      <p class="note" id="estimate"></p>
+      <p id="runErr" role="alert"></p>
+      <div class="jobs" id="jobs"></div>
+      <details class="specs">
+        <summary id="specsSummary">Registered study specs</summary>
+        <p class="note">A study is registered by committing its spec (question, conditions, metrics and
+          decision rules) before it runs. The commit hash is the proof.</p>
+        <div id="specs"></div>
+      </details>
+    </div>
+  </section>
 </main>
 
-<footer style="text-align:center;color:#8a93a6;font-size:11px;padding:6px 0 10px">
-  Pixel art: <a href="https://kenney.nl/assets/tiny-town" target="_blank" style="color:#8a93a6">Tiny Town</a> &amp;
-  <a href="https://kenney.nl/assets/tiny-dungeon" target="_blank" style="color:#8a93a6">Tiny Dungeon</a>
-  by <a href="https://kenney.nl" target="_blank" style="color:#8a93a6">Kenney</a> (CC0) — thank you!
-  · NeuralMind is MIT-licensed open source · <a href="https://github.com/sitta07/NeuralMind" target="_blank" style="color:#8a93a6">GitHub</a>
+<footer class="site-foot">
+  Pixel art: <a href="https://kenney.nl/assets/tiny-town" target="_blank" rel="noopener">Tiny Town</a> &amp;
+  <a href="https://kenney.nl/assets/tiny-dungeon" target="_blank" rel="noopener">Tiny Dungeon</a>
+  by <a href="https://kenney.nl" target="_blank" rel="noopener">Kenney</a> (CC0).
+  NeuralMind is MIT-licensed open source · <a href="https://github.com/sitta07/NeuralMind" target="_blank" rel="noopener">GitHub</a>
 </footer>
-<dialog id="dlg">
-  <div class="dlg-head"><b id="dlgTitle">Report</b><button class="ghost" onclick="dlg.close()">Close</button></div>
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg-head"><b id="dlgTitle">Report</b><button class="ghost" id="dlgClose">Close</button></div>
   <div class="md" id="dlgBody"></div>
 </dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/static/common.js"></script>
 <script src="/static/lab.js"></script>
 </body>
 </html>

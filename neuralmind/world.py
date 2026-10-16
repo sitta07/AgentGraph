@@ -94,6 +94,14 @@ class WorldConfig:
     w_social_scale: float = 0.85   # initial input-weight scale for social actions
     credit_chosen_only: bool = False  # True: reward changes only the executed action's input weights
     frozen_inputs: tuple = ()      # action names whose input weights never learn
+    normalized_inputs: tuple = ()  # action names whose per-neuron input sum is held at its innate value
+    mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
+    mirror_every: int = 0          # >0: left/right sensing flips every this many ticks
+    deaf: bool = False             # True: the heard-signal sensor always reads 0
+    directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
+    coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
+    positive_rpe_only: bool = False  # True: negative reward-prediction errors change no weights
+    critic: str = "scalar"         # "scalar": one reward expectation; "state": one per binarised sensor state
     # True: affect (and the frustration->aggression drive) follows the RPE of
     # the primary reward (eating, hazards, theft, being hurt) only.
     # False: affect follows the full learning reward, including shaping.
@@ -108,6 +116,8 @@ class WorldConfig:
     trait_sigma: float = 0.2       # mutation s.d. of the heritable aggression gain
     birth_radius: float = 0.04     # offspring scatter around the parent
     viscous: bool = True           # True: born near parent; False: born anywhere
+    no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
+    born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
     seed: int = 0
@@ -126,7 +136,8 @@ class Agent:
         self.id = aid
         self.net: SpikingNetwork | None = None
         self.actions = ACTIONS + (SOCIAL_ACTIONS if cfg.social else ())
-        self.n_sensors = N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
+        self.n_sensors = (N_SENSORS + (N_SOCIAL_SENSORS if cfg.social else 0)
+                          + (3 if cfg.social and cfg.directional_hearing else 0))
         # heritable trait + genealogy (used by evolution; harmless otherwise)
         self.aggr_gain = float(cfg.aggression_gain)
         self.neutral_gene = float(cfg.aggression_gain)   # drift control; never read by behaviour
@@ -162,6 +173,7 @@ class Agent:
         self.signaling = False
         self.pending_hurt = 0.0     # energy lost to attackers since last tick
         self.pending_gift = 0.0     # energy received from sharers since last tick
+        self.mirrored = False       # environment shift: left/right sensor bins swapped
 
     def build_net(self, rng: np.random.Generator, genome: dict | None = None) -> None:
         c = self.cfg
@@ -195,6 +207,8 @@ class Agent:
         self.genome = {"w": {cn.post: cn.weights.copy() for cn in self._plastic},
                        "aggression_gain": self.aggr_gain}
         self._row_budget = c.w_init * self.n_sensors
+        self._innate_rows = {cn.post: cn.weights.sum(axis=1, keepdims=True)
+                             for cn in self._plastic}
         self._node_order = list(net.populations)
         self._node_offsets, off = {}, 0
         for p in self._node_order:
@@ -239,6 +253,8 @@ class Agent:
               signals: np.ndarray | None = None) -> np.ndarray:
         food_s = self._bin_signals(food)
         threat_s = self._bin_signals(hazards)
+        if self.mirrored:
+            food_s, threat_s = food_s[::-1], threat_s[::-1]
         hunger = float(np.clip(1.0 - self.energy / self.cfg.e0, 0.0, 1.0))
         base = [food_s, threat_s, [hunger]]
         if self.cfg.social:
@@ -246,11 +262,16 @@ class Agent:
             others = np.empty((0, 2)) if others is None else others
             signals = np.empty((0, 2)) if signals is None else signals
             heard = 0.0
-            for q in signals:
+            for q in ([] if self.cfg.deaf else signals):
                 d = float(np.linalg.norm(q - self.pos))
                 if d <= self.cfg.signal_range:
                     heard += 1.0 - d / self.cfg.signal_range
-            base += [self._bin_signals(others), [min(1.0, heard)]]
+            other_s = self._bin_signals(others)
+            base += [other_s[::-1] if self.mirrored else other_s, [min(1.0, heard)]]
+            if self.cfg.directional_hearing:
+                callers = np.empty((0, 2)) if self.cfg.deaf else signals
+                call_s = self._bin_signals(callers)
+                base += [call_s[::-1] if self.mirrored else call_s]
         return np.concatenate(base)
 
     def nearest_food_dist(self, food: np.ndarray) -> float:
@@ -328,20 +349,24 @@ class Agent:
                          in_hazard: bool, learning: bool, hurt: bool = False,
                          primary: float | None = None, action: int | None = None) -> float:
         c = self.cfg
-        rpe = self.predictor.update(reward)
+        key = tuple(np.asarray(sensors) > 0.2) if c.critic == "state" else "_"
+        rpe = self.predictor.update(reward, key)
         affect_rpe = (self.primary_predictor.update(primary)
                       if (c.affect_from_primary and primary is not None) else rpe)
-        if learning:
+        if learning and not (c.positive_rpe_only and rpe < 0):
             chosen = self.actions[action] if (c.credit_chosen_only and action is not None) else None
             for cn in self._plastic:
                 if cn.post not in c.frozen_inputs and chosen in (None, cn.post):
                     cn.apply_reward(c.lr * rpe)
+                    if cn.post in c.normalized_inputs:
+                        rs = cn.weights.sum(axis=1, keepdims=True)
+                        cn.weights *= self._innate_rows[cn.post] / np.maximum(rs, 1e-9)
             if c.normalize:
                 self._normalize()
         self.net.clear_eligibility()
         self.affect.update(rpe=affect_rpe, threat_cue=float(max(sensors[3:6])),
                            pain=1.0 if (in_hazard or hurt) else 0.0,
-                           reward_expectation=float(np.clip(self.predictor.value(), 0, 1)))
+                           reward_expectation=float(np.clip(self.predictor.value(key), 0, 1)))
         return rpe
 
     def neural_glow(self) -> list[float]:
@@ -410,6 +435,8 @@ class World2D:
         self.affect = a0.affect
         self.next_id = len(self.agents)
         self.births = 0
+        self.eaten_total = 0
+        self.food_blocked = 0            # food reached but not eaten: no partner within coop_radius
         # Genealogy of every agent that ever lived (kept after bodies are pruned).
         self.registry: dict[int, dict] = {}
         for ag in self.agents:
@@ -521,6 +548,11 @@ class World2D:
         if len(self.food):
             d = np.linalg.norm(self.food - ag.pos, axis=1)
             hit = list(np.nonzero(d < c.eat_radius)[0])
+            if hit and c.coop_radius > 0 and not any(
+                    o.alive and o is not ag and np.linalg.norm(o.pos - ag.pos) < c.coop_radius
+                    for o in self.agents):
+                self.food_blocked += len(hit)
+                hit = []
             if hit:
                 eaten = len(hit)
                 if self.deprive:
@@ -529,6 +561,7 @@ class World2D:
                     for idx in hit:
                         self.food[idx] = self._scatter(1)[0]
         ag.food_eaten += eaten
+        self.eaten_total += eaten
         ag.energy += eaten * c.food_energy
 
         in_hazard = False
@@ -603,8 +636,9 @@ class World2D:
                 target.energy -= amt
                 target.pending_hurt += amt
                 target.attacked += 1
-                ag.energy += amt
-                r += c.r_eat * amt * unit * (1.0 - c.r_prosocial)
+                gain = 0.0 if (c.no_filial_gain and target.parent == ag.id) else amt
+                ag.energy += gain
+                r += c.r_eat * gain * unit * (1.0 - c.r_prosocial)
                 self.events.append({"type": "attack", "src": ag.id, "dst": target.id,
                                     "amount": round(amt, 3)})
                 if target.energy <= 0:
@@ -640,6 +674,11 @@ class World2D:
         self.events = []
         self._signals_now = []
         results = {}
+        mirrored = 0 <= self.cfg.mirror_at <= self.t
+        if self.cfg.mirror_every > 0:
+            mirrored = (self.t // self.cfg.mirror_every) % 2 == 1
+        for ag in self.agents:
+            ag.mirrored = mirrored
         for ag in self.agents:
             if ag.alive:
                 results[ag.id] = self._advance_agent(ag, learning, actions.get(ag.id))
@@ -695,8 +734,14 @@ class World2D:
         c, rng = self.cfg, self.rng
         child = Agent(c, self.next_id)
         self.next_id += 1
+        strangers = ([a for a in self.agents if a.alive and a is not parent
+                      and self.relatedness(parent, a) == 0.0]
+                     if (c.born_near_stranger and not c.viscous) else [])
         if c.viscous:
             pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
+        elif strangers:
+            host = strangers[int(rng.integers(len(strangers)))]
+            pos = host.pos + rng.normal(0.0, c.birth_radius, size=2)
         else:
             pos = rng.uniform(0.05, c.size - 0.05, size=2)
         child.spawn(np.clip(pos, 0.01, c.size - 0.01), float(rng.uniform(0, 2 * math.pi)))

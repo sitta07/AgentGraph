@@ -145,6 +145,8 @@ def test_lab_lists_committed_studies(client):
     for s in d["studies"]:
         assert isinstance(s["verdict"], dict)
         for ci in s["tests"].values():
+            if ci["mean"] is None:   # a test with no data (e.g. every pair went extinct)
+                continue
             assert ci["lo"] <= ci["mean"] <= ci["hi"]
 
 
@@ -172,3 +174,22 @@ def test_lineage_endpoint(client):
     d = client.get("/api/lineage").json()
     assert d["evolve"] is True and len(d["records"]) >= 4
     assert {"id", "parent", "born", "died", "aggr_gain"} <= set(d["records"][0])
+
+
+def test_session_accepts_mechanism_switches(client):
+    r = client.post("/api/session", json={"social": True, "credit_chosen_only": 1, "deaf": True,
+                                          "frozen_inputs": ["left", "forward", "bogus"],
+                                          "mirror_at": 12.4})
+    cfg = r.json()["config"]
+    assert cfg["credit_chosen_only"] is True and cfg["deaf"] is True
+    assert cfg["frozen_inputs"] == ["left", "forward"]
+    assert cfg["mirror_at"] == 12
+
+
+def test_social_session_with_new_bool_toggles(client):
+    r = client.post("/api/session", json={"seed": 3, "social": True, "evolve": True,
+                                          "directional_hearing": True, "no_filial_gain": True,
+                                          "viscous": False, "born_near_stranger": True})
+    assert r.status_code == 200
+    s = client.post("/api/step", json={"n": 5, "learning": True})
+    assert s.status_code == 200

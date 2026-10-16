@@ -1,0 +1,24 @@
+{
+  "id": "N_lamarck_vs_darwin_shift",
+  "title": "Lamarckian vs Darwinian inheritance of learned weights, in a static and a shifting world",
+  "question": "If offspring inherit their parent's learned weights (Lamarckian) rather than its inborn ones (Darwinian), do populations forage better in a static world and worse after the environment changes?",
+  "background": "Sasaki & Tokoro (1997, 2000) report, with neural networks and genetic algorithms, that Lamarckian inheritance adapts faster in static environments but is less robust when the environment changes. Experiment E found a hiding effect under Darwinian inheritance. Shift: from tick 6000, left and right sensor bins are swapped (food, hazards, other agents), so wiring that turned toward food now turns away from it. Innate foraging is assayed with learning off, in the environment the population ended in. food_rate is food eaten per agent-tick in the final quarter of the run, with learning on. Seeds 600-607 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 600,
+  "ticks": 12000,
+  "base": {"viscous": true},
+  "conditions": {
+    "darwin_static":  {"config": {"lamarckian": false}, "learning": true},
+    "lamarck_static": {"config": {"lamarckian": true},  "learning": true},
+    "darwin_shift":   {"config": {"lamarckian": false, "mirror_at": 6000}, "learning": true},
+    "lamarck_shift":  {"config": {"lamarckian": true,  "mirror_at": 6000}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H22a", "statement": "Static world: Lamarckian populations have higher innate foraging", "metric": "innate_foraging", "a": "lamarck_static", "b": "darwin_static", "direction": "greater"},
+    {"id": "H22b", "statement": "Static world: Lamarckian populations forage more (with learning)", "metric": "food_rate", "a": "lamarck_static", "b": "darwin_static", "direction": "greater"},
+    {"id": "H22c", "statement": "After the shift: Darwinian populations have higher innate foraging", "metric": "innate_foraging", "a": "darwin_shift", "b": "lamarck_shift", "direction": "greater"},
+    {"id": "H22d", "statement": "After the shift: Darwinian populations forage more (with learning)", "metric": "food_rate", "a": "darwin_shift", "b": "lamarck_shift", "direction": "greater"},
+    {"id": "H22e", "statement": "Manipulation check: the shift lowers Darwinian foraging", "metric": "food_rate", "a": "darwin_shift", "b": "darwin_static", "direction": "less"}
+  ]
+}

@@ -86,11 +86,26 @@ function sliderRow(key, label, dp, cfg, bounds) {
     <input type="range" id="c_${key}" min="${b[0]}" max="${b[1]}" step="${step}" value="${val}"></div>`;
 }
 const TOGGLES = [["social", "Social (see others, attack, share, signal)"],
-  ["evolve", "Evolution (reproduce, mutate, die)"], ["viscous", "Offspring born near parent"]];
+  ["evolve", "Evolution (reproduce, mutate, die)"], ["viscous", "Offspring born near parent"],
+  ["lamarckian", "Offspring inherit learned weights (Lamarckian)"],
+  ["credit_chosen_only", "Reward only the executed action (Exp. I)"],
+  ["positive_rpe_only", "Ignore negative reward errors (Exp. P)"],
+  ["deaf", "Nobody can hear signals (Exp. M)"],
+  ["directional_hearing", "Hear which side a call comes from (Exp. S)"],
+  ["born_near_stranger", "Newborns placed beside a non-relative (Exp. Q; needs viscous off)"],
+  ["no_filial_gain", "No energy from attacking own offspring (Exp. Q3)"]];
+const LOCO = ["left", "forward", "right"];
+const LOCO_TOGGLES = [["frozen_inputs", "Freeze locomotion learning (Exp. J)"],
+  ["normalized_inputs", "Hold locomotion drive fixed (Exp. K)"]];
 function buildControls(cfg, bounds) {
   $("toggleCtls").innerHTML = TOGGLES.map(([k, l]) =>
     `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
-     <input type="checkbox" id="t_${k}" ${cfg[k] ? "checked" : ""}> ${l}</label>`).join("");
+     <input type="checkbox" id="t_${k}" ${cfg[k] ? "checked" : ""}> ${l}</label>`).join("")
+    + LOCO_TOGGLES.map(([k, l]) =>
+    `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
+     <input type="checkbox" id="t_${k}" ${(cfg[k] || []).length ? "checked" : ""}> ${l}</label>`).join("")
+    + `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
+     <input type="checkbox" id="t_critic" ${cfg.critic === "state" ? "checked" : ""}> Reward expectation per sensor state (Exp. R)</label>`;
   $("envCtls").innerHTML = ENV_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
   $("neuroCtls").innerHTML = NEURO_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
   for (const [k, , dp] of [...ENV_FIELDS, ...NEURO_FIELDS]) {
@@ -104,6 +119,8 @@ function gatherControls() {
     const el = $("c_" + k); if (el) o[k] = +el.value;
   }
   for (const [k] of TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked; }
+  for (const [k] of LOCO_TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked ? LOCO : []; }
+  { const el = $("t_critic"); if (el) o.critic = el.checked ? "state" : "scalar"; }
   if (o.evolve) o.social = true;   // evolution experiments run with the social layer
   o.learning = S.learning;
   return o;

@@ -1,0 +1,22 @@
+{
+  "id": "M_signal_meaning",
+  "title": "Do signals evolve meaning when someone can hear them?",
+  "question": "Over ~18000 ticks of evolution with learning off, does the signal action come to carry information about the signaller's state (food in view, threat in view, hunger) more when receivers can hear it than when every agent is deaf?",
+  "background": "Exploratory data from C2, E and G: MI(signal; own food/threat/hunger sensors) <= 0.002 bits in every condition. Experiments I and J showed that learning raises signalling as a side effect, so learning is off here and only selection can shape signalling. In the deaf control the heard-signal sensor always reads 0, so a signal cannot affect anyone and there is no selection for it to carry information. Referential signalling has been reported in evolved spiking-network swarms with cooperative tasks (arXiv 2212.08484); this world rewards no cooperation. MI is measured in bits over the final quarter of the run, from 2x2 tables of signal (yes/no) against each binarised sensor. Viscous populations (relatives nearby) are used because kin structure favours honest signals. Seeds 700-711 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 700,
+  "ticks": 18000,
+  "base": {"viscous": true},
+  "conditions": {
+    "hearing": {"config": {"deaf": false}, "learning": false},
+    "deaf":    {"config": {"deaf": true},  "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H23a", "statement": "Signals carry more information about food in view when they can be heard", "metric": "mi_signal_food", "a": "hearing", "b": "deaf", "direction": "greater"},
+    {"id": "H23b", "statement": "Signals carry more information about threat in view when they can be heard", "metric": "mi_signal_threat", "a": "hearing", "b": "deaf", "direction": "greater"},
+    {"id": "H23c", "statement": "Signals carry more information about hunger when they can be heard", "metric": "mi_signal_hunger", "a": "hearing", "b": "deaf", "direction": "greater"},
+    {"id": "H23d", "statement": "With hearing, signals carry at least 0.01 bits about food in view", "metric": "mi_signal_food", "a": "hearing", "b": 0.01, "direction": "greater"},
+    {"id": "H23e", "statement": "Signalling rate is no different when signals can be heard", "metric": "signal_rate", "a": "hearing", "b": "deaf", "direction": "none"}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "O_rl_invasion",
+  "title": "Can tabular Q-learners invade an evolving population of spiking agents?",
+  "question": "Six of twelve founders, and all their descendants, are driven by tabular Q-learners instead of their spiking networks; bodies, sensors, actions, rewards and reproduction rules are identical. Do Q-learner lineages take over the population, and does it matter whether a newborn inherits its parent's Q-table or starts from zero?",
+  "background": "Controllers: see neuralmind/research/invasion.py (2048 binarised sensor states, epsilon 0.05, alpha 0.1, gamma 0.9). The 'label' condition marks the same six founder lineages but leaves them SNN-driven, which measures neutral drift of lineage share. An engineering pilot on one unregistered seed (9999, 2000 ticks) showed q_inherit lineages reaching 100% and q_fresh lineages falling to ~3%; these predictions were written after that pilot. The primary metric is the mean share of the population in marked lineages over the whole run (invader_share_mean), which is robust to when fixation happens. Seeds 800-811 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 800,
+  "ticks": 6000,
+  "base": {"viscous": true},
+  "conditions": {
+    "label":     {"config": {}, "learning": true, "invader": {"founders": 6, "mode": "label"}},
+    "q_fresh":   {"config": {}, "learning": true, "invader": {"founders": 6, "mode": "q_fresh"}},
+    "q_inherit": {"config": {}, "learning": true, "invader": {"founders": 6, "mode": "q_inherit"}}
+  },
+  "hypotheses": [
+    {"id": "H24a", "statement": "Q-learners that inherit their parent's table out-compete SNN lineages (relative to the neutral-drift control)", "metric": "invader_share_mean", "a": "q_inherit", "b": "label", "direction": "greater"},
+    {"id": "H24b", "statement": "Q-learners that start every life from a zero table lose to SNN lineages", "metric": "invader_share_mean", "a": "q_fresh", "b": "label", "direction": "less"},
+    {"id": "H24c", "statement": "Inheriting the Q-table matters", "metric": "invader_share_mean", "a": "q_inherit", "b": "q_fresh", "direction": "greater"},
+    {"id": "H24d", "statement": "Neutral-drift control: marked SNN lineages hold about half the population on average", "metric": "invader_share_mean", "a": "label", "b": 0.5, "direction": "none"}
+  ]
+}

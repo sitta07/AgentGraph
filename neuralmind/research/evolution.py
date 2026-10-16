@@ -49,6 +49,7 @@ from pathlib import Path
 import numpy as np
 
 from neuralmind import __version__
+from neuralmind.research.invasion import QPopulation, invader_share
 from neuralmind.research.stats import g_test_p, mean_ci, mutual_information, paired_diff
 from neuralmind.world import World2D, WorldConfig
 
@@ -76,8 +77,11 @@ def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
                     ticks: int = 300) -> int:
     """Assay a genome: food eaten alone in a fresh world with learning OFF.
     Measures what the innate wiring can do without any lifetime learning."""
+    # the assay runs in the environment the population ended in
+    shifted = 0 <= cfg.mirror_at < cfg.max_ticks
     solo = WorldConfig(**{**cfg.as_dict(), "n_agents": 1, "evolve": False,
-                          "seed": seed, "max_ticks": ticks + 1})
+                          "seed": seed, "max_ticks": ticks + 1,
+                          "mirror_at": 0 if shifted else -1})
     w = World2D(solo)
     ag = w.agents[0]
     ag.aggr_gain = aggr_gain
@@ -90,25 +94,69 @@ def innate_foraging(cfg: WorldConfig, genome: dict, aggr_gain: float, seed: int,
 
 
 def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25,
-                  sample_every: int = 100) -> dict:
-    """Run one evolving population; return time series + final-window metrics."""
+                  sample_every: int = 100, early: int = 6000,
+                  invader: dict | None = None) -> dict:
+    """Run one evolving population; return time series + final-window metrics.
+
+    ``invader`` = {"founders": k, "mode": "label" | "q_fresh" | "q_inherit"}
+    marks the lineages of the first k founders. In the q modes those lineages
+    are driven by tabular Q-learners (see ``invasion.py``); "label" only
+    tracks them, as a neutral-drift control."""
     w = World2D(WorldConfig(**{**BASE, "max_ticks": ticks + 1, **cfg_kw}))
+    qpop = None
+    if invader:
+        qpop = QPopulation(invader["founders"], len(w.agents[0].actions), w.cfg.seed,
+                           inherit=invader["mode"] == "q_inherit")
+    drive = qpop is not None and invader["mode"] != "label"
     start_final = int(ticks * (1 - window))
     acts, alive_ticks = Counter(), 0
     enc_ticks, enc_kin = 0, 0
     share_events, share_kin = 0, 0
     series = {"t": [], "pop": [], "share_gene": [], "aggr_gene": [],
-              "generation": [], "share_rate": [], "attack_rate": []}
+              "generation": [], "share_rate": [], "attack_rate": [], "invader_share": [], "food_rate": []}
     win = Counter(); win_ticks = 0
+    eaten_mark = 0
     # communication: does signalling carry information about the signaller's
     # state, and does hearing a signal change what the listener does?
     tab = {k: np.zeros((2, 2)) for k in ("food", "threat", "hunger")}
     enc_acts = Counter()                      # actions on ticks with a neighbour in reach
     enc_d, enc_d_kin, enc_d_non, share_d = [], [], [], []
     heard_action = np.zeros((2, 6))
+    # demography before `early` ticks: deaths by cause, births, offspring success
+    dem = Counter()
+    prev_ids = {a.id for a in w.agents if a.alive}
+    prev_agents = {a.id: a for a in w.agents if a.alive}
+    young_age = 150                           # "newborn" for the kill log: first 10% of max_age
+    born_early, parents = set(), set()
+    eaten0, eaten1 = {}, {}                   # agent id -> food eaten at first / last tick seen in the final window
     for t in range(ticks):
-        frame = w.step(learning=learning)
+        frame = w.step(learning=learning, actions=qpop.act(w) if drive else None)
+        if drive:
+            qpop.learn(w, frame)
         live = [a for a in w.agents if a.alive]
+        if t < early:
+            ids = {a.id for a in live}
+            killed = {e["dst"] for e in frame["events"] if e["type"] == "death"}
+            old = {e["src"] for e in frame["events"] if e["type"] == "old_age"}
+            by_id = {**prev_agents, **{a.id: a for a in live}}
+            for e in frame["events"]:
+                if e["type"] == "death" and e["src"] in by_id and e["dst"] in by_id:
+                    killer, victim = by_id[e["src"]], by_id[e["dst"]]
+                    dem["kills_kin"] += w.relatedness(killer, victim) > 0
+                    dem["kills_young"] += victim.age < young_age
+                    dem["kills_offspring"] += victim.parent == killer.id
+                    dem["kills_logged"] += 1
+                if e["type"] == "birth":
+                    dem["births"] += 1
+                    parents.add(e["src"])
+                    if t < early - w.cfg.max_age:
+                        born_early.add(e["dst"])
+            for i in prev_ids - ids:
+                dem["killed" if i in killed else "old_age" if i in old else "starved"] += 1
+            dem["agent_ticks"] += len(live)
+            dem["young_ticks"] += sum(a.age < young_age for a in live)
+            prev_ids = ids
+            prev_agents = {a.id: a for a in live}
         if not live:
             break
         names = {a["id"]: a["action_name"] for a in frame["agents"] if a["alive"]}
@@ -119,6 +167,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             win[nm] += 1; win_ticks += 1
             if t >= start_final:
                 acts[nm] += 1; alive_ticks += 1
+                eaten0.setdefault(a.id, a.food_eaten)
+                eaten1[a.id] = a.food_eaten
         if t >= start_final:
             # kin structure of encounters (pairs within reach) vs of shares
             pos = np.array([a.pos for a in live])
@@ -160,9 +210,13 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
             n = max(1, win_ticks)
             series["share_rate"].append(win["share"] / n)
             series["attack_rate"].append(win["attack"] / n)
+            series["invader_share"].append(invader_share(w, qpop) if qpop else float("nan"))
+            series["food_rate"].append((w.eaten_total - eaten_mark) / n)
+            eaten_mark = w.eaten_total
             win = Counter(); win_ticks = 0
     live = [a for a in w.agents if a.alive]
     n = max(1, alive_ticks)
+    food_final = sum(eaten1[i] - eaten0[i] for i in eaten1)
     assay = [innate_foraging(w.cfg, a.genome, a.aggr_gain, seed=10_000 + i)
              for i, a in enumerate(sorted(live, key=lambda a: a.id)[:8])]
     pops = np.array(series["pop"], dtype=float)
@@ -189,6 +243,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_rate": acts["share"] / n if alive_ticks else float("nan"),
         "attack_rate": acts["attack"] / n if alive_ticks else float("nan"),
         "signal_rate": acts["signal"] / n if alive_ticks else float("nan"),
+        "food_rate": food_final / n if alive_ticks else float("nan"),
         "drift_loco": mean_drift(loco),
         **{f"drift_{x}": mean_drift((x,)) for x in social},
         "drift_social_minus_loco": mean_drift(social) - mean_drift(loco),
@@ -198,6 +253,8 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_given_encounter": enc_acts["share"] / enc_ticks if enc_ticks else float("nan"),
         "attack_given_encounter": enc_acts["attack"] / enc_ticks if enc_ticks else float("nan"),
         "encounter_rate": enc_ticks / n if alive_ticks else float("nan"),
+        "food_blocked_frac": (w.food_blocked / (w.food_blocked + w.eaten_total)
+                              if w.food_blocked + w.eaten_total else float("nan")),
         "enc_dist": float(np.mean(enc_d)) if enc_d else float("nan"),
         "enc_dist_kin": float(np.mean(enc_d_kin)) if enc_d_kin else float("nan"),
         "enc_dist_nonkin": float(np.mean(enc_d_non)) if enc_d_non else float("nan"),
@@ -208,13 +265,61 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "mi_heard_action": mutual_information(heard_action),
         "p_heard_action": g_test_p(heard_action),
         "births": w.births,
+        **_shift_recovery(series, w.cfg.mirror_every),
+        "invader_share": invader_share(w, qpop) if qpop else float("nan"),
+        "invader_share_mean": (float(np.nanmean(series["invader_share"]))
+                               if qpop and series["invader_share"] else float("nan")),
+        "invader_lost01": (float(not any(qpop.controls(a) for a in live))
+                           if qpop else float("nan")),
+        **_demography(dem, born_early, parents),
         "series": series,
     }
 
 
+def _shift_recovery(series: dict, every: int) -> dict:
+    """Food per agent-tick in the first quarter after each sensory flip vs the
+    last quarter before it, averaged over flips."""
+    nan = float("nan")
+    if every <= 0:
+        return {"food_rate_pre_shift": nan, "food_rate_post_shift": nan, "shift_drop": nan}
+    t, f = np.array(series["t"]), np.array(series["food_rate"], dtype=float)
+    q = every // 4
+    pre, post = [], []
+    for k in range(1, int(t.max()) // every + 1 if t.size else 0):
+        b = k * every
+        a_ = f[(t >= b - q) & (t < b)]
+        p_ = f[(t > b) & (t <= b + q)]
+        if a_.size and p_.size:
+            pre.append(a_.mean()); post.append(p_.mean())
+    if not pre:
+        return {"food_rate_pre_shift": nan, "food_rate_post_shift": nan, "shift_drop": nan}
+    return {"food_rate_pre_shift": float(np.mean(pre)), "food_rate_post_shift": float(np.mean(post)),
+            "shift_drop": float(np.mean(pre) - np.mean(post))}
+
+
+def _demography(dem: Counter, born_early: set, parents: set) -> dict:
+    deaths = dem["killed"] + dem["old_age"] + dem["starved"]
+    frac = lambda k: dem[k] / deaths if deaths else float("nan")
+    kills_young = dem["kills_young"] / dem["kills_logged"] if dem["kills_logged"] else float("nan")
+    young = dem["young_ticks"] / dem["agent_ticks"] if dem["agent_ticks"] else float("nan")
+    return {"early_birth_rate": dem["births"] / dem["agent_ticks"] if dem["agent_ticks"] else float("nan"),
+            "early_death_rate": deaths / dem["agent_ticks"] if dem["agent_ticks"] else float("nan"),
+            "early_frac_killed": frac("killed"), "early_frac_starved": frac("starved"),
+            "early_frac_old_age": frac("old_age"),
+            "early_frac_kills_kin": (dem["kills_kin"] / dem["kills_logged"]
+                                     if dem["kills_logged"] else float("nan")),
+            "early_frac_kills_young": kills_young,
+            "early_frac_young": young,
+            "early_young_kill_excess": kills_young - young,
+            "early_frac_kills_offspring": (dem["kills_offspring"] / dem["kills_logged"]
+                                           if dem["kills_logged"] else float("nan")),
+            "early_offspring_success": (len(born_early & parents) / len(born_early)
+                                        if born_early else float("nan"))}
+
+
 def _job(args):
-    cfg_kw, ticks, learning = args
-    return run_evolution(cfg_kw, ticks, learning)
+    cfg_kw, ticks, learning, *invader = args
+    return run_evolution(cfg_kw, ticks, learning, invader=invader[0] if invader else None)
 
 
 METRICS = ("share_gene", "aggr_gene", "share_rate", "attack_rate", "share_to_kin",
@@ -223,12 +328,12 @@ METRICS = ("share_gene", "aggr_gene", "share_rate", "attack_rate", "share_to_kin
 
 def run_conditions(conditions: dict, seeds: int, ticks: int, seed_start: int = 0) -> dict:
     """Generic multi-seed runner. ``conditions`` maps a name to
-    ``(world_config_overrides, learning)``. Seeds are shared across conditions
-    so differences can be analysed as paired."""
+    ``(world_config_overrides, learning)`` or ``(overrides, learning, invader)``.
+    Seeds are shared across conditions so differences can be analysed as paired."""
     jobs, keys = [], []
-    for name, (over, learn) in conditions.items():
+    for name, (over, learn, *inv) in conditions.items():
         for s in range(seed_start, seed_start + seeds):
-            jobs.append(({"seed": s, **over}, ticks, learn))
+            jobs.append(({"seed": s, **over}, ticks, learn, *inv))
             keys.append((name, s))
     workers = max(1, (os.cpu_count() or 2) - 1)
     with ProcessPoolExecutor(max_workers=workers) as ex:

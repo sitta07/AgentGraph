@@ -1,0 +1,23 @@
+{
+  "id": "Q_kin_vs_density",
+  "title": "Does viscosity protect populations through kinship or through local density?",
+  "question": "Viscous populations (newborns placed beside their parent) survive longer and breed faster than well-mixed ones (F, F2, L). Is that because newborns start next to a relative, or simply next to someone? A third condition places well-mixed newborns beside a random living agent that is not a recorded relative.",
+  "background": "L (ticks 0-6000): births per agent-tick 0.0027 well-mixed vs 0.0036 viscous; starvation 37% vs 31% of deaths; killings 58% vs 67%. Food respawns uniformly, so food patches cannot explain it. Interpretation rule, fixed in advance: if only density matters, H26a and H26b are supported and H26c and H26d are not; if only kinship matters, the reverse. Seeds 1100-1111 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1100,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "mixed":    {"config": {"viscous": false}, "learning": true},
+    "stranger": {"config": {"viscous": false, "born_near_stranger": true}, "learning": true},
+    "viscous":  {"config": {"viscous": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H26a", "statement": "Density: newborns placed beside a stranger survive longer as populations than randomly placed ones", "metric": "survival_ticks", "a": "stranger", "b": "mixed", "direction": "greater"},
+    {"id": "H26b", "statement": "Density: placing newborns beside a stranger raises the early birth rate", "metric": "early_birth_rate", "a": "stranger", "b": "mixed", "direction": "greater"},
+    {"id": "H26c", "statement": "Kinship: placing newborns beside their parent beats placing them beside a stranger (survival)", "metric": "survival_ticks", "a": "viscous", "b": "stranger", "direction": "greater"},
+    {"id": "H26d", "statement": "Kinship: placing newborns beside their parent beats placing them beside a stranger (early birth rate)", "metric": "early_birth_rate", "a": "viscous", "b": "stranger", "direction": "greater"},
+    {"id": "H14b4", "statement": "Fourth test: viscous populations survive longer than well-mixed ones", "metric": "survival_ticks", "a": "viscous", "b": "mixed", "direction": "greater"}
+  ]
+}

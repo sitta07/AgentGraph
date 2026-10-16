@@ -1,0 +1,23 @@
+{
+  "id": "P_positive_rpe_only",
+  "title": "Do negative reward-prediction errors drive the learned rise in social actions?",
+  "question": "An exploratory probe (FINDINGS_K, seeds 900-902) found that ~58% of learning updates carry a negative RPE and that locomotion, which fires ~8x more than social populations, absorbs most of the resulting depression. If negative RPEs are ignored (only positive RPEs change weights), does the learning-induced rise in attacking, signalling and sharing disappear, and do locomotion weights now grow more than social ones?",
+  "background": "Experiments I-K: the rise in social behaviour under learning comes from a fall in total locomotion drive. Intervention: positive_rpe_only=true skips every weight update whose RPE is negative. Prediction from the candidate mechanism: activity-weighted potentiation now favours the most active pathways (locomotion), so social actions win less often than without learning or no more often. Seeds 1000-1007 have never been run.",
+  "simulator": "evolution",
+  "seeds": 8,
+  "seed_start": 1000,
+  "ticks": 8000,
+  "base": {"viscous": true},
+  "conditions": {
+    "learn_all": {"config": {}, "learning": true},
+    "pos_only":  {"config": {"positive_rpe_only": true}, "learning": true},
+    "nolearn":   {"config": {}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H25a", "statement": "Ignoring negative RPEs lowers the attack rate", "metric": "attack_rate", "a": "learn_all", "b": "pos_only", "direction": "greater"},
+    {"id": "H25b", "statement": "Ignoring negative RPEs lowers signalling", "metric": "signal_rate", "a": "learn_all", "b": "pos_only", "direction": "greater"},
+    {"id": "H25c", "statement": "Ignoring negative RPEs lowers sharing given a neighbour in reach", "metric": "share_given_encounter", "a": "learn_all", "b": "pos_only", "direction": "greater"},
+    {"id": "H25d", "statement": "With positive RPEs only, locomotion inputs grow more than social inputs", "metric": "drift_social_minus_loco", "a": "pos_only", "b": 0, "direction": "less"},
+    {"id": "H25e", "statement": "With positive RPEs only, learning does not raise the attack rate above no-learning", "metric": "attack_rate", "a": "pos_only", "b": "nolearn", "direction": "none"}
+  ]
+}

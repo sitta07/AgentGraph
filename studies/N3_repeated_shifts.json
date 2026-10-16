@@ -1,0 +1,23 @@
+{
+  "id": "N3_repeated_shifts",
+  "title": "Repeated environment shifts: does learning buffer them, and does Lamarckian inheritance cope worse?",
+  "question": "Experiment N's single mirror shift was measured too late to show any effect. Here left/right sensing flips every 2000 ticks, and foraging is measured in the 500 ticks just after each flip versus the 500 ticks just before it. Does lifetime learning shrink the post-flip drop, and do Lamarckian populations suffer a larger drop than Darwinian ones (Sasaki & Tokoro 1999)?",
+  "background": "shift_drop = food per agent-tick in the last quarter before each flip minus the first quarter after it, averaged over the 5 flips in 12000 ticks (sampled every 100 ticks). N (not pre-registered) suggested Lamarckian populations go extinct more often; extinct runs give no shift_drop, so tests rest on survivors. Seeds 1500-1511 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1500,
+  "ticks": 12000,
+  "base": {"viscous": true, "mirror_every": 2000},
+  "conditions": {
+    "darwin":         {"config": {"lamarckian": false}, "learning": true},
+    "lamarck":        {"config": {"lamarckian": true},  "learning": true},
+    "darwin_nolearn": {"config": {"lamarckian": false}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H30a", "statement": "Manipulation check: foraging drops after each flip (Darwinian, learning)", "metric": "shift_drop", "a": "darwin", "b": 0, "direction": "greater"},
+    {"id": "H30b", "statement": "Manipulation check: foraging drops after each flip (no learning)", "metric": "shift_drop", "a": "darwin_nolearn", "b": 0, "direction": "greater"},
+    {"id": "H30c", "statement": "Lifetime learning shrinks the post-flip drop", "metric": "shift_drop", "a": "darwin", "b": "darwin_nolearn", "direction": "less"},
+    {"id": "H30d", "statement": "Lamarckian populations suffer a larger post-flip drop", "metric": "shift_drop", "a": "lamarck", "b": "darwin", "direction": "greater"},
+    {"id": "H30e", "statement": "Lamarckian populations die out sooner under repeated shifts", "metric": "survival_ticks", "a": "lamarck", "b": "darwin", "direction": "less"}
+  ]
+}

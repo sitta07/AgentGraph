@@ -21,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 from neuralmind.lab import RESULTS as LAB_RESULTS, router as lab_router
 from neuralmind.persistence.store import ExperimentStore
-from neuralmind.world import ACTIONS, World2D, WorldConfig
+from neuralmind.world import ACTIONS, SOCIAL_ACTIONS, World2D, WorldConfig
 
 app = FastAPI(title="NeuralMind Artificial Life Playground")
 
@@ -37,7 +37,7 @@ _BOUNDS = {
     "aggression_gain": (0.0, 10.0), "w_social_scale": (0.1, 1.5),
     "repro_threshold": (0.5, 1.5), "repro_cost": (0.05, 1.0), "max_pop": (2, 60),
     "max_age": (50, 20000), "mut_sigma": (0.0, 1.0), "trait_sigma": (0.0, 2.0),
-    "birth_radius": (0.0, 0.5),
+    "birth_radius": (0.0, 0.5), "mirror_at": (-1, 100000), "coop_radius": (0.0, 0.5), "mirror_every": (0, 100000),
     "sensor_range": (0.05, 2.0), "speed": (0.002, 0.1), "turn": (0.05, 1.5),
     "e0": (0.1, 5.0), "food_energy": (0.0, 2.0), "move_cost": (0.0, 0.1),
     "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 20),
@@ -74,9 +74,15 @@ class Session:
             if k == "reward_mode":
                 kwargs[k] = v if v in ("align", "approach") else "align"
                 continue
-            if k in ("normalize", "social", "evolve", "viscous", "lamarckian",
-                     "affect_from_primary", "gift_reward"):
+            if k == "critic":
+                kwargs[k] = v if v in ("scalar", "state") else "scalar"
+                continue
+            if isinstance(getattr(WorldConfig, k, None), bool):
                 kwargs[k] = bool(v)
+                continue
+            if isinstance(getattr(WorldConfig, k, None), tuple):
+                names = v if isinstance(v, (list, tuple)) else []
+                kwargs[k] = tuple(str(x) for x in names if x in ACTIONS + SOCIAL_ACTIONS)
                 continue
             try:
                 v = float(v)
@@ -88,7 +94,7 @@ class Session:
                 lo, hi = _BOUNDS[k]
                 v = min(max(v, lo), hi)
             if k in ("n_agents", "n_food", "n_hazard", "max_ticks", "n_action",
-                     "substeps", "seed", "ticks_per_day", "max_pop", "max_age"):
+                     "substeps", "seed", "ticks_per_day", "max_pop", "max_age", "mirror_at", "mirror_every"):
                 v = int(round(v))
             kwargs[k] = v
         return WorldConfig(**kwargs)

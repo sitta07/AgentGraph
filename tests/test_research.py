@@ -68,6 +68,19 @@ def test_evolution_reports_weight_drift_and_signal_rate():
     assert off["drift_loco"] == 0 and off["drift_social_minus_loco"] == 0
 
 
+def test_early_demography_accounts_for_every_death():
+    from neuralmind.research.evolution import run_evolution
+    r = run_evolution({"seed": 0, "n_agents": 8, "max_pop": 16, "max_age": 200},
+                      ticks=600, learning=True, early=500)
+    total = r["early_frac_killed"] + r["early_frac_starved"] + r["early_frac_old_age"]
+    assert abs(total - 1.0) < 1e-9
+    assert r["early_frac_old_age"] > 0 and 0 < r["early_birth_rate"] < 1
+    assert 0 <= r["early_offspring_success"] <= 1
+    for k in ("early_frac_kills_kin", "early_frac_kills_young", "early_frac_young",
+              "early_frac_kills_offspring"):
+        assert np.isnan(r[k]) or 0 <= r[k] <= 1, k
+
+
 def test_relatedness_genealogy():
     from neuralmind.world import World2D, WorldConfig
     w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True))
@@ -89,3 +102,37 @@ def test_mutual_information_and_g_test():
     assert g_test_p([[50, 0], [0, 50]]) < 1e-10
     assert g_test_p([[25, 25], [25, 25]]) > 0.99
     assert 0.0 <= g_test_p([[10, 20, 30], [30, 20, 10]]) < 0.01
+
+
+def test_q_invaders_drive_their_lineages_only():
+    from neuralmind.research.evolution import run_evolution
+    from neuralmind.research.invasion import N_BITS, state_index
+    assert state_index(np.zeros(11)) == 0 and state_index(np.ones(11)) == (1 << N_BITS) - 1
+    kw = {"seed": 0, "n_agents": 6, "max_pop": 12}
+    lab = run_evolution(kw, ticks=150, learning=True, invader={"founders": 3, "mode": "label"})
+    plain = run_evolution(kw, ticks=150, learning=True)
+    assert lab["final_pop"] == plain["final_pop"] and lab["attack_rate"] == plain["attack_rate"]
+    assert 0 <= lab["invader_share"] <= 1
+    q = run_evolution(kw, ticks=150, learning=True, invader={"founders": 3, "mode": "q_inherit"})
+    assert 0 <= q["invader_share"] <= 1 and np.isfinite(q["invader_share_mean"])
+    assert np.isnan(plain["invader_share"])
+
+
+def test_drift_probe_restores_learning_rule_and_reports_all_tick_kinds():
+    from neuralmind.research.drift_probe import probe
+    from neuralmind.world import Agent
+    before = Agent.learn_and_affect
+    r = probe(seed=0, ticks=60, cfg={"n_agents": 4, "max_pop": 8})
+    assert Agent.learn_and_affect is before
+    assert sum(r["updates"].get(k, 0) for k in ("eat", "pain", "shaping")) > 0
+
+
+def test_periodic_shift_reports_drop_after_each_flip():
+    from neuralmind.research.evolution import _shift_recovery, run_evolution
+    series = {"t": list(range(0, 4000, 100)),
+              "food_rate": [0.05 if (t % 1000) >= 250 else 0.01 for t in range(0, 4000, 100)]}
+    r = _shift_recovery(series, 1000)
+    assert r["shift_drop"] > 0.03
+    out = run_evolution({"seed": 0, "n_agents": 6, "max_pop": 12, "mirror_every": 100},
+                        ticks=400, learning=False, sample_every=20)
+    assert np.isfinite(out["shift_drop"]) and len(out["series"]["food_rate"]) == 20

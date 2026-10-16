@@ -1,0 +1,21 @@
+{
+  "id": "S_signals_with_a_reason",
+  "title": "Do signals evolve meaning when food must be eaten together?",
+  "question": "Experiment M found no meaning in signals when nothing rewarded communication. Here food can only be eaten when another living agent is within 0.15, and hearing is directional (three egocentric bins locate callers). Does a signal now carry more information about the signaller's view of food when it can be heard than in a deaf control?",
+  "background": "M: MI(signal; food in view) ~0.0002 bits with or without hearing. New mechanics: coop_radius=0.15 (an engineering pilot on unregistered seed 9998 found 0.08 went extinct within 548 ticks and 0.15 persisted for 3000 ticks); directional_hearing adds three caller-direction sensors, which read 0 in the deaf condition just like the heard-level sensor. Learning is off so only selection shapes signalling (I-K showed learning raises signalling as a side effect). Seeds 1400-1411 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1400,
+  "ticks": 18000,
+  "base": {"viscous": true, "coop_radius": 0.15, "directional_hearing": true},
+  "conditions": {
+    "hearing": {"config": {"deaf": false}, "learning": false},
+    "deaf":    {"config": {"deaf": true},  "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H29a", "statement": "Signals carry more information about food in view when they can be heard", "metric": "mi_signal_food", "a": "hearing", "b": "deaf", "direction": "greater"},
+    {"id": "H29b", "statement": "Hearing populations survive longer", "metric": "survival_ticks", "a": "hearing", "b": "deaf", "direction": "greater"},
+    {"id": "H29c", "statement": "Hearing populations eat more per agent-tick", "metric": "food_rate", "a": "hearing", "b": "deaf", "direction": "greater"},
+    {"id": "H29d", "statement": "Hearing populations signal more", "metric": "signal_rate", "a": "hearing", "b": "deaf", "direction": "greater"}
+  ]
+}

@@ -118,6 +118,7 @@ class WorldConfig:
     viscous: bool = True           # True: born near parent; False: born anywhere
     no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
+    born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
@@ -436,6 +437,7 @@ class World2D:
         self.affect = a0.affect
         self.next_id = len(self.agents)
         self.births = 0
+        self.birth_fallbacks = 0   # born_near_relative births with no living relative: placed beside the parent
         self.eaten_total = 0
         self.food_blocked = 0            # food reached but not eaten: no partner within coop_radius
         # Genealogy of every agent that ever lived (kept after bodies are pruned).
@@ -738,6 +740,11 @@ class World2D:
         strangers = ([a for a in self.agents if a.alive and a is not parent
                       and self.relatedness(parent, a) == 0.0]
                      if (c.born_near_stranger and not c.viscous) else [])
+        relatives = ([a for a in self.agents if a.alive and a is not parent
+                      and self.relatedness(parent, a) > 0.0]
+                     if (c.born_near_relative and not c.viscous) else [])
+        if c.born_near_relative and not c.viscous and not relatives:
+            self.birth_fallbacks += 1
         if c.birth_distance > 0:
             th = float(rng.uniform(0, 2 * math.pi))
             pos = parent.pos + c.birth_distance * np.array([math.cos(th), math.sin(th)])
@@ -747,6 +754,9 @@ class World2D:
             pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
         elif strangers:
             host = strangers[int(rng.integers(len(strangers)))]
+            pos = host.pos + rng.normal(0.0, c.birth_radius, size=2)
+        elif c.born_near_relative:
+            host = relatives[int(rng.integers(len(relatives)))] if relatives else parent
             pos = host.pos + rng.normal(0.0, c.birth_radius, size=2)
         else:
             pos = rng.uniform(0.05, c.size - 0.05, size=2)

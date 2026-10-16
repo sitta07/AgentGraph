@@ -46,6 +46,7 @@ import numpy as np
 
 from neuralmind import __version__
 from neuralmind.research.evolution import line_svg, run_conditions
+from neuralmind.research.single import run_single_conditions
 from neuralmind.research.stats import mean_ci, paired_diff
 
 from neuralmind.paths import home
@@ -53,6 +54,7 @@ from neuralmind.paths import home
 ROOT = home()
 REQUIRED = ("id", "title", "question", "simulator", "conditions", "hypotheses")
 DIRECTIONS = ("greater", "less", "none")
+SIMULATORS = ("evolution", "single")
 
 
 def load(path: str | Path) -> dict:
@@ -60,8 +62,8 @@ def load(path: str | Path) -> dict:
     missing = [k for k in REQUIRED if k not in spec]
     if missing:
         raise ValueError(f"spec missing keys: {missing}")
-    if spec["simulator"] != "evolution":
-        raise ValueError("only simulator='evolution' is supported so far")
+    if spec["simulator"] not in SIMULATORS:
+        raise ValueError(f"simulator must be one of {SIMULATORS}")
     for h in spec["hypotheses"]:
         for k in ("id", "statement", "metric", "a", "b", "direction"):
             if k not in h:
@@ -112,10 +114,17 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
     ticks = ticks or spec.get("ticks", 6000)
     seed_start = int(spec.get("seed_start", 0))
     prereg = preregistration(path)
-    conds = {n: ({**spec.get("base", {}), **c.get("config", {})}, bool(c.get("learning", True)),
-                 c.get("invader"))
-             for n, c in spec["conditions"].items()}
-    res = run_conditions(conds, seeds, ticks, seed_start)
+    if spec["simulator"] == "single":
+        conds = {n: {**spec.get("base", {}), **c.get("config", {}), "max_ticks": ticks}
+                 for n, c in spec["conditions"].items()}
+        res = run_single_conditions(conds, seeds, seed_start, int(spec.get("train_episodes", 40)),
+                                    int(spec.get("test_worlds", 16)),
+                                    int(spec.get("test_seed_start", 9000)))
+    else:
+        conds = {n: ({**spec.get("base", {}), **c.get("config", {})}, bool(c.get("learning", True)),
+                     c.get("invader"))
+                 for n, c in spec["conditions"].items()}
+        res = run_conditions(conds, seeds, ticks, seed_start)
     metrics = sorted(k for k, v in res["raw"][next(iter(conds))][0].items()
                      if isinstance(v, (int, float)) and not isinstance(v, bool))
     col = lambda n, m: [r[m] for r in res["raw"][n]]
@@ -131,7 +140,8 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
     return {"experiment": spec["id"], "title": spec["title"], "question": spec["question"],
             "background": spec.get("background", ""), "hypotheses": spec["hypotheses"],
             "version": __version__, "preregistration": prereg, "deviations": deviations,
-            "design": {"seeds": seeds, "seed_start": seed_start, "ticks": ticks,
+            "design": {"simulator": spec["simulator"], "seeds": seeds, "seed_start": seed_start, "ticks": ticks,
+                       **{k: spec[k] for k in ("train_episodes", "test_worlds", "test_seed_start") if k in spec},
                        "base": spec.get("base", {}),
                        "conditions": spec["conditions"]},
             "summary": summary, "tests": tests, "verdict": verdict, "raw": res["raw"]}
@@ -145,6 +155,8 @@ def write(res: dict, out: Path) -> Path:
               ("pop", "Population"), ("generation", "Mean generation")]
     if any(c.get("invader") for c in res["design"]["conditions"].values()):
         charts.append(("invader_share", "Share of population in marked lineages"))
+    if res["design"].get("simulator") == "single":
+        charts = []
     for m, t in charts:
         (out / f"series_{m}.svg").write_text(line_svg(res["raw"], m, t))
     pr = res["preregistration"]
@@ -162,7 +174,9 @@ def write(res: dict, out: Path) -> Path:
     for h in res["hypotheses"]:
         key = f"{h['id']}: {h['metric']} ({h['a']} − {h['b']})"
         L.append(f"| {h['id']} | {h['statement']} | {f(res['tests'][key])} | **{res['verdict'][h['id']]}** |")
-    shown = [m for m in ("innate_foraging", "share_gene", "aggr_gene", "share_rate",
+    shown = [m for m in ("trained_food", "trained_food_scrambled", "untrained_food",
+                         "learning_gain", "sense_gain", "collapsed01", "trained_forward_frac",
+                         "innate_foraging", "share_gene", "aggr_gene", "share_rate",
                          "attack_rate", "signal_rate", "share_given_encounter", "encounter_rate",
                          "drift_social_minus_loco", "invader_share",
                          "final_pop", "max_generation") if m in next(iter(res["summary"].values()))]
@@ -170,7 +184,7 @@ def write(res: dict, out: Path) -> Path:
           "|---|" + "---|" * len(shown)]
     for n, c in res["summary"].items():
         L.append(f"| {n} | " + " | ".join(f(c[m]) for m in shown) + " |")
-    L += ["", " ".join(f"![](series_{m}.svg)" for m, _ in charts), "",
+    L += ["", " ".join(f"![](series_{m}.svg)" for m, _ in charts) if charts else "", "",
           f"Full per-metric summaries and raw per-run data: `results.json`."]
     p = out / "REPORT.md"
     p.write_text("\n".join(L))

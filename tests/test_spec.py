@@ -66,3 +66,15 @@ def test_seed_start_uses_fresh_seeds(tmp_path):
     res = run(load(p), p, seeds=2, ticks=40)
     assert res["design"]["seed_start"] == 50
     assert "pop_cv" in res["summary"]["a"]
+
+
+def test_single_agent_simulator_end_to_end(tmp_path):
+    p = _spec(tmp_path, simulator="single", base={}, ticks=40, train_episodes=2, test_worlds=2,
+              conditions={"a": {"config": {}}, "b": {"config": {"reset_each_decision": True}}},
+              hypotheses=[{"id": "H", "statement": "s", "metric": "trained_food",
+                           "a": "a", "b": "b", "direction": "none"}])
+    res = run(load(p), p)
+    r = res["raw"]["a"][0]
+    assert r["learning_gain"] == r["trained_food"] - r["untrained_food"]
+    assert res["design"]["train_episodes"] == 2
+    assert "trained_food" in write(res, tmp_path / "out").read_text()

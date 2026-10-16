@@ -45,6 +45,7 @@ const CONTROLS = [
   {key: "max_ticks", label: "Episode length", help: "Steps before an episode ends on its own.", tier: "advanced", group: "World", kind: "range", dp: 0},
   {key: "ticks_per_day", label: "Day length", help: "Steps that make up one simulated day.", tier: "advanced", group: "World", kind: "range", dp: 0},
 
+  {key: "substeps", label: "Decision time (ms)", help: "Simulated milliseconds the brain runs before each move. 32 lets senses reach the action groups (Exp. W).", tier: "advanced", group: "Brain & learning", kind: "range", dp: 0},
   {key: "n_action", label: "Neurons per action", help: "Size of each group of neurons that votes for one action.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 0},
   {key: "sensor_gain", label: "Sense strength", help: "How strongly sensing drives the sensory neurons.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 1},
   {key: "action_noise", label: "Exploration", help: "Random input that makes creatures try different actions.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 1},
@@ -62,6 +63,9 @@ const CONTROLS = [
   {key: "no_filial_gain", exp: "Q3", label: "No gain from attacking offspring", help: "Attacking your own offspring drains it but gives you no energy.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
   {key: "critic", exp: "R", label: "Expectation per situation", help: "Keep a separate reward expectation for each sensed situation.", tier: "advanced", group: "Research switches (ablations)", kind: "critic"},
   {key: "directional_hearing", exp: "S", label: "Hear direction of calls", help: "Creatures hear which side a signal comes from.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "scramble_senses", exp: "V", label: "Scrambled senses", help: "Food and hazard readings are shuffled every step, so they carry no direction.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "reset_each_decision", exp: "W", label: "Fresh start each decision", help: "Neuron state is cleared before every move, so the last winner does not keep winning.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "normalize", exp: "W", label: "Balanced learning", help: "Each action neuron's total input weight stays fixed, so one pathway cannot run away.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
   {key: "lamarckian", label: "Inherit learned brains", help: "Offspring inherit the parent's learned connections, not its inborn ones.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
 ];
 // UI value <-> config value. Every non-range control shows as one checkbox.
@@ -82,6 +86,8 @@ function writeCtl(c, v) {
 const SCENARIOS = [
   {id: "lone", name: "Lone forager", blurb: "One creature learns to find food and avoid hazards.",
    overrides: {n_agents: 1}},
+  {id: "learner", name: "Learning that works", blurb: "One creature with the fixed brain dynamics from Exp. W. Train it and it learns to steer to food.",
+   overrides: {n_agents: 1, substeps: 32, reset_each_decision: true, normalize: true}},
   {id: "social", name: "Social group", blurb: "Six creatures that can attack, share food and signal.",
    overrides: {n_agents: 6, social: true}},
   {id: "evolve", name: "Evolving population", blurb: "Creatures reproduce and mutate. Watch the family tree.",

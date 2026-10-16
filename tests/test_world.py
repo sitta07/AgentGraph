@@ -347,6 +347,9 @@ def test_born_near_stranger_places_newborn_next_to_a_non_relative():
     assert d < 0.2 and np.linalg.norm(c.pos - p.pos) > d
 
 
+
+
+
 def test_scramble_senses_keeps_values_but_breaks_their_positions():
     cfg = dict(seed=3, n_agents=1, n_food=8)
     seen, scr = World2D(WorldConfig(**cfg)), World2D(WorldConfig(**cfg, scramble_senses=True))

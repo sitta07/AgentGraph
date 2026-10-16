@@ -347,6 +347,16 @@ def test_born_near_stranger_places_newborn_next_to_a_non_relative():
     assert d < 0.2 and np.linalg.norm(c.pos - p.pos) > d
 
 
+def test_scramble_senses_keeps_values_but_breaks_their_positions():
+    cfg = dict(seed=3, n_agents=1, n_food=8)
+    seen, scr = World2D(WorldConfig(**cfg)), World2D(WorldConfig(**cfg, scramble_senses=True))
+    a, b = seen.agents[0], scr.agents[0]
+    s1 = a.sense(seen.food, seen.hazards)
+    s2 = b.sense(scr.food, scr.hazards)
+    assert sorted(s1[:6]) == sorted(s2[:6]) and s1[6] == s2[6]
+    assert any(not np.array_equal(b.sense(scr.food, scr.hazards)[:6], s1[:6]) for _ in range(20))
+
+
 def test_birth_distance_places_newborn_at_that_distance_from_parent():
     w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, birth_distance=0.3))
     p = w.agents[0]

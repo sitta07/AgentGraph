@@ -22,6 +22,7 @@ studies complete.
 | 14 | Does Lamarckian inheritance compound the bias? | Post-hoc in N. | N2, fresh seeds, with a state-critic arm. | ~60 min | **done** ([N2](FINDINGS_N2.md)): Lamarckian extinction replicated (9/12 vs 1/12); state critic does not prevent it; 2/12 state-critic runs found a peaceful high-food state |
 | 15 | A better learning rule for social worlds: does lifetime learning ever pay in evolving populations? | P: learners eat ~31% less. | Compare rules (state critic, symmetric STDP, action-specific eligibility) on food_rate and survival. | ~1 h | **done: no rule pays yet** ([T](FINDINGS_T.md)); best is state critic + low lr at −7%; needs a world with something to learn (item 16) |
 | 16 | Environment-shift test done properly | N's shift was too weak and was measured too late. | Repeated shifts; food_rate time series right after each shift. | ~1 h | **failed manipulation check** ([N3](FINDINGS_N3.md)): left/right flips do not lower foraging; needs a shift validated by pilot |
+| 17 | Do evolving agents use their senses to find food at all? | Three shift tests (N, N3, swap pilot) failed their manipulation checks; evolved weights showed no sensory structure. | V: scramble the food/hazard sensors; falsified if real senses do not raise foraging. | ~50 min | **done: no measurable use** ([V](FINDINGS_V.md)); exploratory follow-up points to the decision dynamics (lock-in, 8 ms window, runaway potentiation) |
 
 ## Principles
 

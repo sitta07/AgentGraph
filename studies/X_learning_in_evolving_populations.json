@@ -1,0 +1,24 @@
+{
+  "id": "X_learning_in_evolving_populations",
+  "title": "With the fixed decision dynamics, does lifetime learning pay in evolving social populations?",
+  "question": "In evolving populations lifetime learning has always lowered foraging (P, R, T, V: about -14% to -31%), and V found that innate wiring does not measurably use the senses. W showed that single agents learn sensory foraging and eat about 5.7x more once decisions last 32 ms, start from a cleared state, and use normalised input weights. In social evolving worlds W's normalisation, which sets every action neuron's input sum to one common budget, erased the weaker innate drive into attack, share and signal, and learning populations died out within 1000 ticks (exploratory pilot). Normalising each neuron to its own innate input sum kept 2/2 pilot populations alive. This study asks whether learning now pays in evolving populations and whether it uses the senses.",
+  "background": "All fixed conditions use substeps=32, reset_each_decision=True, normalize=True, normalize_to='innate' on the standard evolution base (12 founders, viscous, 24 food). Pilot (seeds 9200-9201, 3000 ticks, exploratory): food per agent-tick 0.033/0.037 learning vs 0.032/0.030 no learning; attack rate 0.15-0.18 vs 0.06. default_nolearn uses the default dynamics without learning, the best foraging condition in V (0.051). Interpretation rule, fixed in advance: learning pays in evolving populations if H40a is supported; the gain is sensory if H40b is also supported. H40c asks whether the fixed learners beat the best old baseline. Seeds 2300-2309 have never been run.",
+  "simulator": "evolution",
+  "seeds": 10,
+  "seed_start": 2300,
+  "ticks": 6000,
+  "base": {},
+  "conditions": {
+    "fixed_learn":           {"config": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate"}, "learning": true},
+    "fixed_nolearn":         {"config": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate"}, "learning": false},
+    "fixed_learn_scrambled": {"config": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "scramble_senses": true}, "learning": true},
+    "default_nolearn":       {"config": {}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H40a", "statement": "With the fixed dynamics, learning populations eat more than non-learning ones", "metric": "food_rate", "a": "fixed_learn", "b": "fixed_nolearn", "direction": "greater"},
+    {"id": "H40b", "statement": "With the fixed dynamics, learning populations eat more with real than with scrambled senses", "metric": "food_rate", "a": "fixed_learn", "b": "fixed_learn_scrambled", "direction": "greater"},
+    {"id": "H40c", "statement": "Fixed-dynamics learners eat more than default-dynamics non-learners (the best earlier baseline)", "metric": "food_rate", "a": "fixed_learn", "b": "default_nolearn", "direction": "greater"},
+    {"id": "H40d", "statement": "With the fixed dynamics, learning raises the attack rate", "metric": "attack_rate", "a": "fixed_learn", "b": "fixed_nolearn", "direction": "greater"},
+    {"id": "H40e", "statement": "With the fixed dynamics, learning populations survive as long as non-learning ones (no difference expected)", "metric": "survival_ticks", "a": "fixed_learn", "b": "fixed_nolearn", "direction": "none"}
+  ]
+}

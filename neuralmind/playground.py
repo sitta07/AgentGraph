@@ -61,6 +61,9 @@ def validate(overrides: dict) -> WorldConfig:
         if k == "reward_mode":
             kwargs[k] = v if v in ("align", "approach") else "align"
             continue
+        if k == "normalize_to":
+            kwargs[k] = v if v in ("budget", "innate") else "budget"
+            continue
         if k == "critic":
             kwargs[k] = v if v in ("scalar", "state") else "scalar"
             continue

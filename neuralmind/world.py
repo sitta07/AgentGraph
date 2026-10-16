@@ -72,6 +72,7 @@ class WorldConfig:
     w_inhib: float = 0.8
     lr: float = 0.8
     normalize: bool = False
+    normalize_to: str = "budget"   # "budget": every action neuron's input sum = w_init * n_sensors; "innate": its own sum at birth
     reward_mode: str = "align"
     r_eat: float = 1.0
     r_approach: float = 5.0
@@ -233,7 +234,8 @@ class Agent:
         for cn in self._plastic:
             rs = cn.weights.sum(axis=1, keepdims=True)
             rs[rs < 1e-9] = 1e-9
-            cn.weights *= self._row_budget / rs
+            target = self._innate_rows[cn.post] if self.cfg.normalize_to == "innate" else self._row_budget
+            cn.weights *= target / rs
 
     # ---- sensing --------------------------------------------------------
     def _bin_signals(self, points: np.ndarray) -> np.ndarray:

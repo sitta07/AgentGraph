@@ -46,7 +46,8 @@ redirect vs stranger p = 0.069; parent vs redirect p = 0.68.
 - Pooled over the eight studies with both placements, stranger placement
   went extinct in 88/96 runs and parent placement in 30/96.
 - Redirection lowered the birth rate (0.0025 vs 0.0043) and raised the
-  attack rate (0.30 vs 0.23), the latter because more attacks now land.
+  attack rate (0.30 vs 0.23). The attack rate counts chosen actions, so
+  the rise is in how often agents chose to attack; why was not analysed.
 
 ## Next step
 

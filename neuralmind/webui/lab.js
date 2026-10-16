@@ -77,7 +77,7 @@ function card(s) {
   const more = entries.length > TESTS_SHOWN ? `<button class="ghost more" data-toggle="${esc(s.id)}"
       aria-expanded="${open}">${open ? "Show fewer" : `Show all ${entries.length} tests`}</button>` : "";
   const charts = (s.charts || []).map(c => {
-    const src = `/results/${encodeURIComponent(s.folder)}/${encodeURIComponent(c)}`;
+    const src = `results/${encodeURIComponent(s.folder)}/${encodeURIComponent(c)}`;
     return `<a href="${src}" target="_blank" rel="noopener" aria-label="Open chart ${esc(c)} in a new tab">
       <img src="${src}" alt="Chart: ${esc(c)}" loading="lazy" decoding="async"></a>`;
   }).join("");
@@ -182,7 +182,7 @@ function renderEstimate() {
 function md(src, folder) {
   const inline = (t) => esc(t)
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, a, u) =>
-      `<img alt="${a}" loading="lazy" src="${/^https?:/.test(u) ? u : `/results/${encodeURIComponent(folder)}/${u}`}">`)
+      `<img alt="${a}" loading="lazy" src="${/^https?:/.test(u) ? u : `results/${encodeURIComponent(folder)}/${u}`}">`)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
   const lines = src.split("\n"); let out = "", i = 0;
   while (i < lines.length) {

@@ -193,3 +193,12 @@ def test_social_session_with_new_bool_toggles(client):
     assert r.status_code == 200
     s = client.post("/api/step", json={"n": 5, "learning": True})
     assert s.status_code == 200
+
+
+def test_pages_and_their_relative_assets_resolve(client):
+    for page in ("/", "/lab", "/lab.html"):
+        html = client.get(page)
+        assert html.status_code == 200
+        for ref in ("static/common.css", "static/common.js"):
+            assert ref in html.text
+            assert client.get("/" + ref).status_code == 200

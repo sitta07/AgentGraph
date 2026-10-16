@@ -346,8 +346,8 @@ function buildBrainLegend() {
 
 // ---------- world rendering ----------
 // ---------- pixel-art world (Kenney CC0 tiles) ----------
-const TOWN = new Image(); TOWN.src = "/static/assets/kenney/tiny_town.png";
-const DUN = new Image(); DUN.src = "/static/assets/kenney/tiny_dungeon.png";
+const TOWN = new Image(); TOWN.src = "static/assets/kenney/tiny_town.png";
+const DUN = new Image(); DUN.src = "static/assets/kenney/tiny_dungeon.png";
 const SPRITES = [85, 99, 86, 88, 87, 100, 97, 111];   // tiny_dungeon character tiles
 const T = {grass: 0, grass2: 1, flower: 2, trees: [4, 16, 28, 5], food: 29};
 const D = {fire: 29, spikes: 41, grave: 65};

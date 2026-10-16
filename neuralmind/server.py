@@ -119,6 +119,7 @@ def index():
 
 
 @app.get("/lab")
+@app.get("/lab.html")
 def lab_page():
     return FileResponse(_WEBUI / "lab.html")
 

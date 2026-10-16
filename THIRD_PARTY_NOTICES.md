@@ -34,12 +34,6 @@ governs that use and this notice must be updated accordingly.
 > copied into this MIT-licensed repository. See
 > `docs/architecture/ARCHITECTURE_DECISIONS.md` (ADR-0002, ADR-0004).
 
-## Original project
-
-The pre-existing AgentGraph application (LangGraph/LangChain/Streamlit based) is
-retained under this repository's MIT License. Its own Python dependencies are
-declared in `requirements.txt` and carry their respective upstream licenses.
-
 ## Bundled art assets (CC0)
 
 | Asset | Author | License | Location | Use |

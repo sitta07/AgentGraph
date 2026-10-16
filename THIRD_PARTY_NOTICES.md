@@ -56,3 +56,15 @@ of both web pages.
 | Gymnasium | MIT | observation/action spaces for the PettingZoo wrapper |
 | Playwright (Python) | Apache-2.0 | dev-only: records README media (`tools/make_media.py`) |
 | Pillow | MIT-CMU | dev-only: assembles GIFs |
+
+## Browser build (GitHub Pages; loaded from a CDN at runtime, not vendored)
+
+| Project | Version pin | License | Use |
+|---|---|---|---|
+| [Pyodide](https://pyodide.org) | 0.29.5, from `cdn.jsdelivr.net/pyodide/v0.29.5/full/` | MPL-2.0 (bundled CPython: PSF) | Runs the Python engine in the browser via WebAssembly (`neuralmind/webui/pyodide-worker.js`) |
+| NumPy (Pyodide build) | 2.2.5, shipped with Pyodide 0.29.5 | BSD-3-Clause | Same as above, inside the browser |
+
+`tools/build_site.py` writes no third-party code into `site/`; the visitor's
+browser downloads Pyodide and NumPy directly from the CDN. Pyodide is MPL-2.0,
+a file-level copyleft licence: using it unmodified this way places no
+conditions on NeuralMind's own MIT code.

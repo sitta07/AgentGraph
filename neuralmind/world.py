@@ -98,6 +98,7 @@ class WorldConfig:
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     mirror_every: int = 0          # >0: left/right sensing flips every this many ticks
     deaf: bool = False             # True: the heard-signal sensor always reads 0
+    scramble_senses: bool = False  # True: the 6 food/hazard sensor values are shuffled every tick
     directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
     coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
     positive_rpe_only: bool = False  # True: negative reward-prediction errors change no weights
@@ -150,6 +151,8 @@ class Agent:
         self.born = 0
         self.death_tick: int | None = None
         self.genome: dict | None = None
+        # own stream, so scrambling never shifts the world's random draws
+        self._scramble_rng = np.random.default_rng((cfg.seed, aid, 7919))
 
     # ---- lifecycle ------------------------------------------------------
     def spawn(self, pos: np.ndarray, heading: float) -> None:
@@ -256,6 +259,9 @@ class Agent:
         threat_s = self._bin_signals(hazards)
         if self.mirrored:
             food_s, threat_s = food_s[::-1], threat_s[::-1]
+        if self.cfg.scramble_senses:
+            mixed = self._scramble_rng.permutation(np.concatenate([food_s, threat_s]))
+            food_s, threat_s = mixed[:3], mixed[3:]
         hunger = float(np.clip(1.0 - self.energy / self.cfg.e0, 0.0, 1.0))
         base = [food_s, threat_s, [hunger]]
         if self.cfg.social:

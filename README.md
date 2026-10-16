@@ -40,6 +40,8 @@ NeuralMind is **MIT-licensed**: use it, change it, ship it, commercially or not 
 | **Teach** neurons, plasticity, reinforcement learning or evolution | the interactive Playground: click any creature to see its brain |
 | **Build on the engine** | `pip install` it: small, dependency-light NumPy code with 120+ tests and CI |
 
+**New here?** [`docs/GUIDE.md`](docs/GUIDE.md) explains the whole system, the research and what to learn, in about 45 minutes.
+
 If you use it in research, please cite it ([`CITATION.cff`](CITATION.cff)). PRs
 and new studies are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 

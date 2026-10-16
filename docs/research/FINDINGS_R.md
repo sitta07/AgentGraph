@@ -49,6 +49,7 @@ commit `36743d9`, spec unchanged, no deviations. Report:
 - **Innate foraging** (an evolved trait) was 9.7 with a state critic, 6.6
   with a scalar critic and 11.5 without learning. The hiding effect from E
   looks weaker with the better rule. That is a single comparison, untested.
+  **It did not replicate in [T](FINDINGS_T.md)** (8.0 vs 7.5).
 - The **early birth rate** was much higher with the scalar critic (0.0036 vs
   0.0014 state, 0.0010 nolearn), and so was the number of generations (9.6 vs
   7.0 vs 6.9). One possible reason is that attacks transfer energy and speed

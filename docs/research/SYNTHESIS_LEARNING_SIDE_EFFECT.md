@@ -58,12 +58,13 @@ supported by pre-registered tests (J, K, P, R).
 ## Consequences
 
 - **Learning costs foraging.** In P, learners ate ~31% less than
-  non-learners. With the per-state critic in R the cost was ~15%. No rule
-  tested so far makes lifetime learning pay in these evolving populations.
-  Experiment T tests two more variants.
+  non-learners. With the per-state critic the cost was ~14% (R, T). In
+  [T](FINDINGS_T.md), adding chosen-only credit or a 4× lower learning rate
+  narrowed it further, to −12% and −7%, but no rule tested makes lifetime
+  learning pay. So far, less learning is always better in these worlds.
 - **Hiding effect.** With learning, innate foraging evolves less
-  ([E](FINDINGS_E.md)). In R this gap was smaller with the per-state critic
-  (9.7 vs 6.6; no learning 11.5). That observation was not pre-registered.
+  ([E](FINDINGS_E.md)). In R this gap looked smaller with the per-state
+  critic. That observation was not pre-registered and did not replicate in T.
 - **Lamarckian inheritance** collapses populations, 9/12 vs 1/12 extinct
   ([N2](FINDINGS_N2.md)). The per-state critic does not prevent it, so that
   collapse needs a different explanation.
@@ -74,8 +75,9 @@ supported by pre-registered tests (J, K, P, R).
 
 ## What is still open
 
-- Whether any lifetime-learning rule improves foraging over fixed wiring in
-  this world (T, agenda item 15).
+- Whether lifetime learning can pay at all here. It probably needs a world
+  that changes within a lifetime in a way that hurts fixed wiring. N and N3
+  did not achieve that (agenda item 16).
 - Whether the side effect matters for kin-directed sharing. The kin bias in
   C and C2 is larger with learning, and it has not been re-tested with the
   per-state critic.

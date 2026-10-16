@@ -30,7 +30,7 @@
 
 ## 🔓 Open for you to build on
 
-NeuralMind is **MIT-licensed**. It is designed to be forked, extended and cited:
+NeuralMind is **MIT-licensed**: use it, change it, ship it, commercially or not ([details](#licence-free-to-use)). It is designed to be forked, extended and cited:
 
 | You want to… | Use |
 |---|---|
@@ -199,12 +199,33 @@ tests/           pytest suite (CI on 3.12 / 3.13)
 - Evolution studies run for tens of generations, not thousands.
 - A "day" is a simulation unit (`ticks_per_day`).
 
-## Licence & credits
+## Licence: free to use
 
-- **Code:** MIT (see `LICENSE`).
-- **Pixel art:** [Tiny Town](https://kenney.nl/assets/tiny-town) and [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) by **[Kenney](https://kenney.nl)**, released under CC0. Thank you! CC0 doesn't require credit, but we give it gladly.
-- **Optional dependencies:** FastAPI, PettingZoo, Gymnasium (MIT); Uvicorn (BSD); Playwright (Apache-2.0, media recording only).
-- Details in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+You may use, copy, change, share and sell anything in this repository, including the
+code, docs, study specs, results data and README media, for personal, research,
+teaching or commercial work. You don't need to ask.
+
+| What | Licence | What you must do |
+|---|---|---|
+| Code, docs, study specs, `results/` data, README GIFs/screenshots | [MIT](LICENSE) | Keep the copyright and licence notice in copies or substantial portions. Citation is welcome ([`CITATION.cff`](CITATION.cff)) but not required. |
+| Pixel art in `neuralmind/webui/assets/kenney/`: [Tiny Town](https://kenney.nl/assets/tiny-town) and [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) by **[Kenney](https://kenney.nl)** | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (public domain dedication) | Nothing. Credit is optional; we give it gladly. Don't imply Kenney endorses your project. |
+| pip dependencies (NumPy, FastAPI, Uvicorn, PettingZoo, Gymnasium, …) | each package's own permissive licence (BSD, MIT, Apache-2.0) | Not included in this repo. You install them, under their own terms. |
+
+Notes:
+
+- The README GIFs and screenshots show Kenney's CC0 art, so they carry no extra restriction.
+- The emoji in the UI (😠 💚 📢 …) are drawn by your operating system's emoji font.
+  No emoji font or image is bundled.
+- MIT and CC0 come with **no warranty**. This is a research model, not a medical or
+  safety-critical tool.
+- No copyleft (GPL) code is included. Copyleft simulators we studied for reference
+  (Brian2, NEST, TVB) are listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+  with the rules for using them alongside this repo.
+
+The licence texts were checked against [kenney.nl](https://kenney.nl/assets/tiny-town),
+the `License.txt` files shipped with the art, and the
+[CC0 deed](https://creativecommons.org/publicdomain/zero/1.0/) in October 2026.
+If you find an asset whose source or licence is unclear, please open an issue.
 
 This repository started as AgentGraph, an LLM multi-agent app. That code was removed;
 it is preserved at the git tag [`agentgraph-legacy`](https://github.com/sitta07/NeuralMind/tree/agentgraph-legacy).

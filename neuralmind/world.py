@@ -121,6 +121,7 @@ class WorldConfig:
     viscous: bool = True           # True: born near parent; False: born anywhere
     no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
     filial_attack_redirect: bool = False  # True: an attack whose nearest target is your own offspring hits the nearest other agent in reach instead
+    family_attack_redirect: bool = False  # True: an attack whose nearest target is your offspring or your parent hits the nearest agent in reach that is neither
     no_filial_attack: bool = False  # True: an attack on your own offspring has no effect (the attacker still pays)
     no_family_interaction: bool = False  # True: attacks and shares between a parent and its offspring, either way, have no effect (the actor still pays)
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
@@ -656,6 +657,11 @@ class World2D:
                 target = None
             if target is not None and c.filial_attack_redirect and target.parent == ag.id:
                 rest = [(float(np.linalg.norm(o.pos - ag.pos)), o) for o in others if o.parent != ag.id]
+                rest = [(d, o) for d, o in rest if d <= c.attack_radius]
+                target = min(rest, key=lambda x: x[0])[1] if rest else None
+            family = lambda o: o.parent == ag.id or o.id == ag.parent
+            if target is not None and c.family_attack_redirect and family(target):
+                rest = [(float(np.linalg.norm(o.pos - ag.pos)), o) for o in others if not family(o)]
                 rest = [(d, o) for d, o in rest if d <= c.attack_radius]
                 target = min(rest, key=lambda x: x[0])[1] if rest else None
             if target is not None:

@@ -1,0 +1,22 @@
+{
+  "id": "Q9_family_redirect",
+  "title": "Do attacks wasted within the family protect populations born beside the parent?",
+  "question": "Placing newborns beside their parent protects evolving populations (stranger placement went extinct in 77/84 runs vs 26/84 beside the parent over Q-Q8). Redirecting only the parent's attacks on its offspring (Q7) and blocking all parent-offspring attacks and shares (Q8) both left the protection intact. But in Q8 a blocked attack still does not reach an unrelated adult, and in Q7 the offspring's attacks on its parent were never redirected. A broad sink account remains: beside the parent, many attacks in both directions land within the family instead of on unrelated adults. This study redirects attacks in both directions.",
+  "background": "Intervention: family_attack_redirect=True. When the nearest target of an attack is the attacker's own offspring or own parent, the attack instead hits the nearest agent within reach that is neither (or misses if there is none). Sharing is unchanged. Newborns are placed beside the parent. stranger is a reference only. Interpretation rule, fixed in advance: the broad sink account is supported if H45a or H45b is supported; if neither is, attacks between parent and offspring are not the mechanism in any form tested, and what the newborn senses becomes the leading candidate. H45c and H45d are manipulation checks. No pilot was run. Seeds 2600-2611 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2600,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":          {"config": {"viscous": true}, "learning": true},
+    "parent_redirect": {"config": {"viscous": true, "family_attack_redirect": true}, "learning": true},
+    "stranger":        {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H45a", "statement": "With attacks between parent and offspring redirected to others, populations beside the parent die out sooner", "metric": "survival_ticks", "a": "parent_redirect", "b": "parent", "direction": "less"},
+    {"id": "H45b", "statement": "With attacks between parent and offspring redirected, populations go extinct more often", "metric": "extinct01", "a": "parent_redirect", "b": "parent", "direction": "greater"},
+    {"id": "H45c", "statement": "Manipulation check: kills of own offspring fall below 5% of kills", "metric": "early_frac_kills_offspring", "a": "parent_redirect", "b": 0.05, "direction": "less"},
+    {"id": "H45d", "statement": "Manipulation check: redirection lowers the share of kills that are of kin", "metric": "early_frac_kills_kin", "a": "parent_redirect", "b": "parent", "direction": "less"}
+  ]
+}

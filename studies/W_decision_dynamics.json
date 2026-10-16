@@ -1,0 +1,30 @@
+{
+  "id": "W_decision_dynamics",
+  "title": "Can lifetime learning find sensory foraging once decisions are slow, fresh and balanced?",
+  "question": "V found that evolving agents do not measurably use their senses, and P, R and T found that lifetime learning lowers foraging. Exploratory probes after V point to the decision dynamics: (1) state carries over between decisions, so the current winner keeps winning (an untrained agent repeats one action for a median of 217 of 500 ticks); (2) a decision lasts 8 ms against a 20 ms membrane time constant, so from rest sensory input barely reaches the action populations; (3) rewarded STDP runs away, so one pathway saturates (Skorheim, Lonjers & Bazhenov 2014). A 12-seed pilot that fixed all three together (32 ms decisions, state cleared before each decision, per-neuron input weights normalised) trained 12/12 single agents to 20.0 food per test episode with real senses vs 3.1 scrambled. Removing any one fix gave 1.3-4.4. This study tests that on fresh training seeds and fresh test worlds.",
+  "background": "Each run trains one fresh agent for 40 episodes of 500 ticks (learning on, weights kept), freezes it, and tests it on 16 held-out worlds with real and scrambled food/hazard senses; an untrained agent with the same configuration is tested on the same worlds. trained_food is mean food per test episode; learning_gain = trained_food - untrained_food; sense_gain = trained_food - trained_food_scrambled; collapsed01 = 1 if trained_food < 1. Conditions: default (8 ms, state carried, no normalisation); full (substeps=32, reset_each_decision, normalize); no_reset, no_window and no_norm each remove one fix from full. Interpretation rule, fixed in advance: the fixes make lifetime learning work if H38a, H38b and H38c are supported; an ingredient is necessary if its H38d/e/f test is supported. Pilot numbers (training seeds 500-511, test worlds 9000-9015) are exploratory and not part of this test. Training seeds 600-611 and test worlds 9100-9115 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 600,
+  "ticks": 500,
+  "train_episodes": 40,
+  "test_worlds": 16,
+  "test_seed_start": 9100,
+  "base": {},
+  "conditions": {
+    "default":   {"config": {}},
+    "full":      {"config": {"substeps": 32, "reset_each_decision": true, "normalize": true}},
+    "no_reset":  {"config": {"substeps": 32, "reset_each_decision": false, "normalize": true}},
+    "no_window": {"config": {"substeps": 8, "reset_each_decision": true, "normalize": true}},
+    "no_norm":   {"config": {"substeps": 32, "reset_each_decision": true, "normalize": false}}
+  },
+  "hypotheses": [
+    {"id": "H38a", "statement": "Trained agents with all three fixes eat more than trained agents with the default dynamics", "metric": "trained_food", "a": "full", "b": "default", "direction": "greater"},
+    {"id": "H38b", "statement": "With all three fixes, lifetime learning pays: trained agents eat more than untrained ones", "metric": "learning_gain", "a": "full", "b": 0, "direction": "greater"},
+    {"id": "H38c", "statement": "With all three fixes, trained agents use their senses: they eat more with real than with scrambled senses", "metric": "sense_gain", "a": "full", "b": 0, "direction": "greater"},
+    {"id": "H38d", "statement": "Clearing state before each decision is necessary (full beats no_reset)", "metric": "trained_food", "a": "full", "b": "no_reset", "direction": "greater"},
+    {"id": "H38e", "statement": "A 32 ms decision window is necessary (full beats no_window)", "metric": "trained_food", "a": "full", "b": "no_window", "direction": "greater"},
+    {"id": "H38f", "statement": "Weight normalisation is necessary (full beats no_norm)", "metric": "trained_food", "a": "full", "b": "no_norm", "direction": "greater"},
+    {"id": "H38g", "statement": "Replication: with the default dynamics, learning raises foraging over untrained agents", "metric": "learning_gain", "a": "default", "b": 0, "direction": "greater"}
+  ]
+}

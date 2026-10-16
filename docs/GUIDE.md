@@ -537,9 +537,11 @@ evolving populations, learning lowers foraging instead.
   learned. This is a concrete example of how that reading can be wrong.
 - **It links theory to behaviour.** The R-STDP bias is known in theory
   (Frémaux et al. 2010). Here it shows up as measurable social behaviour in an
-  embodied, evolving population, and the fix the theory predicts works. We
-  have not yet searched the literature systematically for prior reports of
-  this, so we do not claim it is new.
+  embodied, evolving population, and the fix the theory predicts works. A
+  literature check ([`LITERATURE_NOVELTY.md`](research/LITERATURE_NOVELTY.md))
+  rates this "partly known": the bias is published, but we found no report of
+  it as a behavioural side effect. The check did not include a forward-citation
+  search, so this is a statement about that search, not a claim of novelty.
 - **Every number can be checked.** Registered specs, raw data and reports are
   in the repo. Any study can be rerun from the browser on an ordinary laptop.
 - **An open puzzle.** Why do newborns placed beside strangers drive the

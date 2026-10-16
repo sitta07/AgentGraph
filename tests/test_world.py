@@ -394,6 +394,18 @@ def test_normalize_to_innate_keeps_each_neurons_own_input_sum():
     assert before["attack"].mean() < before["forward"].mean()
 
 
+def test_no_filial_attack_leaves_own_offspring_untouched():
+    for flag in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, no_filial_attack=flag))
+        p = w.agents[0]
+        p.energy = 3.0
+        child = w._birth(p)
+        child.pos = p.pos.copy()
+        before = child.energy
+        w._social_effects(p, p.actions.index("attack"), [child])
+        assert (child.energy == before) == flag
+
+
 def test_state_critic_keeps_separate_expectations_per_sensor_state():
     w = World2D(WorldConfig(seed=0, n_agents=1, social=True, critic="state"))
     ag = w.agents[0]

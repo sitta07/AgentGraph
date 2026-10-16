@@ -1,0 +1,22 @@
+{
+  "id": "Q7_aggression_sink",
+  "title": "Does a newborn beside its parent protect the population by absorbing aggression?",
+  "question": "Placing newborns beside their parent protects evolving populations (Q-Q6: stranger placement 56/60 extinct vs parent placement 18/60), and neither relatedness in general (Q5) nor parental culling (Q6) explains it. An attack hits the nearest agent in reach. Beside the parent, that is often the parent's own young (67% of kills are of young agents vs 54% beside strangers, Q6), so aggression may be absorbed by cheap, replaceable newborns instead of hitting established foragers. If so, redirecting attacks that would hit one's own offspring onto the nearest other agent should remove the protection.",
+  "background": "Intervention: filial_attack_redirect=True. When the nearest target of an attack is the attacker's own offspring, the attack instead hits the nearest other agent within reach (or misses if there is none). Newborns are placed beside the parent. stranger is a reference only. Interpretation rule, fixed in advance: the aggression-sink account is supported if H41a or H41b is supported; it is not supported if neither is. H41c and H41d are manipulation checks (kills move away from young agents and own offspring). Post hoc caution from Q6: with filial attacks made ineffective, kills of young fell to 38% yet protection held, which this account explains only if attacks that hit nobody also count as absorbed. No pilot was run. Seeds 2400-2411 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2400,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":          {"config": {"viscous": true}, "learning": true},
+    "parent_redirect": {"config": {"viscous": true, "filial_attack_redirect": true}, "learning": true},
+    "stranger":        {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H41a", "statement": "With filial attacks redirected to other agents, populations beside the parent die out sooner", "metric": "survival_ticks", "a": "parent_redirect", "b": "parent", "direction": "less"},
+    {"id": "H41b", "statement": "With filial attacks redirected, populations go extinct more often", "metric": "extinct01", "a": "parent_redirect", "b": "parent", "direction": "greater"},
+    {"id": "H41c", "statement": "Manipulation check: redirection lowers the share of kills that are of young agents", "metric": "early_frac_kills_young", "a": "parent_redirect", "b": "parent", "direction": "less"},
+    {"id": "H41d", "statement": "Manipulation check: kills of own offspring fall below 5% of kills", "metric": "early_frac_kills_offspring", "a": "parent_redirect", "b": 0.05, "direction": "less"}
+  ]
+}

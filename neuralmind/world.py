@@ -119,6 +119,7 @@ class WorldConfig:
     birth_radius: float = 0.04     # offspring scatter around the parent
     viscous: bool = True           # True: born near parent; False: born anywhere
     no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
+    filial_attack_redirect: bool = False  # True: an attack whose nearest target is your own offspring hits the nearest other agent in reach instead
     no_filial_attack: bool = False  # True: an attack on your own offspring has no effect (the attacker still pays)
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
@@ -646,6 +647,10 @@ class World2D:
             r -= c.r_eat * c.attack_cost * unit
             if target is not None and c.no_filial_attack and target.parent == ag.id:
                 target = None
+            if target is not None and c.filial_attack_redirect and target.parent == ag.id:
+                rest = [(float(np.linalg.norm(o.pos - ag.pos)), o) for o in others if o.parent != ag.id]
+                rest = [(d, o) for d, o in rest if d <= c.attack_radius]
+                target = min(rest, key=lambda x: x[0])[1] if rest else None
             if target is not None:
                 amt = min(c.steal, max(0.0, target.energy))
                 target.energy -= amt

@@ -1,0 +1,23 @@
+{
+  "id": "V_do_agents_use_senses",
+  "title": "Do evolving agents use their senses to find food?",
+  "question": "Three environment-shift tests failed their manipulation checks: swapping left and right (N, N3) or swapping the food and hazard channels (exploratory pilot, 4 seeds) did not lower the foraging of fixed-wiring agents. A probe of two evolved populations (8000 ticks, about 6 generations, no learning) found innate food and hazard weights near the founder value (about 1.2) with no left/right structure. If evolved wiring ignores sensory information, those shifts could not matter, and the innate-foraging gain in E (+5.5) must come from something other than sensing, such as moving more. This study scrambles the food and hazard sensors and asks whether foraging depends on them.",
+  "background": "Intervention: scramble_senses=True shuffles the 6 food/hazard sensor values every tick with a dedicated random stream. The total input current is unchanged, but which value comes from which direction and object is lost. Hunger and social sensors are untouched. sense_gain is the innate-foraging assay (each of up to 8 surviving genomes alone in a fresh world for 300 ticks, learning off, as in E) with real senses minus the same genomes with scrambled senses. Positive-control pilot (exploratory, not registered): single agents trained for 40 episodes ate 4.03 food per test episode with real senses vs 2.60 scrambled (6 training seeds x 16 test worlds; lower in 5/6), so scrambling removes information a trained agent uses. In the same pilot untrained random wiring ate 1.0 with real senses vs 2.5 scrambled. Interpretation rule, fixed in advance: if H36a and H36b are both not supported, foraging in evolving populations does not measurably depend on sensory information, and earlier interpretations that assume sensory-guided innate foraging (E, N, N3) must be re-read. Seeds 2000-2011 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2000,
+  "ticks": 8000,
+  "base": {},
+  "conditions": {
+    "nolearn":           {"config": {}, "learning": false},
+    "nolearn_scrambled": {"config": {"scramble_senses": true}, "learning": false},
+    "learn":             {"config": {}, "learning": true},
+    "learn_scrambled":   {"config": {"scramble_senses": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H36a", "statement": "Evolved innate wiring uses the senses: its genomes forage better with real than with scrambled senses (no-learning populations)", "metric": "sense_gain", "a": "nolearn", "b": 0, "direction": "greater"},
+    {"id": "H36b", "statement": "Evolving populations without learning eat more with real senses than with scrambled senses", "metric": "food_rate", "a": "nolearn", "b": "nolearn_scrambled", "direction": "greater"},
+    {"id": "H36c", "statement": "Evolving populations with learning eat more with real senses than with scrambled senses", "metric": "food_rate", "a": "learn", "b": "learn_scrambled", "direction": "greater"},
+    {"id": "H36d", "statement": "Evolving with real senses yields more sense use than evolving with scrambled senses (no learning)", "metric": "sense_gain", "a": "nolearn", "b": "nolearn_scrambled", "direction": "greater"}
+  ]
+}

@@ -1,7 +1,8 @@
 """Single-agent learning studies: train one agent, then test it on held-out worlds.
 
 Each run trains a fresh agent for ``train_episodes`` episodes (learning on,
-weights kept between episodes), then freezes it and measures food eaten per
+weights kept between episodes), or for a total of ``train_ticks`` ticks in
+episodes no longer than the test episode, then freezes it and measures food eaten per
 episode on ``test_worlds`` held-out world seeds, with real and with scrambled
 food/hazard senses. An untrained agent with the same configuration is tested
 on the same worlds as the baseline.
@@ -40,25 +41,30 @@ def _test(w: World2D, seeds: range, scramble: bool, untrained_cfg: dict | None =
     return float(np.mean(food)), float(np.mean(fwd))
 
 
-def run_single(cfg_kw: dict, train_episodes: int, test_worlds: int, test_seed_start: int) -> dict:
-    w = World2D(WorldConfig(**cfg_kw))
+def run_single(cfg_kw: dict, train_episodes: int, test_worlds: int, test_seed_start: int,
+               train_ticks: int | None = None) -> dict:
+    test_len = cfg_kw.get("max_ticks", WorldConfig.max_ticks)
+    ep_len = test_len if train_ticks is None else min(test_len, train_ticks)
+    episodes = train_episodes if train_ticks is None else train_ticks // ep_len
+    w = World2D(WorldConfig(**{**cfg_kw, "max_ticks": ep_len}))
     curve = []
-    for ep in range(train_episodes):
+    for ep in range(episodes):
         w.reset(keep_weights=ep > 0)
         curve.append(w.run(learning=True)["food_eaten"])
+    w.cfg.max_ticks = test_len
     seeds = range(test_seed_start, test_seed_start + test_worlds)
     base = {k: v for k, v in cfg_kw.items() if k != "seed"}
     trained, trained_fwd = _test(w, seeds, False)
     trained_scr, _ = _test(w, seeds, True)
     naive, naive_fwd = _test(w, seeds, False, base)
     naive_scr, _ = _test(w, seeds, True, base)
-    q = max(1, train_episodes // 4)
+    q = max(1, episodes // 4)
     return {
         "trained_food": trained, "trained_food_scrambled": trained_scr,
         "untrained_food": naive, "untrained_food_scrambled": naive_scr,
         "learning_gain": trained - naive, "sense_gain": trained - trained_scr,
         "trained_forward_frac": trained_fwd, "untrained_forward_frac": naive_fwd,
-        "collapsed01": float(trained < COLLAPSED),
+        "collapsed01": float(trained < COLLAPSED), "train_ticks_run": float(episodes * ep_len),
         "train_food_first_quarter": float(np.mean(curve[:q])),
         "train_food_last_quarter": float(np.mean(curve[-q:])),
     }
@@ -69,13 +75,17 @@ def _job(args):
 
 
 def run_single_conditions(conditions: dict, seeds: int, seed_start: int, train_episodes: int,
-                          test_worlds: int, test_seed_start: int) -> dict:
-    """``conditions`` maps a name to world-config overrides. Training seeds and
-    test worlds are shared across conditions, so differences are paired."""
+                          test_worlds: int, test_seed_start: int,
+                          train_ticks: dict | None = None) -> dict:
+    """``conditions`` maps a name to world-config overrides; ``train_ticks``
+    optionally maps a name to a total training budget in ticks. Training seeds
+    and test worlds are shared across conditions, so differences are paired."""
+    train_ticks = train_ticks or {}
     jobs, keys = [], []
     for name, over in conditions.items():
         for s in range(seed_start, seed_start + seeds):
-            jobs.append(({**over, "seed": s}, train_episodes, test_worlds, test_seed_start))
+            jobs.append(({**over, "seed": s}, train_episodes, test_worlds, test_seed_start,
+                         train_ticks.get(name)))
             keys.append(name)
     with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 2) - 1)) as ex:
         out = list(ex.map(_job, jobs))

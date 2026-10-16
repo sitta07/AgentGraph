@@ -507,6 +507,20 @@ ate 7% less. No rule tested so far makes lifetime learning pay in these
 worlds. Any statement before J that agents "learn to share" or "learn
 aggression" should be read as a side effect of the learning rule.
 
+### The sequel: the decisions themselves (V, W)
+
+Two later studies went one level deeper. V scrambled the food and hazard
+sensors every tick and found that evolving populations ate just as much, so
+evolved innate wiring does not measurably use the senses. Probes then showed
+why. State carries over between decisions, so the current winner keeps
+winning (lock-in). A decision lasts 8 ms against a 20 ms membrane time
+constant, so sensory input barely arrives in time. And without balancing,
+rewarded STDP lets one pathway run away. W fixed all three at once: 32 ms
+decisions, state cleared before each decision, normalised input weights.
+Every trained single agent then learned sensory-guided foraging and ate about
+5.7× more than an untrained one. Each fix was necessary. The **Learning that
+works** scenario in the Playground runs this configuration.
+
 ## 13. Other results
 
 | Question | Current answer |
@@ -517,7 +531,9 @@ aggression" should be read as a side effect of the learning rule.
 | Does an aggression gene rise under scarcity? (D, D2) | No. The first result did not replicate against a neutral marker gene. |
 | Lamarckian vs Darwinian (N, N2, N3) | Lamarckian populations go extinct far more often, 9/12 vs 1/12 (p = 0.003), replicated. The cause is unknown. |
 | Can Q-learners invade an SNN population? (O) | No advantage either way, but lineage fate is all-or-nothing. |
-| Does being born near the parent help through kinship or density? (Q, Q2, Q3) | Still open. Newborns placed beside a stranger went extinct in 34/36 runs vs 13/36 beside the parent (pooled Q–Q3). Yet 42% of killings in viscous worlds are parents killing their own young, and the "energy recycling" explanation was falsified in Q3. |
+| Why does being born beside the parent protect populations? (Q–Q6) | Still open, but narrowed. Stranger placement: 56/60 extinct vs 18/60 beside the parent. Ruled out: local density (Q), strangers killing newborns (Q2), energy recycling (Q3), gradual spatial spread (Q4: just 0.15 away already gives 8/12 vs 2/12), relatedness in general (Q5: beside another relative 10/12), and parental culling (Q6). Q7 tests whether newborns absorb aggression. |
+| Do evolving agents use their senses? (V) | No, not measurably: scrambled senses changed neither food rate nor evolved innate foraging. |
+| Can lifetime learning pay? (W) | Yes, for single agents once the decision dynamics are fixed (≈5.7×). In evolving social populations it still does not pay (X): the fixed dynamics raise attacks ~15× and lives become too short to learn. |
 
 The clearest positive result is W: once decisions last 32 ms, start from a
 cleared state, and use normalised input weights, a trained single agent eats
@@ -547,9 +563,15 @@ innate wiring does not measurably use the senses at all.
   search, so this is a statement about that search, not a claim of novelty.
 - **Every number can be checked.** Registered specs, raw data and reports are
   in the repo. Any study can be rerun from the browser on an ordinary laptop.
-- **An open puzzle.** Why do newborns placed beside strangers drive the
-  population extinct almost every time? The effect is strong and replicates,
-  and we cannot yet explain it.
+- **Learning that works, after a chain of honest failures.** P, R and T
+  found that lifetime learning lowered foraging under every rule tried.
+  Following the failures down to the
+  decision dynamics (V) produced a configuration in which it pays about 5.7×
+  and every agent learns real sensory foraging (W). You can train one in the
+  browser.
+- **An open puzzle.** Why does being born beside one's own parent, and not
+  beside any other relative, keep populations alive? Six studies have ruled
+  out six explanations.
 
 **What is not new:**
 

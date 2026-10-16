@@ -78,3 +78,13 @@ def test_single_agent_simulator_end_to_end(tmp_path):
     assert r["learning_gain"] == r["trained_food"] - r["untrained_food"]
     assert res["design"]["train_episodes"] == 2
     assert "trained_food" in write(res, tmp_path / "out").read_text()
+
+
+def test_single_agent_train_ticks_sets_the_training_budget_per_condition(tmp_path):
+    p = _spec(tmp_path, simulator="single", base={}, ticks=40, train_episodes=2, test_worlds=1,
+              conditions={"short": {"config": {}, "train_ticks": 25}, "long": {"config": {}, "train_ticks": 120},
+                          "default": {"config": {}}},
+              hypotheses=[{"id": "H", "statement": "s", "metric": "trained_food",
+                           "a": "short", "b": "long", "direction": "none"}])
+    res = run(load(p), p)
+    assert [res["raw"][n][0]["train_ticks_run"] for n in ("short", "long", "default")] == [25, 120, 80]

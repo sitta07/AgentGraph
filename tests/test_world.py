@@ -383,6 +383,17 @@ def test_born_near_relative_places_newborn_beside_a_relative_not_the_parent():
     assert w.birth_fallbacks == 1 and np.linalg.norm(second.pos - first.pos) < 0.2
 
 
+def test_normalize_to_innate_keeps_each_neurons_own_input_sum():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, normalize=True, normalize_to="innate"))
+    ag = w.agents[0]
+    before = {cn.post: cn.weights.sum(axis=1) for cn in ag._plastic}
+    for cn in ag._plastic:
+        cn.weights *= 1.7
+    ag._normalize()
+    assert all(np.allclose(cn.weights.sum(axis=1), before[cn.post]) for cn in ag._plastic)
+    assert before["attack"].mean() < before["forward"].mean()
+
+
 def test_no_filial_attack_leaves_own_offspring_untouched():
     for flag in (False, True):
         w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, no_filial_attack=flag))

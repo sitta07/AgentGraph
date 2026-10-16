@@ -14,3 +14,4 @@ argument, so it runs against that checkout:
 | `braitenberg_pilot.py` | V follow-up: hand-wired sensory foraging vs random wiring |
 | `control_index.py` | V follow-up item 2: action choice under fixed inputs (lock-in) |
 | `reset_detail3.py` | V follow-up items 3–4 and the W pilot: `python -I tools/probes/reset_detail3.py . <substeps> <reset 0/1> <critic> <normalize 0/1>` |
+| `evo_fixed_pilot.py` | W limits and X pilot: evolving populations with the fixed dynamics (edit the condition list) |

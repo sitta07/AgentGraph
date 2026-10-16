@@ -1,19 +1,9 @@
 "use strict";
-// NeuralMind Artificial Life Playground — frontend.
-// All simulation/learning runs on the backend; this only renders real state.
-
-const API = {
-  async post(path, body) {
-    const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(body || {})});
-    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
-    return r.json();
-  },
-  get: async (p) => (await fetch(p)).json(),
-};
+// NeuralMind Artificial Life Playground frontend.
+// All simulation and learning runs on the backend; this only renders real state.
 
 const S = {
-  session: null, cfg: null, bounds: null, actions: [], nodeOrder: [], sizes: {},
+  session: null, cfg: null, defaults: null, applied: {}, bounds: null, actions: [], nodeOrder: [], sizes: {},
   size: 1, hazards: [], layout: null,
   frame: null, glow: [], queue: [], fetching: false,
   playing: false, learning: true, speed: 10, lastAdvance: 0, deprive: false,
@@ -21,15 +11,11 @@ const S = {
   selId: 0, brainId: -1, brainAge: 0, trails: {}, timeline: [], fx: [], popSeries: [], genSeries: [],
   yaw: 0.6, pitch: -0.35, nodeProj: [],
 };
-window.S = S;  // exposed for inspection/debugging
+window.S = S;  // read by tools/make_media.py and handy for debugging
 
 const PAL = {sensory: "#6d9bff", left: "#bf91f3", forward: "#49d6a6", right: "#e0a63b",
   attack: "#ff5a4f", share: "#5fe08a", signal: "#ffd84a"};
-const $ = (id) => document.getElementById(id);
-function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show");
-  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); }
 
-// ---------- canvas helper (idempotent sizing) ----------
 function fit(cv) {
   const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
   const pw = Math.max(1, Math.round(r.width * d)), ph = Math.max(1, Math.round(r.height * d));
@@ -39,11 +25,147 @@ function fit(cv) {
   return {x, w: r.width, h: r.height};
 }
 
+// ---------- settings: one registry drives build, gather and dirty-check ----------
+const LOCO = ["left", "forward", "right"];
+const GROUPS = ["World", "Brain & learning", "Research switches (ablations)"];
+const CONTROLS = [
+  {key: "n_agents", label: "People", help: "How many creatures the world starts with.", tier: "basic", kind: "range", dp: 0},
+  {key: "n_food", label: "Food", help: "How many food items are on the ground at once.", tier: "basic", kind: "range", dp: 0},
+  {key: "n_hazard", label: "Hazards", help: "Fire pits that drain energy from anyone standing in them.", tier: "basic", kind: "range", dp: 0},
+  {key: "seed", label: "Seed", help: "Fixes the random layout and brains, so the same seed gives the same world.", tier: "basic", kind: "range", dp: 0},
+
+  {key: "social", label: "Social life", help: "Creatures see each other and can attack, share food and signal.", tier: "advanced", group: "World", kind: "toggle"},
+  {key: "evolve", label: "Evolution", help: "Creatures reproduce, offspring mutate, and old or starving ones die. Turns on social life.", tier: "advanced", group: "World", kind: "toggle"},
+  {key: "viscous", label: "Born near parent", help: "Newborns appear next to their parent instead of anywhere.", tier: "advanced", group: "World", kind: "toggle"},
+  {key: "sensor_range", label: "Sight range", help: "How far a creature can sense food, hazards and others.", tier: "advanced", group: "World", kind: "range", dp: 2},
+  {key: "speed", label: "Walk speed", help: "Distance moved per step.", tier: "advanced", group: "World", kind: "range", dp: 3},
+  {key: "food_energy", label: "Food energy", help: "Energy gained from one food item.", tier: "advanced", group: "World", kind: "range", dp: 2},
+  {key: "move_cost", label: "Moving cost", help: "Energy spent on every step.", tier: "advanced", group: "World", kind: "range", dp: 3},
+  {key: "hazard_cost", label: "Hazard damage", help: "Energy lost per step inside a hazard.", tier: "advanced", group: "World", kind: "range", dp: 3},
+  {key: "max_ticks", label: "Episode length", help: "Steps before an episode ends on its own.", tier: "advanced", group: "World", kind: "range", dp: 0},
+  {key: "ticks_per_day", label: "Day length", help: "Steps that make up one simulated day.", tier: "advanced", group: "World", kind: "range", dp: 0},
+
+  {key: "n_action", label: "Neurons per action", help: "Size of each group of neurons that votes for one action.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 0},
+  {key: "sensor_gain", label: "Sense strength", help: "How strongly sensing drives the sensory neurons.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 1},
+  {key: "action_noise", label: "Exploration", help: "Random input that makes creatures try different actions.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 1},
+  {key: "lr", label: "Learning rate", help: "How much one reward changes the connections.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 2},
+  {key: "w_inhib", label: "Action competition", help: "How strongly the action groups suppress each other.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 2},
+  {key: "r_align", label: "Reward for facing food", help: "Learning reward for turning towards nearby food.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 1},
+  {key: "r_hazard", label: "Hazard penalty", help: "Learning penalty for touching a hazard.", tier: "advanced", group: "Brain & learning", kind: "range", dp: 1},
+
+  {key: "credit_chosen_only", exp: "I", label: "Reward chosen action only", help: "Reward changes only the connections of the action actually taken.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "frozen_inputs", exp: "J", label: "Freeze movement learning", help: "The left, ahead and right action groups never learn.", tier: "advanced", group: "Research switches (ablations)", kind: "loco"},
+  {key: "normalized_inputs", exp: "K", label: "Fixed movement drive", help: "Total input to each movement neuron is held at its starting value.", tier: "advanced", group: "Research switches (ablations)", kind: "loco"},
+  {key: "deaf", exp: "M", label: "No hearing", help: "Nobody can hear signals.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "positive_rpe_only", exp: "P", label: "Learn from good surprises only", help: "Rewards worse than expected change nothing.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "born_near_stranger", exp: "Q", label: "Born beside a stranger", help: "Newborns are placed next to a non-relative. Needs Born near parent off.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "no_filial_gain", exp: "Q3", label: "No gain from attacking offspring", help: "Attacking your own offspring drains it but gives you no energy.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "critic", exp: "R", label: "Expectation per situation", help: "Keep a separate reward expectation for each sensed situation.", tier: "advanced", group: "Research switches (ablations)", kind: "critic"},
+  {key: "directional_hearing", exp: "S", label: "Hear direction of calls", help: "Creatures hear which side a signal comes from.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+  {key: "lamarckian", label: "Inherit learned brains", help: "Offspring inherit the parent's learned connections, not its inborn ones.", tier: "advanced", group: "Research switches (ablations)", kind: "toggle"},
+];
+// UI value <-> config value. Every non-range control shows as one checkbox.
+const CODEC = {
+  range: {decode: v => +v, encode: v => v},
+  toggle: {decode: v => !!v, encode: v => v},
+  loco: {decode: v => (v || []).length > 0, encode: on => on ? LOCO : []},
+  critic: {decode: v => v === "state", encode: on => on ? "state" : "scalar"},
+};
+const elOf = (c) => $((c.kind === "range" ? "c_" : "t_") + c.key);
+const readCtl = (c) => { const el = elOf(c); return el ? (c.kind === "range" ? +el.value : el.checked) : undefined; };
+function writeCtl(c, v) {
+  const el = elOf(c); if (!el) return;
+  if (c.kind === "range") { el.value = v; $("v_" + c.key).textContent = (+el.value).toFixed(c.dp); }
+  else el.checked = !!v;
+}
+
+const SCENARIOS = [
+  {id: "lone", name: "Lone forager", blurb: "One creature learns to find food and avoid hazards.",
+   overrides: {n_agents: 1}},
+  {id: "social", name: "Social group", blurb: "Six creatures that can attack, share food and signal.",
+   overrides: {n_agents: 6, social: true}},
+  {id: "evolve", name: "Evolving population", blurb: "Creatures reproduce and mutate. Watch the family tree.",
+   overrides: {n_agents: 8, n_food: 22, social: true, evolve: true}},
+];
+const CUSTOM = {id: "custom", name: "Custom", blurb: "Your own mix. Pick a scenario above to start again."};
+
+// Seed is left out so a scenario keeps the seed the user chose.
+function scenarioValues(sc) {
+  const out = {};
+  for (const c of CONTROLS) if (c.key !== "seed")
+    out[c.key] = c.key in sc.overrides ? sc.overrides[c.key] : CODEC[c.kind].decode(S.defaults[c.key]);
+  return out;
+}
+const same = (a, b) => typeof a === "number" ? Math.abs(a - b) < 1e-9 : a === b;
+function activeScenario() {
+  if (!S.defaults) return CUSTOM;
+  return SCENARIOS.find(sc => Object.entries(scenarioValues(sc)).every(([k, v]) =>
+    same(readCtl(CONTROLS.find(c => c.key === k)), v))) || CUSTOM;
+}
+const pendingCount = () => CONTROLS.filter(c => !same(readCtl(c), S.applied[c.key])).length;
+
+function controlHtml(c, cfg, bounds) {
+  const help = `<button type="button" class="help" aria-expanded="false" aria-controls="h_${c.key}"
+      aria-label="What is ${esc(c.label)}?">?</button>`;
+  const exp = c.exp ? `<span class="exp" title="Experiment ${c.exp} in results/">Exp ${c.exp}</span>` : "";
+  const value = CODEC[c.kind].decode(cfg[c.key]);
+  if (c.kind === "range") {
+    const [lo, hi] = bounds[c.key] || [0, 10];
+    const step = c.dp === 0 ? 1 : Math.pow(10, -c.dp);
+    return `<div class="ctl"><div class="ctl-head"><label for="c_${c.key}">${esc(c.label)}</label>
+        <span class="val" id="v_${c.key}">${value.toFixed(c.dp)}</span>${help}</div>
+      <input type="range" id="c_${c.key}" min="${lo}" max="${hi}" step="${step}" value="${value}">
+      <p class="note help-text" id="h_${c.key}" hidden>${esc(c.help)}</p></div>`;
+  }
+  const research = !!c.exp || c.group === GROUPS[2];
+  return `<div class="ctl"><div class="ctl-head"><label><input type="checkbox" id="t_${c.key}" ${value ? "checked" : ""}>
+      ${esc(c.label)}</label>${exp}${research ? "" : help}</div>
+    <p class="note help-text" id="h_${c.key}" ${research ? "" : "hidden"}>${esc(c.help)}</p></div>`;
+}
+function buildControls(cfg, bounds) {
+  const html = (list) => list.map(c => controlHtml(c, cfg, bounds)).join("");
+  $("basicCtls").innerHTML = html(CONTROLS.filter(c => c.tier === "basic"));
+  $("advCtls").innerHTML = GROUPS.map(g => `<div class="group-title">${esc(g)}</div>` +
+    html(CONTROLS.filter(c => c.tier === "advanced" && c.group === g))).join("");
+  S.applied = Object.fromEntries(CONTROLS.map(c => [c.key, readCtl(c)]));
+  refreshSetup();
+}
+function buildScenarios() {
+  $("scenarios").innerHTML = `<legend>Scenario</legend>` + [...SCENARIOS, CUSTOM].map(sc =>
+    `<label class="scard"><input type="radio" name="scenario" value="${sc.id}">
+      <div><b>${esc(sc.name)}</b><span>${esc(sc.blurb)}</span></div></label>`).join("");
+}
+function chooseScenario(id) {
+  const sc = SCENARIOS.find(s => s.id === id);
+  if (!sc || !S.defaults) return;
+  for (const [k, v] of Object.entries(scenarioValues(sc))) writeCtl(CONTROLS.find(c => c.key === k), v);
+  refreshSetup();
+}
+function refreshSetup() {
+  const active = activeScenario();
+  for (const r of document.querySelectorAll("input[name=scenario]")) {
+    r.checked = r.value === active.id;
+    if (r.value === CUSTOM.id) r.disabled = active.id !== CUSTOM.id;
+  }
+  const n = pendingCount();
+  $("pending").textContent = n ? `${n} ${n === 1 ? "change" : "changes"} not applied yet` : "";
+  const btn = $("btnNew");
+  btn.classList.toggle("ghost", !n);
+  btn.textContent = n ? "Create world with these settings" : "New world";
+}
+function gatherControls() {
+  const o = {};
+  for (const c of CONTROLS) { const v = readCtl(c); if (v !== undefined) o[c.key] = CODEC[c.kind].encode(v); }
+  if (o.evolve) o.social = true;   // evolution experiments run with the social layer
+  o.learning = S.learning;
+  return o;
+}
+
 // ---------- session ----------
 async function newWorld() {
-  const overrides = gatherControls();
-  S.session = await API.post("/api/session", overrides);
-  applySession(S.session);
+  const d = await api("/api/session", {body: gatherControls(), what: "Creating the world"});
+  if (!d) return;
+  S.session = d; applySession(d);
   toast("New world created");
 }
 function applySession(d) {
@@ -54,76 +176,38 @@ function applySession(d) {
   S.brainId = -1; S.fx = []; S.popSeries = []; S.genSeries = [];
   renderTimeline();
   S.queue = []; S.frame = d.state; S.glow = d.state.glow || [];
-  S.deprive = false;
-  $("btnDeprive").classList.remove("on"); $("btnDeprive").textContent = "🚫 Deprive";
+  setDeprive(false);
   buildControls(d.config, d.bounds);
   buildBrainLegend();
   buildScores(0);
   applyFrame(d.state, true);
-  $("worldState").textContent = "ready";
+  setStatus("ready", "ready");
 }
 
-// ---------- controls ----------
-const ENV_FIELDS = [
-  ["n_agents", "People (agents)", 0], ["n_food", "Food items", 0], ["n_hazard", "Hazards", 0],
-  ["sensor_range", "Sensor range", 2], ["speed", "Move speed", 3],
-  ["food_energy", "Food energy", 2], ["move_cost", "Move cost", 3],
-  ["hazard_cost", "Hazard cost", 3], ["max_ticks", "Max ticks", 0],
-  ["ticks_per_day", "Ticks per day", 0],
-  ["seed", "Seed", 0],
+// ---------- inspector ----------
+const INSPECTOR = [
+  {id: "iEnergy", label: "Energy", help: "Stored energy. Food adds it; moving and hazards use it. At zero the creature dies.", bar: "energyBar"},
+  {id: "iHunger", label: "Hunger", help: "Time since the creature last ate, from 0 (just ate) to 1 (starving).", bar: "hungerBar"},
+  {id: "iDay", label: "Day", help: "Simulated days since the episode started."},
+  {id: "iAge", label: "Time alive (ticks)", help: "Simulation steps survived this episode."},
+  {id: "iFood", label: "Food eaten", help: "Food items eaten this episode."},
+  {id: "iHaz", label: "Hazard hits", help: "Steps spent inside a hazard."},
+  {id: "iAction", label: "Current action", help: "The action group that fired most on the last step."},
+  {id: "iReward", label: "Reward this episode", help: "Sum of the learning signal so far."},
+  {id: "iRpe", label: "Surprise (reward prediction error)", help: "How much better or worse the last reward was than expected. This is what drives learning."},
 ];
-const NEURO_FIELDS = [
-  ["n_action", "Neurons / action", 0], ["sensor_gain", "Sensor gain", 1],
-  ["action_noise", "Exploration noise", 1], ["lr", "Learning rate", 2],
-  ["w_inhib", "Lateral inhibition", 2], ["r_align", "Align reward", 1],
-  ["r_hazard", "Hazard penalty", 1],
+const AFFECT = [
+  {key: "valence", label: "Mood (valence)", lo: -1, hi: 1, col: "#49d6a6", help: "Good or bad overall, from -1 to 1."},
+  {key: "arousal", label: "Arousal", lo: 0, hi: 1, col: "#e0a63b", help: "How activated the creature is."},
+  {key: "threat", label: "Threat", lo: 0, hi: 1, col: "#e0734f", help: "Sensed danger, mostly from nearby hazards or attackers."},
+  {key: "frustration", label: "Frustration", lo: 0, hi: 1, col: "#bf91f3", help: "Builds when rewards stay below expectation. Feeds the urge to attack."},
 ];
-function sliderRow(key, label, dp, cfg, bounds) {
-  const b = bounds[key] || [0, 10];
-  const step = dp === 0 ? 1 : Math.pow(10, -dp);
-  const val = cfg[key];
-  return `<div class="ctl"><label>${label}<span class="val" id="v_${key}">${(+val).toFixed(dp)}</span></label>
-    <input type="range" id="c_${key}" min="${b[0]}" max="${b[1]}" step="${step}" value="${val}"></div>`;
-}
-const TOGGLES = [["social", "Social (see others, attack, share, signal)"],
-  ["evolve", "Evolution (reproduce, mutate, die)"], ["viscous", "Offspring born near parent"],
-  ["lamarckian", "Offspring inherit learned weights (Lamarckian)"],
-  ["credit_chosen_only", "Reward only the executed action (Exp. I)"],
-  ["positive_rpe_only", "Ignore negative reward errors (Exp. P)"],
-  ["deaf", "Nobody can hear signals (Exp. M)"],
-  ["directional_hearing", "Hear which side a call comes from (Exp. S)"],
-  ["born_near_stranger", "Newborns placed beside a non-relative (Exp. Q; needs viscous off)"],
-  ["no_filial_gain", "No energy from attacking own offspring (Exp. Q3)"]];
-const LOCO = ["left", "forward", "right"];
-const LOCO_TOGGLES = [["frozen_inputs", "Freeze locomotion learning (Exp. J)"],
-  ["normalized_inputs", "Hold locomotion drive fixed (Exp. K)"]];
-function buildControls(cfg, bounds) {
-  $("toggleCtls").innerHTML = TOGGLES.map(([k, l]) =>
-    `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
-     <input type="checkbox" id="t_${k}" ${cfg[k] ? "checked" : ""}> ${l}</label>`).join("")
-    + LOCO_TOGGLES.map(([k, l]) =>
-    `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
-     <input type="checkbox" id="t_${k}" ${(cfg[k] || []).length ? "checked" : ""}> ${l}</label>`).join("")
-    + `<label class="note" style="display:flex;gap:6px;align-items:center;margin:4px 0">
-     <input type="checkbox" id="t_critic" ${cfg.critic === "state" ? "checked" : ""}> Reward expectation per sensor state (Exp. R)</label>`;
-  $("envCtls").innerHTML = ENV_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
-  $("neuroCtls").innerHTML = NEURO_FIELDS.map(([k, l, dp]) => sliderRow(k, l, dp, cfg, bounds)).join("");
-  for (const [k, , dp] of [...ENV_FIELDS, ...NEURO_FIELDS]) {
-    const el = $("c_" + k);
-    if (el) el.oninput = () => { $("v_" + k).textContent = (+el.value).toFixed(dp); };
-  }
-}
-function gatherControls() {
-  const o = {};
-  for (const [k] of [...ENV_FIELDS, ...NEURO_FIELDS]) {
-    const el = $("c_" + k); if (el) o[k] = +el.value;
-  }
-  for (const [k] of TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked; }
-  for (const [k] of LOCO_TOGGLES) { const el = $("t_" + k); if (el) o[k] = el.checked ? LOCO : []; }
-  { const el = $("t_critic"); if (el) o.critic = el.checked ? "state" : "scalar"; }
-  if (o.evolve) o.social = true;   // evolution experiments run with the social layer
-  o.learning = S.learning;
-  return o;
+function buildInspector() {
+  $("inspector").innerHTML = INSPECTOR.map(r =>
+    `<div class="stat" title="${esc(r.help)}"><b>${esc(r.label)}</b><span id="${r.id}">0</span></div>` +
+    (r.bar ? `<div class="bar" style="margin-bottom:6px"><i id="${r.bar}" style="width:0%"></i></div>` : "")).join("");
+  $("inspectorHelp").innerHTML = [...INSPECTOR, ...AFFECT].map(r =>
+    `<dt>${esc(r.label)}</dt><dd>${esc(r.help)}</dd>`).join("");
 }
 
 // ---------- apply a frame ----------
@@ -152,7 +236,6 @@ function applyFrame(frame, instant) {
   const nAlive = agents.filter(a => a.alive).length;
   $("selName").textContent = "P" + (S.selId + 1) + (agents.length > 1 ? ` · ${nAlive} alive` : "");
   $("brainWho").textContent = "P" + (S.selId + 1);
-  // inspector
   $("iEnergy").textContent = f.energy.toFixed(3);
   const ep = Math.max(0, Math.min(1, f.energy / (S.cfg.e0 || 1)));
   const bar = $("energyBar"); bar.style.width = (ep * 100).toFixed(0) + "%";
@@ -170,11 +253,14 @@ function applyFrame(frame, instant) {
   $("hungerBar").style.width = (hunger * 100).toFixed(0) + "%";
   $("hungerBar").style.background = hunger > 0.75 ? "var(--bad)" : "var(--warn)";
   drawAffect(f.affect || {});
-  const st = !f.alive ? "episode ended" : (f.deprive ? `DEPRIVED · day ${(f.day||0).toFixed(1)}`
-    : (S.playing ? "running" : "paused"));
-  $("worldState").textContent = st;
-  $("worldState").style.color = f.deprive && f.alive ? "var(--bad)" : "";
+  if (!f.alive) setStatus("ended", "episode ended");
+  else if (f.deprive) setStatus("deprived", `deprived · day ${(f.day || 0).toFixed(1)}`);
+  else setStatus(S.playing ? "running" : "paused", S.playing ? "running" : "paused");
   buildScores(f.action, f.scores);
+}
+function setStatus(state, text) {
+  const el = $("worldState");
+  if (el.dataset.state !== state || el.textContent !== text) { el.dataset.state = state; el.textContent = text; }
 }
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 
@@ -184,11 +270,9 @@ function buildScores(active, scores) {
     `<div class="score ${i === active ? "on" : ""}">${a}<br><b>${scores ? scores[i] : 0}</b></div>`).join("");
 }
 function drawAffect(a) {
-  const defs = [["valence", -1, 1, "#49d6a6"], ["arousal", 0, 1, "#e0a63b"],
-    ["threat", 0, 1, "#e0734f"], ["frustration", 0, 1, "#bf91f3"]];
-  $("affectBars").innerHTML = defs.map(([k, lo, hi, col]) => {
-    const v = a[k] ?? 0, pct = Math.max(0, Math.min(1, (v - lo) / (hi - lo))) * 100;
-    return `<div class="stat" style="border:0;padding:1px 0"><b>${k}</b><span>${v.toFixed(2)}</span></div>
+  $("affectBars").innerHTML = AFFECT.map(({key, label, lo, hi, col}) => {
+    const v = a[key] ?? 0, pct = Math.max(0, Math.min(1, (v - lo) / (hi - lo))) * 100;
+    return `<div class="stat" style="border:0;padding:1px 0"><b>${label}</b><span>${v.toFixed(2)}</span></div>
       <div class="bar" style="margin-bottom:4px"><i style="width:${pct}%;background:${col}"></i></div>`;
   }).join("");
 }
@@ -199,20 +283,19 @@ function renderSocial(f) {
     ["Attacks made / received", `${f.attacks} / ${f.attacked}`],
     ["Shares given / received", `${f.shares_given} / ${f.shares_received}`],
     ["Signals sent", f.signals],
-    ["Aggression drive (nA)", (f.aggression_drive ?? 0).toFixed(2)]);
+    ["Urge to attack (nA)", (f.aggression_drive ?? 0).toFixed(2)]);
   if (f.generation !== undefined) rows.push(
-    ["Generation · lineage", `${f.generation} · L${f.lineage}`],
+    ["Generation · family line", `${f.generation} · L${f.lineage}`],
     ["Age (ticks)", f.age], ["Aggression gene", (f.aggr_gain ?? 0).toFixed(2)]);
-  el.innerHTML = rows.length ? `<div class="seg">Social &amp; evolution</div>` + rows.map(([k, v]) =>
+  el.innerHTML = rows.length ? `<div class="seg">Social life and evolution</div>` + rows.map(([k, v]) =>
     `<div class="stat"><b>${k}</b><span>${v}</span></div>`).join("") : "";
 }
 async function loadBrain(id) {
   S.brainId = id; S.brainAge = 0;
-  try {
-    const b = await API.get("/api/brain/" + id);
-    if (b.layout && S.selId === id) { S.layout = b.layout; S.nodeOrder = b.node_order;
-      S.sizes = b.sizes; S.actions = b.actions; buildBrainLegend(); }
-  } catch (e) { /* agent may have just died; keep last brain */ }
+  // quiet: the selected creature may have just died; the last brain stays on screen
+  const b = await api("/api/brain/" + id, {quiet: true});
+  if (b && b.layout && S.selId === id) { S.layout = b.layout; S.nodeOrder = b.node_order;
+    S.sizes = b.sizes; S.actions = b.actions; buildBrainLegend(); }
 }
 function queueEffects(frame) {
   const byId = {}; for (const a of frame.agents || []) byId[a.id] = a;
@@ -418,19 +501,18 @@ function drawCharts() {
     if (S.popSeries.length > 1) line(pc, [S.popSeries, S.genSeries.map(g => g * 2)], ["#6d9bff", "#e0a63b"], 0); }
   if (S.learnCurve.length) line($("chartLearn"), [S.learnCurve], ["#e0a63b"], 0);
   else { const {x, w, h} = fit($("chartLearn")); x.clearRect(0,0,w,h);
-    x.fillStyle = "#8a93a6"; x.font = "11px sans-serif";
+    x.fillStyle = "#9aa3b5"; x.font = "12px sans-serif";
     x.fillText("Run 'Train 40 episodes' to see the learning curve.", 6, h / 2); }
 }
+
 
 // ---------- loop ----------
 async function pump() {
   if (!S.playing || S.fetching || S.queue.length > 10 || !S.session) return;
   S.fetching = true;
-  try {
-    const d = await API.post("/api/step", {n: 6, learning: S.learning});
-    S.queue.push(...d.frames);
-    if (!d.alive) { /* let queue drain, then stop */ }
-  } catch (e) { toast("step error: " + e.message); S.playing = false; setPlay(); }
+  const d = await api("/api/step", {body: {n: 6, learning: S.learning}, what: "Running the world"});
+  if (d) S.queue.push(...d.frames);
+  else { S.playing = false; setPlay(); }
   S.fetching = false;
 }
 function renderLoop(ts) {
@@ -440,73 +522,86 @@ function renderLoop(ts) {
     applyFrame(S.queue.shift()); S.lastAdvance = ts;
     const anyAlive = (S.frame.agents || [S.frame]).some(a => a.alive);
     if (!anyAlive && !S.queue.length) { S.playing = false; setPlay();
-      toast(S.frame.evolve ? "Population extinct" : "Episode ended"); }
+      toast(S.frame.evolve ? "The population died out. Press New world to start again."
+        : "Episode ended. Press Restart to run it again with what was learned."); }
   }
   drawWorld(); drawBrain(); drawCharts();
   pump();
   requestAnimationFrame(renderLoop);
 }
 
-// ---------- controls wiring ----------
-function setPlay() { $("btnPlay").textContent = S.playing ? "❚❚ Pause" : "▶ Play"; }
-async function togglePlay() {
+// ---------- actions ----------
+function setPlay() {
+  $("btnPlay").textContent = S.playing ? "❚❚ Pause" : "▶ Play";
+  $("btnPlay").setAttribute("aria-pressed", S.playing ? "true" : "false");
+  if (["running", "paused", "ready"].includes($("worldState").dataset.state))
+    setStatus(S.playing ? "running" : "paused", S.playing ? "running" : "paused");
+}
+function togglePlay() {
   if (!S.session) return;
   S.playing = !S.playing; setPlay();
+  if (S.playing) dismissHint();
 }
 async function stepOnce() {
   if (!S.session) return;
-  const d = await API.post("/api/step", {n: 1, learning: S.learning});
-  if (d.frames.length) applyFrame(d.frames[0]);
+  S.playing = false; setPlay();
+  // frames prefetched while playing are older than the backend's state now
+  S.queue = [];
+  const d = await api("/api/step", {body: {n: 1, learning: S.learning}, what: "Stepping"});
+  if (d && d.frames.length) applyFrame(d.frames[0]);
 }
 async function resetWorld(keep) {
   if (!S.session) return;
   S.playing = false; setPlay();
-  const d = await API.post("/api/reset", {keep_weights: !!keep});
-  S.trail = []; S.epEnergy = []; S.epReward = [];
+  const d = await api("/api/reset", {body: {keep_weights: !!keep}, what: "Restarting"});
+  if (!d) return;
+  S.trail = []; S.epEnergy = []; S.epReward = []; S.queue = [];
   S.hazards = d.hazards; S.layout = d.layout; S.frame = d.state; S.glow = d.state.glow || [];
-  S.deprive = false; $("btnDeprive").classList.remove("on"); $("btnDeprive").textContent = "🚫 Deprive";
+  setDeprive(false);
   applyFrame(d.state, true);
-  toast(keep ? "Reset (kept learned weights)" : "Reset");
+  toast(keep ? "Episode restarted. The brains kept what they learned." : "Episode restarted");
+}
+async function busy(btn, label, work) {
+  const idle = btn.textContent;
+  btn.disabled = true; btn.setAttribute("aria-busy", "true"); btn.textContent = label;
+  try { return await work(); }
+  finally { btn.disabled = false; btn.removeAttribute("aria-busy"); btn.textContent = idle; }
 }
 async function train() {
   if (!S.session) { toast("Create a world first"); return; }
   S.playing = false; setPlay();
-  $("btnTrain").disabled = true; $("btnTrain").textContent = "Training…";
-  try {
-    const d = await API.post("/api/train", {episodes: 40});
-    S.learnCurve = d.curve.map(c => c.food);
-    drawCharts();
-    toast(`Trained ${d.episodes} episodes. Now Reset (keep weights) or Compare.`);
-  } catch (e) { toast("train error: " + e.message); }
-  $("btnTrain").disabled = false; $("btnTrain").textContent = "Train 40 episodes";
+  const d = await busy($("btnTrain"), "Training…", () =>
+    api("/api/train", {body: {episodes: 40}, what: "Training"}));
+  if (!d) return;
+  S.learnCurve = d.curve.map(c => c.food);
+  drawCharts();
+  toast(`Trained ${d.episodes} episodes. Press Restart to watch, or Compare.`);
 }
 async function compare() {
   if (!S.session) return;
-  $("btnCompare").disabled = true;
-  try {
-    const d = await API.post("/api/compare", {seeds: 16});
-    const t = d.trained_mean, u = d.untrained_mean, mx = Math.max(t, u, 1);
-    $("compareBox").innerHTML =
-      `<div class="seg">Trained vs untrained (10 held-out worlds)</div>
-       <div class="row"><span style="width:70px">trained</span>
-         <span class="bar" style="flex:1"><i style="width:${t/mx*100}%;background:var(--good)"></i></span>
-         <b>${t.toFixed(1)}</b></div>
-       <div class="row"><span style="width:70px">untrained</span>
-         <span class="bar" style="flex:1"><i style="width:${u/mx*100}%;background:var(--muted)"></i></span>
-         <b>${u.toFixed(1)}</b></div>
-       <p class="note">mean food eaten / episode. Learning helps when trained &gt; untrained.</p>`;
-  } catch (e) { toast("compare error: " + e.message); }
-  $("btnCompare").disabled = false;
+  const d = await busy($("btnCompare"), "Comparing…", () =>
+    api("/api/compare", {body: {seeds: 16}, what: "Comparing"}));
+  if (!d) return;
+  const t = d.trained_mean, u = d.untrained_mean, mx = Math.max(t, u, 1);
+  $("compareBox").innerHTML =
+    `<div class="seg">Trained vs untrained (${d.seeds.length} unseen worlds)</div>
+     <div class="row"><span style="width:76px">trained</span>
+       <span class="bar" style="flex:1"><i style="width:${t / mx * 100}%;background:var(--good)"></i></span>
+       <b>${t.toFixed(1)}</b></div>
+     <div class="row"><span style="width:76px">untrained</span>
+       <span class="bar" style="flex:1"><i style="width:${u / mx * 100}%;background:var(--muted)"></i></span>
+       <b>${u.toFixed(1)}</b></div>
+     <p class="note">Mean food eaten per episode. Learning helped if trained is higher than untrained.</p>`;
 }
 async function save() {
   if (!S.session) return;
-  const d = await API.post("/api/save", {note: "ui"});
-  $("saveMsg").textContent = "saved run #" + d.id;
+  const d = await api("/api/save", {body: {note: "ui"}, what: "Saving the episode"});
+  if (d) $("saveMsg").textContent = "Saved as run #" + d.id;
 }
 async function foodAhead() {
   if (!S.session) return;
-  const d = await API.post("/api/place_food", {ahead: true});
-  if (S.frame) S.frame.food = d.food;
+  const d = await api("/api/place_food", {body: {ahead: true}, what: "Dropping food"});
+  if (d && S.frame) S.frame.food = d.food;
 }
 async function placeFoodAt(ev) {
   if (!S.session) return;
@@ -519,43 +614,56 @@ async function placeFoodAt(ev) {
     if (d < bd) { bd = d; best = i; } });
   if (best >= 0) { S.selId = agents[best].id; S.epEnergy = []; S.epReward = [];
     applyFrame(S.frame, true); loadBrain(S.selId);
-    toast("Inspecting P" + (S.selId + 1) + " — brain scanner shows this individual"); return; }
+    toast("Inspecting P" + (S.selId + 1) + ". The brain scanner now shows this creature."); return; }
   const wx = (px - G.ax) / G.as * S.size, wy = (1 - (py - G.ay) / G.as) * S.size;
   if (wx < 0 || wx > S.size || wy < 0 || wy > S.size) return;
-  const d = await API.post("/api/place_food", {x: wx, y: wy});
-  if (S.frame) S.frame.food = d.food;
+  const d = await api("/api/place_food", {body: {x: wx, y: wy}, what: "Dropping food"});
+  if (d && S.frame) S.frame.food = d.food;
 }
 async function advanceDays(days) {
   if (!S.session) return;
   S.playing = false; setPlay(); S.queue = [];
-  try {
-    const d = await API.post("/api/advance", {days, agent: S.selId, learning: S.learning});
-    S.timeline.push(...d.snapshots); renderTimeline();
-    if (d.frame) applyFrame(d.frame, true);
-    toast(`Fast-forwarded ${days} day(s)` + (d.alive ? "" : " — everyone has died"));
-  } catch (e) { toast("advance error: " + e.message); }
+  const btn = $(days === 1 ? "btnDay1" : "btnDay3");
+  const d = await busy(btn, "Running…", () => api("/api/advance",
+    {body: {days, agent: S.selId, learning: S.learning}, what: "Skipping ahead"}));
+  if (!d) return;
+  S.timeline.push(...d.snapshots); renderTimeline();
+  if (d.frame) applyFrame(d.frame, true);
+  toast(`Skipped ${days} day${days > 1 ? "s" : ""}` + (d.alive ? "" : ". Everyone has died."));
 }
 function renderTimeline() {
   const el = $("timeline"); if (!el) return;
-  if (!S.timeline.length) { el.innerHTML = 'Use ⏩ to fast-forward days (try 🚫 Deprive first) and see how the selected agent\'s body, affect and neural firing change.'; return; }
+  if (!S.timeline.length) { el.textContent = "Press Skip 1 day to log how the selected creature's body, " +
+    "feelings model and neuron firing change from day to day. Try Deprive first."; return; }
   const pct = (v) => (v * 100).toFixed(0) + "%";
-  el.innerHTML = `<table class="tl"><tr><th>day</th><th>energy</th><th>hunger</th><th>valence</th>
-    <th>arousal</th><th>threat</th><th>sens</th><th>L</th><th>F</th><th>R</th></tr>` +
+  el.innerHTML = `<div class="tl-wrap"><table class="tl"><tr><th>day</th><th>energy</th><th>hunger</th><th>mood</th>
+    <th>arousal</th><th>threat</th><th>senses</th><th>left</th><th>ahead</th><th>right</th></tr>` +
     S.timeline.slice(-12).map(r => `<tr style="${r.alive ? "" : "color:var(--bad)"}">
       <td>${r.day.toFixed(1)}${r.alive ? "" : " †"}</td><td>${r.energy.toFixed(2)}</td><td>${pct(r.hunger)}</td>
       <td>${r.affect.valence.toFixed(2)}</td><td>${r.affect.arousal.toFixed(2)}</td><td>${r.affect.threat.toFixed(2)}</td>
       <td>${pct(r.firing.sensory)}</td><td>${pct(r.firing.left)}</td><td>${pct(r.firing.forward)}</td><td>${pct(r.firing.right)}</td></tr>`).join("") +
-    `</table><p class="note">Snapshot at the end of each day for P${S.selId + 1}. Firing = share of
-     ticks in which a neuron of that population spiked (sens = sensory; L/F/R = action populations).</p>`;
+    `</table></div><p class="note">End-of-day snapshot for P${S.selId + 1}. The last four columns are the
+     share of steps in which that neuron group fired (senses, then the left, ahead and right action groups).</p>`;
+}
+function setDeprive(on) {
+  S.deprive = on;
+  const b = $("btnDeprive");
+  b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.textContent = on ? "Feed again" : "Deprive";
 }
 async function toggleDeprive() {
   if (!S.session) return;
-  S.deprive = !S.deprive;
-  await API.post("/api/deprive", {on: S.deprive});
-  $("btnDeprive").classList.toggle("on", S.deprive);
-  $("btnDeprive").textContent = S.deprive ? "🍃 Feed again" : "🚫 Deprive";
-  toast(S.deprive ? "Food deprivation ON — watch energy & affect change" : "Deprivation off");
+  const d = await api("/api/deprive", {body: {on: !S.deprive}, what: "Changing food supply"});
+  if (!d) return;
+  setDeprive(d.deprive);
+  toast(S.deprive ? "Food stopped. Watch energy and the feelings model change." : "Food is back");
 }
+
+// ---------- first-run hint ----------
+const HINT_KEY = "neuralmind.hintDismissed";
+function storageGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function storageSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode: hint shows again next visit */ } }
+function dismissHint() { if ($("hint").hidden) return; $("hint").hidden = true; storageSet(HINT_KEY, "1"); }
 
 // ---------- evolution observatory (phylogeny) ----------
 const TREE = {timer: null, rows: [], geom: null};
@@ -567,13 +675,13 @@ function geneColor(g) {
   return `rgb(${lerp(a[0], b[0], t)},${lerp(a[1], b[1], t)},${lerp(a[2], b[2], t)})`;
 }
 async function drawTree() {
-  let d;
-  try { d = await API.get("/api/lineage"); } catch (e) { return; }
+  const d = await api("/api/lineage", {what: "Loading the family tree"});
+  if (!d) return;
   const cv = $("treeCv"); const {x, w, h} = fit(cv);
   x.clearRect(0, 0, w, h);
   if (!d.evolve || !d.records.length) {
     x.fillStyle = "#8a93a6"; x.font = "13px sans-serif";
-    x.fillText("Turn on Evolution (Experiment Controls → Modes) and press New world + Play.", 16, 28);
+    x.fillText("Pick Evolving population in Set up a world, create the world, then press Play.", 16, 28);
     $("treeStats").textContent = ""; return;
   }
   const recs = d.records, byId = {}, kids = {};
@@ -619,6 +727,11 @@ function openTree() {
 }
 function closeTree() { clearInterval(TREE.timer); TREE.timer = null; $("treeDlg").close(); }
 
+function openHelp() { $("helpDlg").showModal(); }
+const isTyping = (t) => t.closest("input, select, textarea, [contenteditable=true], dialog");
+// Space already activates a focused button or summary; handling it too would toggle twice.
+const ownsSpace = (t) => t.closest("button, summary, a");
+
 function wire() {
   $("btnNew").onclick = newWorld;
   $("btnPlay").onclick = togglePlay;
@@ -633,19 +746,43 @@ function wire() {
   $("btnDay3").onclick = () => advanceDays(3);
   $("btnTree").onclick = openTree;
   $("treeClose").onclick = closeTree;
+  $("btnHelp").onclick = openHelp;
+  $("helpClose").onclick = () => $("helpDlg").close();
+  $("hintClose").onclick = dismissHint;
   $("treeDlg").addEventListener("close", () => { clearInterval(TREE.timer); TREE.timer = null; });
   $("treeCv").addEventListener("mousemove", (ev) => {
     if (!TREE.geom || !TREE.rows.length) return;
     const r = $("treeCv").getBoundingClientRect();
     const i = Math.floor((ev.clientY - r.top - TREE.geom.top) / TREE.geom.rowH);
     const rec = TREE.rows[i]; if (!rec) return;
-    $("treeHover").textContent = `P${rec.id + 1} · generation ${rec.generation} · lineage L${rec.lineage} · ` +
+    $("treeHover").textContent = `P${rec.id + 1} · generation ${rec.generation} · family line L${rec.lineage} · ` +
       `born t=${rec.born}${rec.died !== null ? " · died t=" + rec.died : " · alive"} · aggression gene ${rec.aggr_gain}`;
   });
   $("world").addEventListener("click", placeFoodAt);
-  $("world").style.cursor = "crosshair";
   $("speed").oninput = (e) => { S.speed = +e.target.value; };
   $("learnTgl").onchange = (e) => { S.learning = e.target.checked; };
+
+  const setup = $("setup");
+  setup.addEventListener("input", (e) => {
+    const t = e.target;
+    if (t.name === "scenario") { chooseScenario(t.value); return; }
+    const c = CONTROLS.find(c => elOf(c) === t);
+    if (c && c.kind === "range") $("v_" + c.key).textContent = (+t.value).toFixed(c.dp);
+    refreshSetup();
+  });
+  setup.addEventListener("click", (e) => {
+    const b = e.target.closest("button.help"); if (!b) return;
+    const open = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", String(open));
+    $(b.getAttribute("aria-controls")).hidden = !open;
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || isTyping(e.target)) return;
+    if (e.key === " ") { if (ownsSpace(e.target)) return; e.preventDefault(); togglePlay(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); stepOnce(); }
+  });
+
   // drag to rotate brain
   const b = $("brain"); let drag = false, lx = 0, ly = 0;
   b.addEventListener("pointerdown", e => { drag = true; lx = e.clientX; ly = e.clientY; b.setPointerCapture(e.pointerId); });
@@ -656,8 +793,12 @@ function wire() {
 }
 
 (async function init() {
+  buildInspector();
+  buildScenarios();
+  renderTimeline();
+  $("hint").hidden = storageGet(HINT_KEY) === "1";
   wire();
-  try { S.session = await API.post("/api/session", {}); applySession(S.session); }
-  catch (e) { toast("Could not reach backend: " + e.message); }
+  const d = await api("/api/session", {body: {}, what: "Creating the first world"});
+  if (d) { S.session = d; S.defaults = d.config; applySession(d); }
   requestAnimationFrame(renderLoop);
 })();

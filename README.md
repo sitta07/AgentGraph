@@ -81,12 +81,12 @@ neuralmind-study studies/my_study.json # run a registered study
 |---|---|
 | **Watch a brain drive behaviour** | Press **Play**. The Brain Scanner shows the selected creature's spikes, and the winning action population is the move it makes. |
 | **Scan anyone's brain** | Click any creature. The scanner loads *that individual's* current learned weights and live spikes. |
-| **Social life** | Tick **Social**. Creatures see each other and can **attack** (steal energy 💢), **share** (the recipient gets 2× 💚) or **signal** (📢). Each is a neural population competing in the same winner-take-all. |
-| **Evolution** | Tick **Evolution**. Well-fed creatures reproduce, and children inherit a mutated *innate* brain plus an aggression gene (✨ birth, 💀 death). |
-| **Family tree** | Press **🌳 Family tree** for a live phylogeny of every individual that ever lived. Each line is one life, colour shows its aggression gene, and you can see which founder lineages take over and which die out. |
-| **Starvation experiment** | **🚫 Deprive**, then **⏩ +1 / +3 days**. A day-by-day table shows energy, hunger, affect and neural firing. |
-| **Feed someone** | Click the grass, or press **🍎 Food ahead**. |
-| **Does learning help?** | **Train 40 episodes**, then **Compare vs untrained**. |
+| **Social life** | Pick the **Social group** scenario and press **Create world with these settings**. Creatures see each other and can **attack** (steal energy 💢), **share** (the recipient gets 2× 💚) or **signal** (📢). Each is a neural population competing in the same winner-take-all. |
+| **Evolution** | Pick the **Evolving population** scenario and create the world. Well-fed creatures reproduce, and children inherit a mutated *innate* brain plus an aggression gene (✨ birth, 💀 death). |
+| **Family tree** | Press **Family tree** for a live phylogeny of every individual that ever lived. Each line is one life, colour shows its aggression gene, and you can see which founder lineages take over and which die out. |
+| **Starvation experiment** | **Deprive**, then **Skip 1 day** or **Skip 3 days**. A day-by-day table shows energy, hunger, affect and neural firing. |
+| **Feed someone** | Click the grass, or press **Drop food**. |
+| **Does learning help?** | **Train 40 episodes**, then **Compare with untrained**. |
 
 ## 🔬 The Discovery Lab (`/lab`)
 

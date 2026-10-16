@@ -119,7 +119,9 @@ def run(spec: dict, path: Path, seeds: int | None = None, ticks: int | None = No
                  for n, c in spec["conditions"].items()}
         res = run_single_conditions(conds, seeds, seed_start, int(spec.get("train_episodes", 40)),
                                     int(spec.get("test_worlds", 16)),
-                                    int(spec.get("test_seed_start", 9000)))
+                                    int(spec.get("test_seed_start", 9000)),
+                                    {n: int(c["train_ticks"]) for n, c in spec["conditions"].items()
+                                     if "train_ticks" in c})
     else:
         conds = {n: ({**spec.get("base", {}), **c.get("config", {})}, bool(c.get("learning", True)),
                      c.get("invader"))

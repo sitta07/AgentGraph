@@ -1,0 +1,28 @@
+{
+  "id": "Y_learning_budget",
+  "title": "How much practice does lifetime learning need before it pays?",
+  "question": "W showed that single agents with the fixed decision dynamics learn sensory foraging after 40 episodes x 500 ticks (20000 ticks) and eat about 5.7x more. X found that in evolving social populations with the same dynamics learning did not pay, and a rough estimate put the mean lifetime there at about 150 ticks (about 35 agents x 6000 ticks / 1336 births). If learning needs much more practice than that, short lives alone can explain X's null result. This study measures how food intake after training depends on the training budget.",
+  "background": "Each run trains one fresh single agent with the W 'full' dynamics (substeps=32, reset_each_decision, normalize) for a total of train_ticks ticks, in episodes of at most 500 ticks, then freezes it and tests it on 16 held-out 500-tick worlds with real and scrambled senses; an untrained agent is tested on the same worlds. learning_gain = trained_food - untrained_food. Exploratory pilot (training seeds 700-705, test worlds 9500-9507): trained food 3.4 at 150 ticks, 6.9 at 500, 15.9 at 1500, 16.7 at 5000, 19.5 at 20000, against 4.75 untrained. Interpretation rule, fixed in advance: short lives can explain X's null result if H42a and H42b are supported and H42c is not. This tests single agents only; it does not show that longer lives would make learning pay in populations. Training seeds 800-811 and test worlds 9200-9215 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 800,
+  "ticks": 500,
+  "train_episodes": 40,
+  "test_worlds": 16,
+  "test_seed_start": 9200,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true},
+  "conditions": {
+    "t150":   {"config": {}, "train_ticks": 150},
+    "t500":   {"config": {}, "train_ticks": 500},
+    "t1500":  {"config": {}, "train_ticks": 1500},
+    "t5000":  {"config": {}, "train_ticks": 5000},
+    "t20000": {"config": {}, "train_ticks": 20000}
+  },
+  "hypotheses": [
+    {"id": "H42a", "statement": "After 1500 ticks of training, learning pays (trained eat more than untrained)", "metric": "learning_gain", "a": "t1500", "b": 0, "direction": "greater"},
+    {"id": "H42b", "statement": "Agents trained for 1500 ticks eat more than agents trained for 150 ticks", "metric": "trained_food", "a": "t1500", "b": "t150", "direction": "greater"},
+    {"id": "H42c", "statement": "After only 150 ticks of training (about the mean lifetime in X), learning pays", "metric": "learning_gain", "a": "t150", "b": 0, "direction": "greater"},
+    {"id": "H42d", "statement": "After 500 ticks of training, learning pays", "metric": "learning_gain", "a": "t500", "b": 0, "direction": "greater"},
+    {"id": "H42e", "statement": "Agents trained for 20000 ticks eat more than agents trained for 1500 ticks", "metric": "trained_food", "a": "t20000", "b": "t1500", "direction": "greater"}
+  ]
+}

@@ -463,3 +463,16 @@ def test_no_filial_gain_blocks_energy_from_own_offspring():
         assert b.energy < e_b
         after[own] = a.energy
     assert after[False] - after[True] == pytest.approx(w.cfg.steal, abs=1e-6)
+
+
+def test_no_family_interaction_blocks_attacks_and_shares_both_ways():
+    for flag in (False, True):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, no_family_interaction=flag))
+        p = w.agents[0]
+        p.energy = 3.0
+        child = w._birth(p)
+        child.pos = p.pos.copy()
+        for actor, target, action in ((p, child, "attack"), (child, p, "attack"), (p, child, "share"), (child, p, "share")):
+            before = target.energy
+            w._social_effects(actor, actor.actions.index(action), [target])
+            assert (target.energy == before) == flag

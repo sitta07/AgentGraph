@@ -62,6 +62,22 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;
   padding:10px 16px;border-bottom:1px solid var(--grid)}
 .dlg-body{padding:12px 18px 18px}
+pre{background:var(--panel2);border:1px solid var(--grid);border-radius:8px;padding:10px 12px;
+  overflow-x:auto;font-size:12.5px;white-space:pre}
+
+/* static build: shown while the in-browser engine loads */
+.boot{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(11,13,18,.82)}
+.boot-card{max-width:520px;width:100%;background:var(--panel);border:1px solid var(--grid);
+  border-radius:var(--radius);padding:18px 20px}
+.boot-card b{font-size:16px}
+.boot-msg{margin:10px 0 6px;font-variant-numeric:tabular-nums}
+.boot:not(.failed) .boot-msg::before{content:"";display:inline-block;width:12px;height:12px;
+  margin-right:8px;vertical-align:-1px;border:2px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;animation:boot-spin .8s linear infinite}
+.boot.failed .boot-card{border-color:var(--bad)}
+.boot.failed .boot-msg{color:var(--bad-ink)}
+@keyframes boot-spin{to{transform:rotate(360deg)}}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none !important;transition:none !important}

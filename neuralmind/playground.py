@@ -308,7 +308,7 @@ def route(session: Session, path: str, body: dict | None) -> dict:
     raise PlaygroundError(404, f"no route {path}")
 
 
-def dispatch(session: Session, path: str, body_json: str | None) -> tuple[int, str]:
+def dispatch(session: Session, path: str, body_json: str | None = None) -> tuple[int, str]:
     """JSON in, ``(status, JSON)`` out: the entry point the browser worker calls."""
     try:
         body = None if body_json is None else (json.loads(body_json) or {})

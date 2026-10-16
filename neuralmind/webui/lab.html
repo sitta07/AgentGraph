@@ -118,6 +118,14 @@
     <h2 id="runTitle">Run studies yourself</h2>
     <p class="sub">Everything runs on your machine using all CPU cores. New results appear in the list above when they finish.</p>
     <div class="panel">
+      <div id="localOnly" hidden>
+        <p>This online version shows the committed results. Running a study takes minutes to hours of
+          CPU time, so it needs NeuralMind installed on your own machine:</p>
+        <pre><code id="installCmd"></code></pre>
+        <p class="note">Then open http://127.0.0.1:8000/lab.html and use this section to run replications
+          or any registered spec.</p>
+      </div>
+      <div id="runLocal">
       <h2 style="font-size:15px">Run a replication</h2>
       <div class="form">
         <label class="field">Study type <select id="kind"></select></label>
@@ -128,6 +136,7 @@
       <p class="note" id="estimate"></p>
       <p id="runErr" role="alert"></p>
       <div class="jobs" id="jobs"></div>
+      </div>
       <details class="specs">
         <summary id="specsSummary">Registered study specs</summary>
         <p class="note">A study is registered by committing its spec (question, conditions, metrics and

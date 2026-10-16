@@ -596,7 +596,16 @@ async function compare() {
 async function save() {
   if (!S.session) return;
   const d = await api("/api/save", {body: {note: "ui"}, what: "Saving the episode"});
-  if (d) $("saveMsg").textContent = "Saved as run #" + d.id;
+  if (!d) return;
+  if (d.download) { downloadJson(d.download, "neuralmind-episode.json");
+    $("saveMsg").textContent = "Downloaded as JSON (the browser version keeps no run history)"; }
+  else $("saveMsg").textContent = "Saved as run #" + d.id;
+}
+function downloadJson(data, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 async function foodAhead() {
   if (!S.session) return;

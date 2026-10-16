@@ -1,0 +1,26 @@
+{
+  "id": "AA_social_body",
+  "title": "Why does a social agent fail to learn foraging even when it is alone?",
+  "question": "Z found that learning pays among non-social peers but not among social ones. An exploratory pilot then trained a social agent alone (social actions and sensors, no other agents) and it also failed to learn (trained 2.97 vs 15.25 food for a lone non-social agent, 6 seeds). Its social sensors read zero when alone, and it still chose movement in about 80% of ticks. A trace showed it entering a hazard and staying there, turning and attacking, losing 0.044 energy per tick until it died about 22 ticks into the episode. The social actions (attack, share, signal) do not move the body, so an agent whose learned response to a hazard is a non-moving action stays inside it. A second pilot (seeds 740-743) without hazards: learning gain +6.4 for the lone social agent vs +1.3 with hazards, and +10.3 vs +8.4 for the lone non-social agent.",
+  "background": "All conditions use the W 'full' dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate'), a single agent, 1500 training ticks (3 episodes of 500), 16 held-out 500-tick test worlds. solo: non-social. social_alone: social=True, so 6 actions and 11 sensors, but no other agents. *_nohazard: n_hazard=0. learning_gain = trained_food - untrained_food. Interpretation rule, fixed in advance: hazards explain the social agent's failure if H46a and H46b are supported; the social body impairs learning beyond hazards if H46d is also supported. Seeds 850-861 and test worlds 9400-9415 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 850,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 16,
+  "test_seed_start": 9400,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate"},
+  "conditions": {
+    "solo":                  {"config": {}, "train_ticks": 1500},
+    "social_alone":          {"config": {"social": true}, "train_ticks": 1500},
+    "solo_nohazard":         {"config": {"n_hazard": 0}, "train_ticks": 1500},
+    "social_alone_nohazard": {"config": {"social": true, "n_hazard": 0}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H46a", "statement": "Without hazards, a lone social agent's learning pays", "metric": "learning_gain", "a": "social_alone_nohazard", "b": 0, "direction": "greater"},
+    {"id": "H46b", "statement": "Removing hazards raises a lone social agent's learning gain", "metric": "learning_gain", "a": "social_alone_nohazard", "b": "social_alone", "direction": "greater"},
+    {"id": "H46c", "statement": "Replication of the pilot: with hazards, a lone social agent gains less from learning than a lone non-social agent", "metric": "learning_gain", "a": "social_alone", "b": "solo", "direction": "less"},
+    {"id": "H46d", "statement": "Without hazards, a lone social agent still gains less than a lone non-social agent", "metric": "learning_gain", "a": "social_alone_nohazard", "b": "solo_nohazard", "direction": "less"}
+  ]
+}

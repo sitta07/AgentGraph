@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NeuralMind Playground</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="/static/common.css">
+<link rel="stylesheet" href="static/common.css">
 <style>
   .app{display:flex;flex-direction:column;min-height:100vh}
   .main{display:grid;gap:12px;padding:12px;grid-template-columns:minmax(0,1fr);
@@ -108,8 +108,8 @@
   <header class="site-head">
     <p class="brand">🧠 NeuralMind</p>
     <nav class="tabs" aria-label="Pages">
-      <a href="/" aria-current="page">Playground</a>
-      <a href="/lab">Discovery Lab</a>
+      <a href="./" aria-current="page">Playground</a>
+      <a href="lab.html">Discovery Lab</a>
     </nav>
     <span class="spacer"></span>
     <button id="btnHelp" class="ghost">Help</button>
@@ -273,7 +273,7 @@
   </div>
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="/static/common.js"></script>
-<script src="/static/app.js"></script>
+<script src="static/common.js"></script>
+<script src="static/app.js"></script>
 </body>
 </html>

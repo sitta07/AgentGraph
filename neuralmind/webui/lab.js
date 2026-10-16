@@ -2,6 +2,7 @@
 // Discovery Lab: renders committed studies and launches replications.
 const dlg = $("dlg");
 const TESTS_SHOWN = 4;
+const STATIC = window.NEURALMIND_STATIC;   // set only by the static build
 const L = {studies: [], filter: "all", query: "", expanded: new Set(), polling: null};
 
 // A verdict value is "supported", "not" or null (a non-hypothesis value such as
@@ -77,7 +78,7 @@ function card(s) {
   const more = entries.length > TESTS_SHOWN ? `<button class="ghost more" data-toggle="${esc(s.id)}"
       aria-expanded="${open}">${open ? "Show fewer" : `Show all ${entries.length} tests`}</button>` : "";
   const charts = (s.charts || []).map(c => {
-    const src = `/results/${encodeURIComponent(s.folder)}/${encodeURIComponent(c)}`;
+    const src = `results/${encodeURIComponent(s.folder)}/${encodeURIComponent(c)}`;
     return `<a href="${src}" target="_blank" rel="noopener" aria-label="Open chart ${esc(c)} in a new tab">
       <img src="${src}" alt="Chart: ${esc(c)}" loading="lazy" decoding="async"></a>`;
   }).join("");
@@ -142,8 +143,8 @@ async function loadSpecs() {
         <span class="note">${esc(s.question)}</span><br>
         <span class="note">${s.hypotheses.map(h => `<b>${esc(h.id)}</b> ${esc(h.statement)}`).join(" · ")}</span><br>
         <span class="note">${s.preregistration.preregistered ? "🔒 registered at " + esc(s.preregistration.commit.slice(0, 7)) : "⚠️ not committed yet"} · ${s.seeds} seeds · ${s.ticks} ticks · ${s.has_results ? "results available" : "not run yet"}</span></div>
-      <button class="ghost" data-spec="${esc(s.id)}" data-seeds="${s.seeds}" data-ticks="${s.ticks}"
-        aria-label="Run ${esc(s.title)} as registered">▶ Run as registered</button>
+      ${STATIC ? "" : `<button class="ghost" data-spec="${esc(s.id)}" data-seeds="${s.seeds}" data-ticks="${s.ticks}"
+        aria-label="Run ${esc(s.title)} as registered">▶ Run as registered</button>`}
     </div>`).join("");
 }
 
@@ -182,7 +183,7 @@ function renderEstimate() {
 function md(src, folder) {
   const inline = (t) => esc(t)
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, a, u) =>
-      `<img alt="${a}" loading="lazy" src="${/^https?:/.test(u) ? u : `/results/${encodeURIComponent(folder)}/${u}`}">`)
+      `<img alt="${a}" loading="lazy" src="${/^https?:/.test(u) ? u : `results/${encodeURIComponent(folder)}/${u}`}">`)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
   const lines = src.split("\n"); let out = "", i = 0;
   while (i < lines.length) {
@@ -237,5 +238,16 @@ function wire() {
   renderEstimate();
 }
 
+// The static build has the committed results but no Python process to run
+// studies, so the run form is replaced by local-install instructions.
+function showLocalOnly() {
+  $("runLocal").hidden = true;
+  $("localOnly").hidden = false;
+  $("installCmd").textContent = STATIC.install;
+  document.querySelector(".run-section .sub").textContent =
+    "New runs need a local install. The registered specs below are the exact studies you can rerun.";
+}
+
 wire();
-loadStudies(); loadJobs(); loadSpecs();
+if (STATIC) showLocalOnly(); else loadJobs();
+loadStudies(); loadSpecs();

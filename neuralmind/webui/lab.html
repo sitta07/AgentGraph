@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NeuralMind Discovery Lab</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="/static/common.css">
+<link rel="stylesheet" href="static/common.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:18px 16px 40px}
   h1{font-size:22px;margin:0 0 6px}
@@ -84,8 +84,8 @@
 <header class="site-head">
   <p class="brand">🧠 NeuralMind</p>
   <nav class="tabs" aria-label="Pages">
-    <a href="/">Playground</a>
-    <a href="/lab" aria-current="page">Discovery Lab</a>
+    <a href="./">Playground</a>
+    <a href="lab.html" aria-current="page">Discovery Lab</a>
   </nav>
 </header>
 <main>
@@ -118,6 +118,14 @@
     <h2 id="runTitle">Run studies yourself</h2>
     <p class="sub">Everything runs on your machine using all CPU cores. New results appear in the list above when they finish.</p>
     <div class="panel">
+      <div id="localOnly" hidden>
+        <p>This online version shows the committed results. Running a study takes minutes to hours of
+          CPU time, so it needs NeuralMind installed on your own machine:</p>
+        <pre><code id="installCmd"></code></pre>
+        <p class="note">Then open http://127.0.0.1:8000/lab.html and use this section to run replications
+          or any registered spec.</p>
+      </div>
+      <div id="runLocal">
       <h2 style="font-size:15px">Run a replication</h2>
       <div class="form">
         <label class="field">Study type <select id="kind"></select></label>
@@ -128,6 +136,7 @@
       <p class="note" id="estimate"></p>
       <p id="runErr" role="alert"></p>
       <div class="jobs" id="jobs"></div>
+      </div>
       <details class="specs">
         <summary id="specsSummary">Registered study specs</summary>
         <p class="note">A study is registered by committing its spec (question, conditions, metrics and
@@ -149,7 +158,7 @@
   <div class="md" id="dlgBody"></div>
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="/static/common.js"></script>
-<script src="/static/lab.js"></script>
+<script src="static/common.js"></script>
+<script src="static/lab.js"></script>
 </body>
 </html>

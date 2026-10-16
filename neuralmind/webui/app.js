@@ -346,8 +346,8 @@ function buildBrainLegend() {
 
 // ---------- world rendering ----------
 // ---------- pixel-art world (Kenney CC0 tiles) ----------
-const TOWN = new Image(); TOWN.src = "/static/assets/kenney/tiny_town.png";
-const DUN = new Image(); DUN.src = "/static/assets/kenney/tiny_dungeon.png";
+const TOWN = new Image(); TOWN.src = "static/assets/kenney/tiny_town.png";
+const DUN = new Image(); DUN.src = "static/assets/kenney/tiny_dungeon.png";
 const SPRITES = [85, 99, 86, 88, 87, 100, 97, 111];   // tiny_dungeon character tiles
 const T = {grass: 0, grass2: 1, flower: 2, trees: [4, 16, 28, 5], food: 29};
 const D = {fire: 29, spikes: 41, grave: 65};
@@ -596,7 +596,16 @@ async function compare() {
 async function save() {
   if (!S.session) return;
   const d = await api("/api/save", {body: {note: "ui"}, what: "Saving the episode"});
-  if (d) $("saveMsg").textContent = "Saved as run #" + d.id;
+  if (!d) return;
+  if (d.download) { downloadJson(d.download, "neuralmind-episode.json");
+    $("saveMsg").textContent = "Downloaded as JSON (the browser version keeps no run history)"; }
+  else $("saveMsg").textContent = "Saved as run #" + d.id;
+}
+function downloadJson(data, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 async function foodAhead() {
   if (!S.session) return;

@@ -58,6 +58,13 @@ and new studies are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## 🚀 Quickstart
 
+**Try it in your browser, no install:** https://sitta07.github.io/NeuralMind/
+
+The online Playground runs the same Python engine through WebAssembly
+([Pyodide](https://pyodide.org)); the first visit downloads about 8 MB.
+The online Discovery Lab shows the committed studies, but running new
+studies, and saving episodes to a run history, needs a local install:
+
 ```bash
 git clone https://github.com/sitta07/NeuralMind.git && cd NeuralMind
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
@@ -174,6 +181,7 @@ python -m neuralmind.research.evolution --experiment kin               # kin-sel
 python -m neuralmind.cli run reward_learning --seed 0                  # classic experiments
 python -m neuralmind.bench --sizes 50 100 200 400                      # runtime + memory
 python tools/make_media.py                                             # re-record these GIFs
+python tools/build_site.py && python -m http.server -d site 8080       # the browser version, locally
 ```
 
 ## 📁 Project layout
@@ -185,9 +193,11 @@ neuralmind/
   world.py       2D world · Agent · social layer · evolution · genealogy
   envs/          PettingZoo ParallelEnv
   research/      pre-registered studies, stats (bootstrap CI, MI, G-test), spec runner
+  playground.py  Playground API as plain Python (used by the server and by the browser build)
   lab.py         Discovery Lab API
   server.py      FastAPI backend (the browser only renders backend state)
-  webui/         Playground (+ family tree) + Discovery Lab (vanilla JS + canvas, Kenney CC0 pixel art)
+  webui/         Playground (+ family tree) + Discovery Lab (vanilla JS + canvas, Kenney CC0 pixel art);
+                 static-mode.js + pyodide-worker.js run it without a server (tools/build_site.py)
   paths.py       where studies/ and results/ live (repo, $NEURALMIND_HOME, or current folder)
 studies/         registered study specs        results/   raw results + reports
 docs/research/   findings, evidence ledger, agenda, literature

@@ -1,0 +1,27 @@
+{
+  "id": "Z_social_learning",
+  "title": "What stops lifetime learning from paying among other agents?",
+  "question": "W and Y showed that a single agent with the fixed decision dynamics learns sensory foraging fast (2.6x after 500 ticks, 4.4x after 1500). X found that learning did not pay in evolving social populations, and Y ruled out short lives as the whole explanation. Here there is no evolution: a fixed group of agents learns together for 1500 ticks, and agent 0 is then tested frozen among its frozen peers. The conditions separate the presence of other foragers from the social actions, and theft from the other social actions.",
+  "background": "All conditions use substeps=32, reset_each_decision, normalize with normalize_to='innate'. solo: one agent, 8 food, non-social. crowd12: 12 non-social agents, 24 food (competition for food only). social12: 12 social agents (attack, share, signal), 24 food. social12_nosteal: as social12 with steal=0, so an attack takes no energy: the attacker gains nothing and the target loses nothing, but the attacker still pays the attack cost. Each run trains all agents for 1500 ticks (3 episodes of 500), freezes them, and tests agent 0 on 8 held-out worlds with its trained peers; the untrained baseline is a fresh untrained group on the same worlds. learning_gain = trained_food - untrained_food for agent 0. Exploratory pilot (seeds 720-723, worlds 9600-9605): learning_gain +15.5 solo and -4.0 social12 (all four seeds negative); crowd12 and social12_nosteal were not piloted. Interpretation rule, fixed in advance: social actions (not crowding) block learning if H43a and H43b are supported; theft is the cause if H43c is also supported. Seeds 830-841 and worlds 9300-9307 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 830,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9300,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate"},
+  "conditions": {
+    "solo":             {"config": {}, "train_ticks": 1500},
+    "crowd12":          {"config": {"n_agents": 12, "n_food": 24}, "train_ticks": 1500},
+    "social12":         {"config": {"social": true, "n_agents": 12, "n_food": 24}, "train_ticks": 1500},
+    "social12_nosteal": {"config": {"social": true, "n_agents": 12, "n_food": 24, "steal": 0.0}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H43a", "statement": "In a social group, learning lowers foraging (trained eat less than untrained)", "metric": "learning_gain", "a": "social12", "b": 0, "direction": "less"},
+    {"id": "H43b", "statement": "Among non-social foragers, learning still pays", "metric": "learning_gain", "a": "crowd12", "b": 0, "direction": "greater"},
+    {"id": "H43c", "statement": "Removing theft restores part of the learning gain (nosteal beats social12)", "metric": "learning_gain", "a": "social12_nosteal", "b": "social12", "direction": "greater"},
+    {"id": "H43d", "statement": "In a social group, learning raises agent 0's attack rate (trained minus untrained)", "metric": "attack_gain", "a": "social12", "b": 0, "direction": "greater"},
+    {"id": "H43e", "statement": "Replication of W/Y: solo learning pays", "metric": "learning_gain", "a": "solo", "b": 0, "direction": "greater"}
+  ]
+}

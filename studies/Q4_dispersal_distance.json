@@ -1,0 +1,73 @@
+{
+  "id": "Q4_dispersal_distance",
+  "title": "Does viscosity protect populations because offspring stay in one place?",
+  "question": "Placing newborns beside their parent keeps populations alive; placing them beside a stranger kills them (pooled Q-Q3: 34/36 vs 13/36 extinct), and random placement sits in between (Q: 8/12). Local density (Q), strangers killing newborns (Q2) and parents recycling energy (Q3) have been ruled out. The remaining candidate is spatial spread: viscous lineages stay in one area, while other placements scatter newborns across the world. If spread is the cause, survival should fall as newborns are placed further from their parent, with no stranger involved.",
+  "background": "Intervention: birth_distance=d places each newborn exactly d from its parent in a uniformly random direction, reflected at walls (so near a wall the realised distance can be shorter). The default viscous placement has a Gaussian scatter of s.d. 0.04 per axis. World width is 1.0, sensor range 0.6. Interpretation rule, fixed in advance: spread is supported as a cause if H34a and H34c are supported (far placement shortens survival, with a dose-response from near to far). If neither is supported, spread alone does not explain viscosity's protection. mixed is a reference for comparison with Q and has no hypothesis. No pilot was run. Seeds 1900-1911 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 1900,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "viscous": {
+      "config": {
+        "viscous": true
+      },
+      "learning": true
+    },
+    "near": {
+      "config": {
+        "viscous": true,
+        "birth_distance": 0.15
+      },
+      "learning": true
+    },
+    "far": {
+      "config": {
+        "viscous": true,
+        "birth_distance": 0.45
+      },
+      "learning": true
+    },
+    "mixed": {
+      "config": {
+        "viscous": false
+      },
+      "learning": true
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H34a",
+      "statement": "Spread: populations whose newborns are placed far (0.45) from the parent die out sooner than viscous ones",
+      "metric": "survival_ticks",
+      "a": "far",
+      "b": "viscous",
+      "direction": "less"
+    },
+    {
+      "id": "H34b",
+      "statement": "Spread: far placement goes extinct more often than viscous placement",
+      "metric": "extinct01",
+      "a": "far",
+      "b": "viscous",
+      "direction": "greater"
+    },
+    {
+      "id": "H34c",
+      "statement": "Dose-response: far placement dies out sooner than near (0.15) placement",
+      "metric": "survival_ticks",
+      "a": "far",
+      "b": "near",
+      "direction": "less"
+    },
+    {
+      "id": "H34e",
+      "statement": "Spread lowers the early birth rate (far vs viscous)",
+      "metric": "early_birth_rate",
+      "a": "far",
+      "b": "viscous",
+      "direction": "less"
+    }
+  ]
+}

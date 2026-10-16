@@ -98,6 +98,7 @@ class WorldConfig:
     mirror_at: int = -1            # tick from which left/right sensing is swapped (-1: never)
     mirror_every: int = 0          # >0: left/right sensing flips every this many ticks
     deaf: bool = False             # True: the heard-signal sensor always reads 0
+    reset_each_decision: bool = False  # True: membrane and synaptic state are cleared before every decision
     scramble_senses: bool = False  # True: the 6 food/hazard sensor values are shuffled every tick
     directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
     coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
@@ -299,6 +300,8 @@ class Agent:
     # ---- acting ---------------------------------------------------------
     def decide(self, sensors: np.ndarray, rng: np.random.Generator) -> tuple[int, np.ndarray, dict]:
         c = self.cfg
+        if c.reset_each_decision:
+            self.net.reset()
         current = c.idle_drive + c.sensor_gain * sensors
         k = len(self.actions)
         counts = np.zeros(k)

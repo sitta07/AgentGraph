@@ -519,9 +519,12 @@ aggression" should be read as a side effect of the learning rule.
 | Can Q-learners invade an SNN population? (O) | No advantage either way, but lineage fate is all-or-nothing. |
 | Does being born near the parent help through kinship or density? (Q, Q2, Q3) | Still open. Newborns placed beside a stranger went extinct in 34/36 runs vs 13/36 beside the parent (pooled Q–Q3). Yet 42% of killings in viscous worlds are parents killing their own young, and the "energy recycling" explanation was falsified in Q3. |
 
-The one clear positive result: a single trained agent eats about 40% more
-than an untrained one (4.85 vs 3.45 per episode, 60 held-out worlds). In
-evolving populations, learning lowers foraging instead.
+The clearest positive result is W: once decisions last 32 ms, start from a
+cleared state, and use normalised input weights, a trained single agent eats
+about 5.7× more than an untrained one (18.7 vs 3.25 food per episode) and
+relies on its senses. With the default dynamics, learning does not raise
+foraging, and in evolving populations it lowers it. V found that evolved
+innate wiring does not measurably use the senses at all.
 
 ## 14. What is interesting, and what is not new
 

@@ -30,7 +30,7 @@ BOUNDS = {
     "birth_radius": (0.0, 0.5), "mirror_at": (-1, 100000), "coop_radius": (0.0, 0.5), "mirror_every": (0, 100000),
     "sensor_range": (0.05, 2.0), "speed": (0.002, 0.1), "turn": (0.05, 1.5),
     "e0": (0.1, 5.0), "food_energy": (0.0, 2.0), "move_cost": (0.0, 0.1),
-    "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 20),
+    "hazard_cost": (0.0, 0.5), "n_action": (2, 32), "substeps": (1, 64),
     "idle_drive": (0.0, 10.0), "sensor_gain": (0.0, 20.0),
     "action_noise": (0.0, 10.0), "lr": (0.0, 5.0), "w_init": (0.05, 5.0),
     "w_max": (0.5, 10.0), "w_inhib": (0.0, 5.0), "r_eat": (0.0, 10.0),

@@ -118,6 +118,7 @@ class WorldConfig:
     viscous: bool = True           # True: born near parent; False: born anywhere
     no_filial_gain: bool = False  # True: attacking your own offspring drains it but returns no energy to you
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
+    birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
     seed: int = 0
@@ -737,7 +738,12 @@ class World2D:
         strangers = ([a for a in self.agents if a.alive and a is not parent
                       and self.relatedness(parent, a) == 0.0]
                      if (c.born_near_stranger and not c.viscous) else [])
-        if c.viscous:
+        if c.birth_distance > 0:
+            th = float(rng.uniform(0, 2 * math.pi))
+            pos = parent.pos + c.birth_distance * np.array([math.cos(th), math.sin(th)])
+            pos = np.abs(pos)
+            pos = np.where(pos > c.size, 2 * c.size - pos, pos)
+        elif c.viscous:
             pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
         elif strangers:
             host = strangers[int(rng.integers(len(strangers)))]

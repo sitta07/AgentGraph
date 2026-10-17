@@ -124,6 +124,8 @@ class WorldConfig:
     family_attack_redirect: bool = False  # True: an attack whose nearest target is your offspring or your parent hits the nearest agent in reach that is neither
     no_filial_attack: bool = False  # True: an attack on your own offspring has no effect (the attacker still pays)
     no_family_interaction: bool = False  # True: attacks and shares between a parent and its offspring, either way, have no effect (the actor still pays)
+    blind_to_parent: bool = False  # True: an agent's "other agent" sensors never respond to its own parent
+    blind_to_family: bool = False  # True: as blind_to_parent, and parents' sensors never respond to their own offspring
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
@@ -536,18 +538,25 @@ class World2D:
         """The agent's current egocentric sensor vector (what its brain sees)."""
         if not self.cfg.social:
             return ag.sense(self.food, self.hazards)
-        others = [o for o in self.agents if o is not ag and o.alive]
-        others_pos = np.array([o.pos for o in others]) if others else np.empty((0, 2))
+        others_pos = self._seen_positions(ag, [o for o in self.agents if o is not ag and o.alive])
         heard = [q for (i, q) in getattr(self, "_signals_prev", []) if i != ag.id]
         return ag.sense(self.food, self.hazards, others_pos,
                         np.array(heard) if heard else np.empty((0, 2)))
+
+    def _seen_positions(self, ag: Agent, others: list) -> np.ndarray:
+        c = self.cfg
+        if c.blind_to_parent or c.blind_to_family:
+            others = [o for o in others if o.id != ag.parent]
+        if c.blind_to_family:
+            others = [o for o in others if o.parent != ag.id]
+        return np.array([o.pos for o in others]) if others else np.empty((0, 2))
 
     def _advance_agent(self, ag: Agent, learning: bool, forced: int | None = None) -> dict:
         c = self.cfg
         others = [o for o in self.agents if o is not ag and o.alive] if c.social else []
         if c.social:
             ag.signaling = False
-            others_pos = np.array([o.pos for o in others]) if others else np.empty((0, 2))
+            others_pos = self._seen_positions(ag, others)
             heard = [q for (i, q) in self._signals_prev if i != ag.id]
             heard = np.array(heard) if heard else np.empty((0, 2))
             sensors = ag.sense(self.food, self.hazards, others_pos, heard)

@@ -39,6 +39,7 @@ studies complete.
 | 31 | Can evolution design a better learning reward? | AF: no shaping is best everywhere; Singh et al. 2009. | AH: heritable teacher weights with a neutral gene. | ~2.3 h | **done: partly** ([AH](FINDINGS_AH.md)); survival +3089; approach weight selected down; next: without hazards |
 | 32 | Do emotion-like internal states evolve when nothing is written in? | Anderson & Adolphs 2014; Gibson et al. 2015. | AK: evolved affect state vs numb control, emotion-primitive assay. | ~1.5 h | **done: no** ([AK](FINDINGS_AK.md)); assay = drift; foraging −37%; next: a world where memory pays |
 | 33 | Does a fear-like state evolve when hazards can only be felt? | AK: no emotion-like states. | AL: invisible hazards, smaller mutations. | ~1.6 h | **done: no** ([AL](FINDINGS_AL.md)); persistence selected shorter; foraging −18% |
+| 34 | Does the shaping-covariance theory predict the fix, here and elsewhere? | Theory note; AE, AF. | AM: state critic in NeuralMind; AN: non-spiking forager. | ~45 min | **done: yes** ([AM](FINDINGS_AM.md), [AN](FINDINGS_AN.md)); +6.7 social gain; Hebbian vs score contrast held; next: X with the state critic |
 
 ## Principles
 

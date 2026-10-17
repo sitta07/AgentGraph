@@ -1,0 +1,28 @@
+{
+  "id": "AM_state_critic",
+  "title": "Does a state-dependent critic, predicted by theory, rescue learning under alignment shaping?",
+  "question": "AF found that replacing alignment shaping with approach shaping rescues learning among social peers. tools/theory/shaping_covariance.py gives a general reason: for any stationary shaping potential Phi with lag-1 autocorrelation rho, the shaping reward r = Phi(t+1) - Phi(t) has Cov(Phi(t), r) = -(1 - rho) Var(Phi) <= 0. When presynaptic activity at decision time rises with Phi (food straight ahead drives the sensors hardest and maximises alignment), a covariance learning rule with a scalar reward baseline depresses active synapses on average, whatever the policy. The same derivation predicts a fix that keeps the shaping: a baseline that depends on the state, E[r | state], removes the term (checked numerically on an AR(1) potential: drift -0.30 with a scalar baseline, -0.001 with a state baseline). NeuralMind already has such a critic (critic='state': one reward expectation per binarised sensor state). This study tests the prediction without changing the reward.",
+  "background": "Same design as AF: fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate'), no hazards, 1500 training ticks, agent 0 tested frozen on 8 held-out worlds against a fresh untrained agent or group with the same config. Alignment shaping (the default reward) throughout except approach12. critic='state' keys the reward expectation on which of the 11 sensors exceed 0.2. Caveats fixed in advance: the state critic's states are coarse (binarised sensors), so it may remove only part of the bias; and the theory covers the shaping term only, not eating or social rewards. Interpretation rule, fixed in advance: the theory's fix works in NeuralMind if H60a and H60b are supported; it fully rescues social learning if H60c is also supported. No pilot was run. Seeds 3800-3811 and worlds 9940-9947 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 3800,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9940,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "n_hazard": 0},
+  "conditions": {
+    "social12_scalar":   {"config": {"social": true, "n_agents": 12, "n_food": 24}, "train_ticks": 1500},
+    "social12_state":    {"config": {"social": true, "n_agents": 12, "n_food": 24, "critic": "state"}, "train_ticks": 1500},
+    "social12_approach": {"config": {"social": true, "n_agents": 12, "n_food": 24, "reward_mode": "approach"}, "train_ticks": 1500},
+    "solo_scalar":       {"config": {}, "train_ticks": 1500},
+    "solo_state":        {"config": {"critic": "state"}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H60a", "statement": "Under alignment shaping, a state critic shrinks the learned rise in attacks among social peers", "metric": "attack_gain", "a": "social12_state", "b": "social12_scalar", "direction": "less"},
+    {"id": "H60b", "statement": "Under alignment shaping, a state critic raises the learning gain among social peers", "metric": "learning_gain", "a": "social12_state", "b": "social12_scalar", "direction": "greater"},
+    {"id": "H60c", "statement": "Under alignment shaping with a state critic, learning pays among social peers", "metric": "learning_gain", "a": "social12_state", "b": 0, "direction": "greater"},
+    {"id": "H60d", "statement": "A solo agent still learns under alignment shaping with a state critic", "metric": "learning_gain", "a": "solo_state", "b": 0, "direction": "greater"},
+    {"id": "H60e", "statement": "Among social peers, the state critic under alignment shaping differs from approach shaping", "metric": "learning_gain", "a": "social12_state", "b": "social12_approach", "direction": "none"}
+  ]
+}

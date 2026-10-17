@@ -1,0 +1,25 @@
+{
+  "id": "AE_which_weights",
+  "title": "Is the learned rise in attacks carried by the movement neurons' input weights?",
+  "question": "In AB and AC, learning among social peers barely paid and raised the attack rate, with or without the frustration drive. An exploratory probe after AC (tools/probes/frozen_rows_probe.py) froze the input weights of one group of actions during learning. Freezing the social actions' inputs raised attacks further; freezing the movement actions' inputs removed the rise and gave the largest gain. This study tests that on new seeds.",
+  "background": "Same design as AC's social12: fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate'), 12 social agents, 24 food, no hazards, frustration drive on, all agents train together for 1500 ticks, agent 0 tested frozen among frozen peers on 8 held-out worlds against a fresh untrained group. frozen_inputs lists actions whose input weights never learn (they are still renormalised, which leaves frozen rows unchanged). Probe on spent seeds 870-875, 4 test worlds 9800-9803: learning gain +3.8 / -2.4 / +5.6 and trained attack rate 0.196 / 0.291 / 0.022 (untrained 0.050) for learn_all / freeze_social / freeze_moves. Interpretation rule, fixed in advance: learning in the movement neurons carries the rise in attacks if H51a and H51b are supported. H51c and H51d ask whether freezing movement inputs restores a learning gain. Seeds 3200-3211 and worlds 9920-9927 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 3200,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9920,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "n_agents": 12, "n_food": 24, "n_hazard": 0, "social": true},
+  "conditions": {
+    "learn_all":     {"config": {}, "train_ticks": 1500},
+    "freeze_social": {"config": {"frozen_inputs": ["attack", "share", "signal"]}, "train_ticks": 1500},
+    "freeze_moves":  {"config": {"frozen_inputs": ["left", "forward", "right"]}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H51a", "statement": "When only the movement inputs learn, learning raises the attack rate", "metric": "attack_gain", "a": "freeze_social", "b": 0, "direction": "greater"},
+    {"id": "H51b", "statement": "Freezing the movement inputs shrinks the rise in attack rate that learning causes", "metric": "attack_gain", "a": "freeze_moves", "b": "learn_all", "direction": "less"},
+    {"id": "H51c", "statement": "With the movement inputs frozen, learning pays among social peers", "metric": "learning_gain", "a": "freeze_moves", "b": 0, "direction": "greater"},
+    {"id": "H51d", "statement": "Freezing the movement inputs raises the learning gain", "metric": "learning_gain", "a": "freeze_moves", "b": "learn_all", "direction": "greater"}
+  ]
+}

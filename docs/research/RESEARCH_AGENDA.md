@@ -31,6 +31,7 @@ studies complete.
 | 23 | Does the hazard trap explain failed learning in social groups? | AA: it explains the lone social agent. | AB: Z design with and without hazards. | ~1.5 h | **done: no** ([AB](FINDINGS_AB.md)); +0.3 without hazards vs +7.3 non-social; learning doubles attacks; next: inspect and silence the social sensors |
 | 24 | Does the frustration-to-attack drive cancel learning among social peers? | AB; probe: trained agents more frustrated, attack less with the drive off at test. | AC: Z/AB design without hazards, with and without the drive. | ~1.4 h | **done: no** ([AC](FINDINGS_AC.md)); +0.6 without the drive; attacks still rise; a probe points at learning in the movement neurons; next: AE |
 | 25 | Does what the newborn senses explain birth-beside-parent protection? | Q6–Q9 ruled out family attacks and shares. | AD: parent invisible to offspring, and both ways. | ~45 min | **done: no** ([AD](FINDINGS_AD.md)); 5/12 and 6/12 vs 6/12; next: birth-site quality |
+| 26 | Which input weights carry the learned rise in attacks? | AC; frozen-rows probe. | AE: freeze social or movement inputs during learning. | ~40 min | **done: the movement inputs** ([AE](FINDINGS_AE.md)); next: AF, approach vs alignment shaping |
 
 ## Principles
 

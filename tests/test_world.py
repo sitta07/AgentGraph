@@ -418,6 +418,19 @@ def test_filial_attack_redirect_hits_the_nearest_non_offspring():
     assert child.energy == c0 and other.energy < o0
 
 
+def test_family_attack_redirect_sends_attacks_on_parent_or_offspring_to_others():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True, family_attack_redirect=True))
+    p, other = w.agents
+    p.energy = 3.0
+    child = w._birth(p)
+    child.pos = p.pos.copy()
+    other.pos = p.pos + np.array([0.05, 0.0])
+    for actor, kin in ((p, child), (child, p)):
+        k0, o0 = kin.energy, other.energy
+        w._social_effects(actor, actor.actions.index("attack"), [kin, other])
+        assert kin.energy == k0 and other.energy < o0
+
+
 def test_state_critic_keeps_separate_expectations_per_sensor_state():
     w = World2D(WorldConfig(seed=0, n_agents=1, social=True, critic="state"))
     ag = w.agents[0]

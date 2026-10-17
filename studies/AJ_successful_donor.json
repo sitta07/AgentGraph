@@ -1,0 +1,22 @@
+{
+  "id": "AJ_successful_donor",
+  "title": "Is the protection lost with foster genomes because selection stops, or because genomes no longer cluster with their family?",
+  "question": "AI found that newborns beside their parent lose the protection when they carry the genome of a random unrelated agent (10/12 extinct vs 4/12). Two accounts fit. (1) Genome clustering: beside the parent, each family's genome stays together in space, and this is what protects. (2) Selection switched off: a random donor need not have reproduced, so offspring no longer carry the genome whose success produced them. This study gives newborns the genome of the unrelated agent that reproduced most recently, which keeps selection on genomes but still breaks the family-place link.",
+  "background": "foster_from_reproducer=True with foster_genome=True: the donor is the living agent unrelated to the parent with the most recent reproduction (ties: the first found); if no unrelated agent has reproduced, a random unrelated agent is used, and if none is alive, the parent (both counted in birth_fallback_frac). parent_foster repeats AI's random-donor condition on new seeds. Interpretation rule, fixed in advance: if H57a is supported and H57c is not, the protection works through selection on genomes (account 2); if H57c is supported and H57a is not, through genomes clustering with their family (account 1); if both are supported, both contribute. No pilot was run. Seeds 3500-3511 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 3500,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":                {"config": {"viscous": true}, "learning": true},
+    "parent_foster":         {"config": {"viscous": true, "foster_genome": true}, "learning": true},
+    "parent_foster_success": {"config": {"viscous": true, "foster_genome": true, "foster_from_reproducer": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H57a", "statement": "A successful donor's genome gives fewer extinctions than a random donor's", "metric": "extinct01", "a": "parent_foster_success", "b": "parent_foster", "direction": "less"},
+    {"id": "H57b", "statement": "A successful donor's genome gives longer survival than a random donor's", "metric": "survival_ticks", "a": "parent_foster_success", "b": "parent_foster", "direction": "greater"},
+    {"id": "H57c", "statement": "A successful donor's genome still gives more extinctions than the parent's own genome", "metric": "extinct01", "a": "parent_foster_success", "b": "parent", "direction": "greater"},
+    {"id": "H57d", "statement": "Replication of AI: a random donor's genome gives more extinctions than the parent's own", "metric": "extinct01", "a": "parent_foster", "b": "parent", "direction": "greater"}
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "AK_evolved_affect",
+  "title": "Do emotion-like internal states evolve when nothing is written in?",
+  "question": "Anderson and Adolphs (2014) proposed that emotion states, across species, share measurable 'emotion primitives', among them persistence (the state outlasts its trigger), scalability (graded with stimulus strength) and valence (good and bad push behaviour in opposite directions). Gibson et al. (2015) used such tests to show a persistent, scalable defensive state in flies. Here no emotion is designed in: each agent carries two internal state variables whose inputs (pain, food eaten, hunger, threat in view, others in view), decay and effect on every action start at zero (decay 0.5) and are left to mutation and selection. The decision network has no memory of its own (reset before every decision), so this state is its only memory. Do emotion-like states evolve, and do they help?",
+  "background": "evolve_affect=True: s <- decay * s + A @ inputs each tick; B.T @ s is added to the input current of each action population; A (2x5), B (2x6) and decay logits (2) mutate by N(0, 0.3) at every birth, starting at zero. numb (control): numb_affect=True, the same genes evolve and are inherited but the state never acts, so its genes drift. The designer's frustration-to-attack drive is switched off in both (aggression_gain=0) and learning is off, so behaviour comes from inherited wiring only. Fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate') on the standard social evolution base. Assay (neuralmind/research/affect_assay.py) at the end of each run, on up to 8 living agents copied frozen into an empty arena, alone, energy clamped and fresh noise per tick: a one-tick input pulse (pain 1, pain 3 or food 1) is injected into the state at tick 0 and the action histogram is compared with an identical run without the pulse. affect_early = total-variation (TV) distance in ticks 0-4 after pain 1; affect_persistence = TV in ticks 5-19; affect_scalability = TV(pain 3) - TV(pain 1) over ticks 0-9; affect_valence_cos = cosine between the action shifts after pain 1 and after food 1 over ticks 0-9 (negative = opposite). In the numb control the assay unmasks the state, so it measures what drifted genes would do. Runs that go extinct have no assay values and drop out of those paired tests. Interpretation rule, fixed in advance: emotion-like states evolved under selection if H58c is supported together with H58d or H58e; they are adaptive if H58a or H58b is supported. No pilot was run (smoke runs of 1500 ticks only, to test the code). Seeds 3600-3611 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 3600,
+  "ticks": 18000,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "aggression_gain": 0.0, "evolve_affect": true},
+  "conditions": {
+    "affect": {"config": {}, "learning": false},
+    "numb":   {"config": {"numb_affect": true}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H58a", "statement": "Populations with an acting affect state survive longer than numb populations", "metric": "survival_ticks", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H58b", "statement": "Populations with an acting affect state eat more per agent-tick", "metric": "food_rate", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H58c", "statement": "Selected affect states persist longer after a pain pulse than drifted ones", "metric": "affect_persistence", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H58d", "statement": "Selected affect states scale more with pulse strength than drifted ones", "metric": "affect_scalability", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H58e", "statement": "In selected affect states, pain and food shift behaviour in more opposite directions than in drifted ones", "metric": "affect_valence_cos", "a": "affect", "b": "numb", "direction": "less"},
+    {"id": "H58f", "statement": "Selection lengthens the affect state's memory (decay closer to 1)", "metric": "affect_decay", "a": "affect", "b": "numb", "direction": "greater"}
+  ]
+}

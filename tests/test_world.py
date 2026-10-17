@@ -554,3 +554,29 @@ def test_foster_from_reproducer_takes_the_genome_of_the_latest_unrelated_breeder
     breeder.last_repro = 5
     p.energy = 3.0
     assert w._birth(p).aggr_gain == 2.5 and p.last_repro == w.t
+
+
+def test_affect_state_starts_silent_and_numb_agents_never_act_on_it():
+    from neuralmind.research.affect_assay import assay
+    for numb in (False, True):
+        cfg = WorldConfig(seed=2, social=True, evolve=True, n_agents=4, evolve_affect=True, numb_affect=numb,
+                          aggression_gain=0.0)
+        w = World2D(cfg)
+        ag = w.agents[0]
+        r0 = assay(cfg, [ag], repeats=2, ticks=10)
+        assert r0["affect_early"] == 0.0 and r0["affect_persistence"] == 0.0   # all-zero genes: no effect
+        ag.aff_A[0, 0], ag.aff_B[0, :] = 3.0, [0, 0, 0, 4.0, 0, 0]
+        ag.aff_logit[:] = 3.0
+        r1 = assay(cfg, [ag], repeats=2, ticks=10)
+        assert r1["affect_early"] > 0.1 and r1["affect_persistence"] > 0.0   # unmasked: the state acts
+        masked = assay(cfg, [ag], repeats=2, ticks=10, unmask=False)
+        assert (masked["affect_early"] == 0.0) == numb
+
+
+def test_offspring_inherit_mutated_affect_genes():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, evolve_affect=True, affect_sigma=0.3))
+    p = w.agents[0]
+    p.energy = 3.0
+    kids = [w._birth(p) for _ in range(100)]
+    assert abs(np.std([k.aff_A[0, 0] for k in kids]) - 0.3) < 0.07
+    assert all(k.aff_B.shape == (2, 6) for k in kids)

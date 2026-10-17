@@ -46,6 +46,10 @@ SOCIAL_ACTIONS = ("attack", "share", "signal")
 # alignment with the nearest food, decrease in distance to it, energy change
 # (in food units) and hunger.
 TEACHER_SIGNALS = ("align", "approach", "energy", "hunger")
+# Inputs to an evolved affect state (WorldConfig.evolve_affect): pain (in a
+# hazard or hurt by an attacker this tick), food eaten this tick, hunger, the
+# strongest threat-sensor value and the strongest other-agent sensor value.
+AFFECT_INPUTS = ("pain", "food", "hunger", "threat", "others")
 N_SENSORS = 7          # 3 food bins + 3 threat bins + hunger
 N_SOCIAL_SENSORS = 4   # 3 "other agent" bins + heard-signal level
 
@@ -142,6 +146,15 @@ class WorldConfig:
     evolve_teacher: bool = False
     teacher_init: tuple = (4.0, 0.0, 0.0, 0.0)
     teacher_sigma: float = 0.5
+    # Evolved affect: each agent carries affect_k internal state variables,
+    # s <- decay * s + A @ inputs (AFFECT_INPUTS) every tick, which add
+    # B.T @ s to the input current of every action population. A, B and the
+    # decays are heritable, start at zero/0.5, and mutate at every birth.
+    # numb_affect computes and inherits the state but never lets it act.
+    evolve_affect: bool = False
+    affect_k: int = 2
+    affect_sigma: float = 0.3
+    numb_affect: bool = False
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
     seed: int = 0
 
@@ -166,6 +179,11 @@ class Agent:
         self.neutral_gene = float(cfg.aggression_gain)   # drift control; never read by behaviour
         self.teacher = np.array(cfg.teacher_init, dtype=float)
         self.teacher_neutral = 0.0   # mutated like a teacher weight, never read: drift baseline
+        k, n_in, n_act = cfg.affect_k, len(AFFECT_INPUTS), len(self.actions)
+        self.aff_A = np.zeros((k, n_in))
+        self.aff_B = np.zeros((k, n_act))
+        self.aff_logit = np.zeros(k)          # decay = sigmoid(logit), 0.5 at start
+        self.aff_s = np.zeros(k)
         self.generation = 0
         self.parent: int | None = None
         self.ancestors: tuple = ()
@@ -182,6 +200,7 @@ class Agent:
     def spawn(self, pos: np.ndarray, heading: float) -> None:
         """Place the body and reset per-episode metrics (keeps the brain)."""
         self.pos = np.asarray(pos, dtype=float)
+        self.aff_s = np.zeros(self.cfg.affect_k)
         self.heading = float(heading)
         self.energy = self.cfg.e0
         self.alive = True
@@ -306,6 +325,10 @@ class Agent:
                 base += [call_s[::-1] if self.mirrored else call_s]
         return np.concatenate(base)
 
+    def update_affect(self, x: np.ndarray) -> None:
+        decay = 1.0 / (1.0 + np.exp(-self.aff_logit))
+        self.aff_s = decay * self.aff_s + self.aff_A @ x
+
     def nearest_food_dist(self, food: np.ndarray) -> float:
         if len(food) == 0:
             return self.cfg.sensor_range
@@ -334,11 +357,16 @@ class Agent:
         # current to the attack population. It biases, never forces, the choice.
         self.aggression_drive = (self.aggr_gain * self.affect.frustration
                                  if c.social else 0.0)
+        affect_bias = (self.aff_B.T @ self.aff_s
+                       if c.evolve_affect and not c.numb_affect else None)
         for _ in range(c.substeps):
             noise = rng.normal(0.0, c.action_noise, size=(k, c.n_action))
             ext = {"sensory": current}
             for i, a in enumerate(self.actions):
                 ext[a] = noise[i]
+            if affect_bias is not None:
+                for i, a in enumerate(self.actions):
+                    ext[a] = ext[a] + affect_bias[i]
             if c.social:
                 ext["attack"] = ext["attack"] + self.aggression_drive
             s = self.net.step(external=ext)
@@ -431,6 +459,8 @@ class World2D:
             self.rng = np.random.default_rng(self.seed)
         # own stream, so teacher mutations never shift the world's random draws
         self._teacher_rng = np.random.default_rng((self.seed, 104729))
+        # own stream, so affect mutations never shift the world's random draws
+        self._affect_rng = np.random.default_rng((self.seed, 7907))
         self.t = 0
         self.deprive = False
         self.events: list[dict] = []
@@ -641,6 +671,11 @@ class World2D:
         reward = primary + shaped
         ag.total_reward += reward
 
+        if c.evolve_affect:
+            ag.update_affect(np.array([
+                1.0 if (in_hazard or hurt) else 0.0, 1.0 if eaten else 0.0,
+                float(np.clip(1.0 - ag.energy / c.e0, 0.0, 1.0)), float(max(sensors[3:6])),
+                float(max(sensors[7:10])) if c.social else 0.0]))
         rpe = ag.learn_and_affect(reward, sensors, in_hazard,
                                   learning and forced is None, hurt=hurt, primary=primary,
                                   action=action)
@@ -846,6 +881,11 @@ class World2D:
             step = self._teacher_rng.normal(0.0, c.teacher_sigma, size=5)
             child.teacher = parent.teacher + step[:4]
             child.teacher_neutral = parent.teacher_neutral + step[4]
+        if c.evolve_affect:
+            g = self._affect_rng
+            child.aff_A = parent.aff_A + g.normal(0.0, c.affect_sigma, size=parent.aff_A.shape)
+            child.aff_B = parent.aff_B + g.normal(0.0, c.affect_sigma, size=parent.aff_B.shape)
+            child.aff_logit = parent.aff_logit + g.normal(0.0, c.affect_sigma, size=parent.aff_logit.shape)
         if c.neutral_marker:
             child.neutral_gene = float(max(0.0, parent.neutral_gene
                                            + rng.normal(0.0, c.trait_sigma)))

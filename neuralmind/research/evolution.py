@@ -287,6 +287,7 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "mi_heard_action": mutual_information(heard_action),
         "p_heard_action": g_test_p(heard_action),
         "births": w.births,
+        **_affect_metrics(w, live),
         "birth_fallback_frac": w.birth_fallbacks / w.births if w.births else float("nan"),
         **_shift_recovery(series, w.cfg.mirror_every),
         "invader_share": invader_share(w, qpop) if qpop else float("nan"),
@@ -297,6 +298,19 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         **_demography(dem, born_early, parents),
         "series": series,
     }
+
+
+def _affect_metrics(w: World2D, live: list) -> dict:
+    if not w.cfg.evolve_affect:
+        return {}
+    from neuralmind.research.affect_assay import assay, gene_summary
+    keys = ("affect_early", "affect_persistence", "affect_scalability", "affect_valence_cos",
+            "affect_decay", "affect_out_norm", "affect_pain_in")
+    if not live:
+        return {k: float("nan") for k in keys}
+    pick = np.random.default_rng((w.cfg.seed, 31)).permutation(len(live))[:8]
+    chosen = [live[i] for i in pick]
+    return {**assay(w.cfg, chosen), **gene_summary(chosen)}
 
 
 def _shift_recovery(series: dict, every: int) -> dict:

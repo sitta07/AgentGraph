@@ -136,3 +136,10 @@ def test_periodic_shift_reports_drop_after_each_flip():
     out = run_evolution({"seed": 0, "n_agents": 6, "max_pop": 12, "mirror_every": 100},
                         ticks=400, learning=False, sample_every=20)
     assert np.isfinite(out["shift_drop"]) and len(out["series"]["food_rate"]) == 20
+
+
+def test_birth_site_metrics_count_the_parent_as_a_neighbour():
+    from neuralmind.research.evolution import run_evolution
+    r = run_evolution({"seed": 0, "n_agents": 8, "max_pop": 16, "max_age": 200, "viscous": True},
+                      ticks=600, learning=True, early=500)
+    assert r["early_birth_neighbours"] >= 1.0 and r["early_birth_food"] >= 0.0

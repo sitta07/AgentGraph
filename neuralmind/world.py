@@ -128,6 +128,7 @@ class WorldConfig:
     blind_to_family: bool = False  # True: as blind_to_parent, and parents' sensors never respond to their own offspring
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
+    born_near_rich_stranger: bool = False  # with viscous=False and born_near_stranger: born near the living non-relative with the most energy
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
@@ -793,7 +794,8 @@ class World2D:
         elif c.viscous:
             pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
         elif strangers:
-            host = strangers[int(rng.integers(len(strangers)))]
+            host = (max(strangers, key=lambda a: a.energy) if c.born_near_rich_stranger
+                    else strangers[int(rng.integers(len(strangers)))])
             pos = host.pos + rng.normal(0.0, c.birth_radius, size=2)
         elif c.born_near_relative:
             host = relatives[int(rng.integers(len(relatives)))] if relatives else parent

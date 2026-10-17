@@ -1,0 +1,25 @@
+{
+  "id": "AB_group_hazard",
+  "title": "Does the hazard trap explain why learning fails among social peers?",
+  "question": "Z found that learning pays among 11 non-social peers (+6.9) but not among 11 social peers (-2.8). AA found that a lone social agent barely learns with hazards (+1.1) and learns without them (+6.2): its non-moving actions (attack, share, signal) keep it inside hazards. This study asks whether removing hazards also lets social agents learn in groups.",
+  "background": "Same design as Z: fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate'), 12 agents and 24 food, all agents train together for 1500 ticks, agent 0 is tested frozen among its frozen peers on 8 held-out worlds against a fresh untrained group. social12 repeats Z's social condition on new seeds; *_nohazard sets n_hazard=0. No pilot was run. Interpretation rule, fixed in advance: the hazard trap explains the group failure if H47a and H47b are supported; other social effects remain if H47c is also supported. Seeds 870-881 and worlds 9700-9707 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 870,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9700,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "n_agents": 12, "n_food": 24},
+  "conditions": {
+    "social12":          {"config": {"social": true}, "train_ticks": 1500},
+    "social12_nohazard": {"config": {"social": true, "n_hazard": 0}, "train_ticks": 1500},
+    "crowd12_nohazard":  {"config": {"n_hazard": 0}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H47a", "statement": "Without hazards, learning pays among social peers", "metric": "learning_gain", "a": "social12_nohazard", "b": 0, "direction": "greater"},
+    {"id": "H47b", "statement": "Removing hazards raises the learning gain among social peers", "metric": "learning_gain", "a": "social12_nohazard", "b": "social12", "direction": "greater"},
+    {"id": "H47c", "statement": "Without hazards, social peers still gain less than non-social peers", "metric": "learning_gain", "a": "social12_nohazard", "b": "crowd12_nohazard", "direction": "less"},
+    {"id": "H47d", "statement": "Without hazards, learning does not raise the attack rate among social peers", "metric": "attack_gain", "a": "social12_nohazard", "b": 0, "direction": "none"}
+  ]
+}

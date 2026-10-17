@@ -108,6 +108,7 @@ class WorldConfig:
     mirror_every: int = 0          # >0: left/right sensing flips every this many ticks
     deaf: bool = False             # True: the heard-signal sensor always reads 0
     reset_each_decision: bool = False  # True: membrane and synaptic state are cleared before every decision
+    hazards_visible: bool = True   # False: the three threat sensors always read 0 (hazards are felt only as pain)
     scramble_senses: bool = False  # True: the 6 food/hazard sensor values are shuffled every tick
     directional_hearing: bool = False  # True: 3 extra egocentric bins locate heard callers
     coop_radius: float = 0.0       # >0: food is eaten only with another living agent this close
@@ -300,7 +301,7 @@ class Agent:
               others: np.ndarray | None = None,
               signals: np.ndarray | None = None) -> np.ndarray:
         food_s = self._bin_signals(food)
-        threat_s = self._bin_signals(hazards)
+        threat_s = self._bin_signals(hazards) if self.cfg.hazards_visible else np.zeros(3)
         if self.mirrored:
             food_s, threat_s = food_s[::-1], threat_s[::-1]
         if self.cfg.scramble_senses:

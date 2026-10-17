@@ -1,0 +1,22 @@
+{
+  "id": "AG_birth_site",
+  "title": "Do newborns beside the parent survive because they start where food has been easy to find?",
+  "question": "Over nine studies, populations whose newborns are placed beside a random stranger went extinct in 99/108 runs, against 36/108 beside the parent. Ruled out so far: local density alone (Q, Q2), any relative (Q5: beside another relative 10/12), parental culling (Q6), the aggression sink (Q7, Q9), parent-offspring sharing (Q8), and sensing the parent (AD). A parent has, by definition, just reached the reproduction threshold, so it is likely to stand where food has recently been easy to find; a random stranger or relative stands anywhere. This study places newborns beside the stranger with the most energy, and measures crowding and food at every birth site.",
+  "background": "born_near_rich_stranger=True (with viscous=False and born_near_stranger=True): the newborn is placed beside the living non-relative with the most energy at the moment of birth. Birth-site metrics, over the early window: early_birth_neighbours = mean number of other living agents within sensor range of the newborn; early_birth_food = mean number of food items within sensor range. Interpretation rule, fixed in advance: the birth-site account is supported if H53a or H53b is supported. H53c and H53d describe how sites beside the parent differ from sites beside a random stranger. No pilot was run. Seeds 2800-2811 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2800,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":         {"config": {"viscous": true}, "learning": true},
+    "stranger":       {"config": {"viscous": false, "born_near_stranger": true}, "learning": true},
+    "rich_stranger":  {"config": {"viscous": false, "born_near_stranger": true, "born_near_rich_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H53a", "statement": "Beside the richest stranger, populations go extinct less often than beside a random stranger", "metric": "extinct01", "a": "rich_stranger", "b": "stranger", "direction": "less"},
+    {"id": "H53b", "statement": "Beside the richest stranger, populations survive longer than beside a random stranger", "metric": "survival_ticks", "a": "rich_stranger", "b": "stranger", "direction": "greater"},
+    {"id": "H53c", "statement": "Birth sites beside the parent have fewer neighbours than beside a random stranger", "metric": "early_birth_neighbours", "a": "parent", "b": "stranger", "direction": "less"},
+    {"id": "H53d", "statement": "Birth sites beside the parent have more food in range than beside a random stranger", "metric": "early_birth_food", "a": "parent", "b": "stranger", "direction": "greater"}
+  ]
+}

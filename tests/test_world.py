@@ -501,3 +501,13 @@ def test_blind_to_parent_hides_the_parent_from_its_offspring_only():
         child.heading = p.heading + math.pi
         assert w.observe(child)[7:10].sum() == 0.0
         assert (w.observe(p)[7:10].sum() > 0) == parent_sees_child
+
+
+def test_born_near_rich_stranger_places_newborns_beside_the_richest_non_relative():
+    w = World2D(WorldConfig(seed=0, n_agents=4, social=True, evolve=True, viscous=False,
+                            born_near_stranger=True, born_near_rich_stranger=True, birth_radius=0.001))
+    p, a, b, c = w.agents
+    a.energy, b.energy, c.energy = 0.2, 1.4, 0.9
+    p.energy = 3.0
+    child = w._birth(p)
+    assert np.linalg.norm(child.pos - b.pos) < 0.01

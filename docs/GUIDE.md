@@ -531,9 +531,9 @@ works** scenario in the Playground runs this configuration.
 | Does an aggression gene rise under scarcity? (D, D2) | No. The first result did not replicate against a neutral marker gene. |
 | Lamarckian vs Darwinian (N, N2, N3) | Lamarckian populations go extinct far more often, 9/12 vs 1/12 (p = 0.003), replicated. The cause is unknown. |
 | Can Q-learners invade an SNN population? (O) | No advantage either way, but lineage fate is all-or-nothing. |
-| Why does being born beside the parent protect populations? (Q–Q6) | Still open, but narrowed. Stranger placement: 56/60 extinct vs 18/60 beside the parent. Ruled out: local density (Q), strangers killing newborns (Q2), energy recycling (Q3), gradual spatial spread (Q4: just 0.15 away already gives 8/12 vs 2/12), relatedness in general (Q5: beside another relative 10/12), and parental culling (Q6). Q7 tests whether newborns absorb aggression. |
+| Why does being born beside the parent protect populations? (Q–Q9) | Still open, but narrowed. Stranger placement: 88/96 extinct vs 30/96 beside the parent. Ruled out: local density (Q), strangers killing newborns (Q2), energy recycling (Q3), gradual spatial spread (Q4: just 0.15 away already gives 8/12 vs 2/12), relatedness in general (Q5: beside another relative 10/12), parental culling (Q6), and changing where attacks between parent and offspring land (Q7–Q9: 16/48 extinct with the change vs 15/48 without). Next candidate: what the newborn senses. |
 | Do evolving agents use their senses? (V) | No, not measurably: scrambled senses changed neither food rate nor evolved innate foraging. |
-| Can lifetime learning pay? (W) | Yes, for single agents once the decision dynamics are fixed (≈5.7×). In evolving social populations it still does not pay (X): the fixed dynamics raise attacks ~15× and lives become too short to learn. |
+| Can lifetime learning pay? (W, X, Y, Z, AA, AB) | Yes, for single agents once the decision dynamics are fixed (≈5.7×, W), and fast: +26% after 150 ticks, 2.6× after 500 (Y). Among non-social peers it still pays (Z). In evolving social populations it does not (X), and short lives are not the whole reason (Y). A social agent fails even alone, because its non-moving actions keep it inside hazards (AA). In groups, removing hazards is not enough: learning doubles attacks and gives no gain (AB). |
 
 The clearest positive result is W: once decisions last 32 ms, start from a
 cleared state, and use normalised input weights, a trained single agent eats
@@ -569,9 +569,13 @@ innate wiring does not measurably use the senses at all.
   decision dynamics (V) produced a configuration in which it pays about 5.7×
   and every agent learns real sensory foraging (W). You can train one in the
   browser.
+- **A chain of mechanisms, each tested.** Learning failed in social
+  populations (X). Not because lives are short (Y), not because of crowding
+  or theft (Z). A lone social agent freezes in hazards (AA), but in groups
+  something else blocks learning too (AB). Each step was pre-registered.
 - **An open puzzle.** Why does being born beside one's own parent, and not
-  beside any other relative, keep populations alive? Six studies have ruled
-  out six explanations.
+  beside any other relative, keep populations alive? Nine studies have ruled
+  out seven explanations.
 
 **What is not new:**
 

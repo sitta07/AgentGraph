@@ -21,7 +21,7 @@ COLLAPSED = 1.0   # mean food per test episode below this counts as a collapsed 
 
 
 def _test(w: World2D, seeds: range, scramble: bool, untrained_cfg: dict | None = None,
-          attacks: list | None = None) -> tuple[float, float]:
+          attacks: list | None = None, frustration: list | None = None) -> tuple[float, float]:
     food, fwd = [], []
     for s in seeds:
         if untrained_cfg is None:
@@ -32,6 +32,7 @@ def _test(w: World2D, seeds: range, scramble: bool, untrained_cfg: dict | None =
             env = World2D(WorldConfig(**{**untrained_cfg, "seed": s, "scramble_senses": scramble}))
         ag = env.agents[0]
         moves = hits = 0
+        fr = []
         attack = ag.actions.index("attack") if "attack" in ag.actions else -1
         for _ in range(env.cfg.max_ticks):
             if not ag.alive:
@@ -39,10 +40,13 @@ def _test(w: World2D, seeds: range, scramble: bool, untrained_cfg: dict | None =
             env.step(learning=False)
             moves += ag.last_action == 1
             hits += ag.last_action == attack
+            fr.append(ag.affect.frustration)
         food.append(ag.food_eaten)
         fwd.append(moves / max(1, env.t))
         if attacks is not None:
             attacks.append(hits / max(1, env.t))
+        if frustration is not None:
+            frustration.append(float(np.mean(fr)) if fr else 0.0)
     return float(np.mean(food)), float(np.mean(fwd))
 
 
@@ -59,10 +63,10 @@ def run_single(cfg_kw: dict, train_episodes: int, test_worlds: int, test_seed_st
     w.cfg.max_ticks = test_len
     seeds = range(test_seed_start, test_seed_start + test_worlds)
     base = {k: v for k, v in cfg_kw.items() if k != "seed"}
-    trained_att, naive_att = [], []
-    trained, trained_fwd = _test(w, seeds, False, attacks=trained_att)
+    trained_att, naive_att, trained_fr, naive_fr = [], [], [], []
+    trained, trained_fwd = _test(w, seeds, False, attacks=trained_att, frustration=trained_fr)
     trained_scr, _ = _test(w, seeds, True)
-    naive, naive_fwd = _test(w, seeds, False, base, attacks=naive_att)
+    naive, naive_fwd = _test(w, seeds, False, base, attacks=naive_att, frustration=naive_fr)
     naive_scr, _ = _test(w, seeds, True, base)
     q = max(1, episodes // 4)
     return {
@@ -72,6 +76,8 @@ def run_single(cfg_kw: dict, train_episodes: int, test_worlds: int, test_seed_st
         "trained_forward_frac": trained_fwd, "untrained_forward_frac": naive_fwd,
         "trained_attack_frac": float(np.mean(trained_att)), "untrained_attack_frac": float(np.mean(naive_att)),
         "attack_gain": float(np.mean(trained_att) - np.mean(naive_att)),
+        "trained_frustration": float(np.mean(trained_fr)), "untrained_frustration": float(np.mean(naive_fr)),
+        "frustration_gain": float(np.mean(trained_fr) - np.mean(naive_fr)),
         "collapsed01": float(trained < COLLAPSED), "train_ticks_run": float(episodes * ep_len),
         "train_food_first_quarter": float(np.mean(curve[:q])),
         "train_food_last_quarter": float(np.mean(curve[-q:])),

@@ -34,6 +34,7 @@ studies complete.
 | 26 | Which input weights carry the learned rise in attacks? | AC; frozen-rows probe. | AE: freeze social or movement inputs during learning. | ~40 min | **done: the movement inputs** ([AE](FINDINGS_AE.md)); next: AF, approach vs alignment shaping |
 | 27 | Does alignment shaping cause the learned rise in attacks? | AE; RPE–eligibility probe. | AF: alignment vs approach shaping, social group and solo. | ~25 min | **done: yes** ([AF](FINDINGS_AF.md)); approach +4.9 in groups vs −1.1; next: let evolution choose the shaping |
 | 28 | Does birth-site quality explain birth-beside-parent protection? | AD ruled out sensing. | AG: beside the richest stranger; birth-site crowding and food. | ~20 min | **done: no** ([AG](FINDINGS_AG.md)); 11/12 like a random stranger; next: separate genome from position |
+| 29 | Is the protection carried by genes clustering in space? | Ten studies ruled out ecological accounts. | AI: beside the parent with a random unrelated genome. | ~40 min | **done: protection lost** ([AI](FINDINGS_AI.md)); 10/12 vs 4/12; next: a successful donor's genome |
 
 ## Principles
 

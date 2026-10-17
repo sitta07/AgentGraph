@@ -29,6 +29,7 @@ studies complete.
 | 21 | What blocks lifetime learning among other agents? | X, Y: learning fails in social populations, not because lives are short. | Z: solo vs 12 non-social vs 12 social vs 12 social without theft, no evolution. | ~1.8 h | **done: not crowding, not theft** ([Z](FINDINGS_Z.md)); next: a social agent alone, to test its extra actions and sensors |
 | 22 | Why does a social agent fail to learn foraging even alone? | Z; pilot trace: agent stays in a hazard, attacking. | AA: solo vs lone social, with and without hazards. | ~25 min | **done: the hazard trap** ([AA](FINDINGS_AA.md)); without hazards learning pays (+6.2); next: make social actions move the body, retest Z and X |
 | 23 | Does the hazard trap explain failed learning in social groups? | AA: it explains the lone social agent. | AB: Z design with and without hazards. | ~1.5 h | **done: no** ([AB](FINDINGS_AB.md)); +0.3 without hazards vs +7.3 non-social; learning doubles attacks; next: inspect and silence the social sensors |
+| 24 | Does the frustration-to-attack drive cancel learning among social peers? | AB; probe: trained agents more frustrated, attack less with the drive off at test. | AC: Z/AB design without hazards, with and without the drive. | ~1.4 h | **done: no** ([AC](FINDINGS_AC.md)); +0.6 without the drive; attacks still rise; a probe points at learning in the movement neurons; next: AE |
 
 ## Principles
 

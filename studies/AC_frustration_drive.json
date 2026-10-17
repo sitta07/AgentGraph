@@ -1,0 +1,26 @@
+{
+  "id": "AC_frustration_drive",
+  "title": "Does the frustration-to-attack drive cancel what social agents learn in groups?",
+  "question": "AB found that, without hazards, learning barely pays among social peers (+0.3) and more than doubles the attack rate. The candidate it named (other-agent sensors potentiating attack) did not hold in a probe: learning lowered those weights. A second probe pointed instead at the frustration drive: accumulated negative reward-prediction error adds a tonic current to the attack neurons, and trained agents were more frustrated than untrained ones. This study switches the drive off (aggression_gain=0) for the whole group, during training and testing.",
+  "background": "Same design as AB: fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate'), 12 agents and 24 food, no hazards, all agents train together for 1500 ticks, agent 0 is tested frozen among its frozen peers on 8 held-out worlds against a fresh untrained group with the same config. Exploratory probes on spent AB seeds 870-876 (tools/probes/attack_weights_probe.py, frustration_probe.py; test worlds 9800-9803): (1) learning lowered the mean weight from the other-agent sensors to attack (-0.11) and moved weight from active sensors (food, other agents) to silent ones in every condition, solo included; (2) test-time frustration was 0.28 trained vs 0.15 untrained and stayed 0.26 when no agent had the drive (agent 0 then attacked 5.0 times), so being attacked did not explain it; (3) the learning gain was +3.5 with the drive on and +6.0 with it off for the whole group at test only, with large seed-to-seed spread (-5.0 to +13.8). These probes used the drive only at test, not during training. Interpretation rule, fixed in advance: the frustration drive explains the group failure if H48a and H48b are supported. H48c tests the proposed route (learning raises frustration). Seeds 3100-3111 and worlds 9900-9907 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 3100,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9900,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "n_agents": 12, "n_food": 24, "n_hazard": 0},
+  "conditions": {
+    "social12":         {"config": {"social": true}, "train_ticks": 1500},
+    "social12_nodrive": {"config": {"social": true, "aggression_gain": 0.0}, "train_ticks": 1500},
+    "crowd12":          {"config": {}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H48a", "statement": "Without the frustration drive, learning pays among social peers", "metric": "learning_gain", "a": "social12_nodrive", "b": 0, "direction": "greater"},
+    {"id": "H48b", "statement": "Removing the frustration drive raises the learning gain among social peers", "metric": "learning_gain", "a": "social12_nodrive", "b": "social12", "direction": "greater"},
+    {"id": "H48c", "statement": "With the drive, learning raises test-time frustration among social peers", "metric": "frustration_gain", "a": "social12", "b": 0, "direction": "greater"},
+    {"id": "H48d", "statement": "Removing the drive shrinks the rise in attack rate that learning causes", "metric": "attack_gain", "a": "social12_nodrive", "b": "social12", "direction": "less"},
+    {"id": "H48e", "statement": "Without the drive, social peers' learning gain differs from non-social peers'", "metric": "learning_gain", "a": "social12_nodrive", "b": "crowd12", "direction": "none"}
+  ]
+}

@@ -89,3 +89,10 @@ def test_single_agent_train_ticks_sets_the_training_budget_per_condition(tmp_pat
                            "a": "short", "b": "long", "direction": "none"}])
     res = run(load(p), p)
     assert [res["raw"][n][0]["train_ticks_run"] for n in ("short", "long", "default")] == [25, 120, 80]
+
+
+def test_single_agent_reports_test_time_frustration():
+    from neuralmind.research.single import run_single
+    r = run_single({"social": True, "n_agents": 3, "max_ticks": 40, "seed": 1}, 2, 2, 50)
+    assert 0.0 < r["trained_frustration"] <= 1.0 and 0.0 < r["untrained_frustration"] <= 1.0
+    assert r["frustration_gain"] == r["trained_frustration"] - r["untrained_frustration"]

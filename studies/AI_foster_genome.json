@@ -1,0 +1,21 @@
+{
+  "id": "AI_foster_genome",
+  "title": "Is the protection of birth beside the parent carried by genes clustering in space?",
+  "question": "Over ten studies, populations whose newborns start beside a random stranger went extinct in 110/120 runs, against 43/120 beside the parent. Every ecological account tested has failed: local density, any relative, parental culling, the aggression sink, parent-offspring sharing, sensing the parent, and birth-site quality. An evolutionary account remains, from population genetics: when newborns start beside their parent, each family's genome stays clustered in space, so families compete as units and selection can act at the family level (multilevel selection in a viscous population). This study keeps newborns beside their parent but gives them the genome of a random unrelated agent, which breaks the link between where genes are and who carries them.",
+  "background": "foster_genome=True: the newborn is placed beside its parent as usual, keeps its parent as its genealogical parent, but inherits the input weights and the aggression gene of a random living agent unrelated to its parent (mutated as usual). If no unrelated agent is alive, the parent's genome is used (counted in birth_fallback_frac). Interpretation rule, fixed in advance: the protection works through genomes clustering in space if H55a or H55b is supported; if neither, it does not depend on who carries which genes beside the parent. No pilot was run. Seeds 2900-2911 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2900,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":        {"config": {"viscous": true}, "learning": true},
+    "parent_foster": {"config": {"viscous": true, "foster_genome": true}, "learning": true},
+    "stranger":      {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H55a", "statement": "With foster genomes, populations beside the parent go extinct more often", "metric": "extinct01", "a": "parent_foster", "b": "parent", "direction": "greater"},
+    {"id": "H55b", "statement": "With foster genomes, populations beside the parent die out sooner", "metric": "survival_ticks", "a": "parent_foster", "b": "parent", "direction": "less"},
+    {"id": "H55c", "statement": "Foster-genome populations differ in extinction from stranger populations", "metric": "extinct01", "a": "parent_foster", "b": "stranger", "direction": "none"}
+  ]
+}

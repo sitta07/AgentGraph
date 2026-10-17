@@ -128,6 +128,7 @@ class WorldConfig:
     blind_to_family: bool = False  # True: as blind_to_parent, and parents' sensors never respond to their own offspring
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
+    foster_genome: bool = False  # True: the newborn inherits the genome (weights and traits) of a random living non-relative of its parent, not its parent's
     born_near_rich_stranger: bool = False  # with viscous=False and born_near_stranger: born near the living non-relative with the most energy
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
@@ -803,11 +804,17 @@ class World2D:
         else:
             pos = rng.uniform(0.05, c.size - 0.05, size=2)
         child.spawn(np.clip(pos, 0.01, c.size - 0.01), float(rng.uniform(0, 2 * math.pi)))
-        base = ({cn.post: cn.weights for cn in parent._plastic} if c.lamarckian
-                else parent.genome["w"])
+        donor = parent
+        if c.foster_genome:
+            pool = [a for a in self.agents if a.alive and a is not parent
+                    and self.relatedness(parent, a) == 0.0]
+            donor = pool[int(rng.integers(len(pool)))] if pool else parent
+            self.birth_fallbacks += not pool
+        base = ({cn.post: cn.weights for cn in donor._plastic} if c.lamarckian
+                else donor.genome["w"])
         genome_w = {a: np.clip(w + rng.normal(0.0, c.mut_sigma * c.w_init, size=w.shape),
                                0.0, c.w_max) for a, w in base.items()}
-        child.aggr_gain = float(max(0.0, parent.genome["aggression_gain"]
+        child.aggr_gain = float(max(0.0, donor.genome["aggression_gain"]
                                     + rng.normal(0.0, c.trait_sigma)))
         if c.neutral_marker:
             child.neutral_gene = float(max(0.0, parent.neutral_gene

@@ -36,6 +36,7 @@ studies complete.
 | 28 | Does birth-site quality explain birth-beside-parent protection? | AD ruled out sensing. | AG: beside the richest stranger; birth-site crowding and food. | ~20 min | **done: no** ([AG](FINDINGS_AG.md)); 11/12 like a random stranger; next: separate genome from position |
 | 29 | Is the protection carried by genes clustering in space? | Ten studies ruled out ecological accounts. | AI: beside the parent with a random unrelated genome. | ~40 min | **done: protection lost** ([AI](FINDINGS_AI.md)); 10/12 vs 4/12; next: a successful donor's genome |
 | 30 | Selection or clustering behind the foster-genome loss? | AI: random donor removes protection. | AJ: successful donor vs random donor vs own genome. | ~45 min | **done: partial** ([AJ](FINDINGS_AJ.md)); successful donor +4354 ticks, 7/12; clustering unresolved |
+| 31 | Can evolution design a better learning reward? | AF: no shaping is best everywhere; Singh et al. 2009. | AH: heritable teacher weights with a neutral gene. | ~2.3 h | **done: partly** ([AH](FINDINGS_AH.md)); survival +3089; approach weight selected down; next: without hazards |
 
 ## Principles
 

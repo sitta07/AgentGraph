@@ -42,6 +42,10 @@ from neuralmind.core.plasticity import STDPConfig
 
 ACTIONS = ("left", "forward", "right")
 SOCIAL_ACTIONS = ("attack", "share", "signal")
+# Signals an evolved teacher weighs (WorldConfig.evolve_teacher): change in
+# alignment with the nearest food, decrease in distance to it, energy change
+# (in food units) and hunger.
+TEACHER_SIGNALS = ("align", "approach", "energy", "hunger")
 N_SENSORS = 7          # 3 food bins + 3 threat bins + hunger
 N_SOCIAL_SENSORS = 4   # 3 "other agent" bins + heard-signal level
 
@@ -133,6 +137,11 @@ class WorldConfig:
     born_near_rich_stranger: bool = False  # with viscous=False and born_near_stranger: born near the living non-relative with the most energy
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
+    # Evolved teacher: the shaping part of the learning reward is a heritable
+    # weighted sum of the TEACHER_SIGNALS, mutated at every birth.
+    evolve_teacher: bool = False
+    teacher_init: tuple = (4.0, 0.0, 0.0, 0.0)
+    teacher_sigma: float = 0.5
     neutral_marker: bool = False   # carry a phenotypically silent gene mutated like the aggression gene
     seed: int = 0
 
@@ -155,6 +164,8 @@ class Agent:
         # heritable trait + genealogy (used by evolution; harmless otherwise)
         self.aggr_gain = float(cfg.aggression_gain)
         self.neutral_gene = float(cfg.aggression_gain)   # drift control; never read by behaviour
+        self.teacher = np.array(cfg.teacher_init, dtype=float)
+        self.teacher_neutral = 0.0   # mutated like a teacher weight, never read: drift baseline
         self.generation = 0
         self.parent: int | None = None
         self.ancestors: tuple = ()
@@ -418,6 +429,8 @@ class World2D:
             self.rng = np.random.default_rng(self.seed)
         elif not hasattr(self, "rng"):
             self.rng = np.random.default_rng(self.seed)
+        # own stream, so teacher mutations never shift the world's random draws
+        self._teacher_rng = np.random.default_rng((self.seed, 104729))
         self.t = 0
         self.deprive = False
         self.events: list[dict] = []
@@ -567,6 +580,7 @@ class World2D:
         else:
             sensors = ag.sense(self.food, self.hazards)
         ag.last_sensors = sensors
+        energy_before = ag.energy
         if forced is None:
             action, scores, _ = ag.decide(sensors, self.rng)
         else:                        # externally controlled (e.g. an RL policy)
@@ -611,7 +625,13 @@ class World2D:
 
         new_dist = ag.nearest_food_dist(self.food)
         new_align = ag.food_alignment(self.food)
-        if c.reward_mode == "align":
+        if c.evolve_teacher:
+            t = ag.teacher
+            shaped = ((0.0 if eaten else t[0] * (new_align - ag._prev_align)
+                       + t[1] * (ag._prev_food_dist - new_dist))
+                      + t[2] * (ag.energy - energy_before) / c.food_energy
+                      + t[3] * float(np.clip(1.0 - ag.energy / c.e0, 0.0, 1.0)))
+        elif c.reward_mode == "align":
             shaped = 0.0 if eaten else c.r_align * (new_align - ag._prev_align)
         else:
             shaped = 0.0 if eaten else c.r_approach * (ag._prev_food_dist - new_dist)
@@ -822,6 +842,10 @@ class World2D:
                                0.0, c.w_max) for a, w in base.items()}
         child.aggr_gain = float(max(0.0, donor.genome["aggression_gain"]
                                     + rng.normal(0.0, c.trait_sigma)))
+        if c.evolve_teacher:
+            step = self._teacher_rng.normal(0.0, c.teacher_sigma, size=5)
+            child.teacher = parent.teacher + step[:4]
+            child.teacher_neutral = parent.teacher_neutral + step[4]
         if c.neutral_marker:
             child.neutral_gene = float(max(0.0, parent.neutral_gene
                                            + rng.normal(0.0, c.trait_sigma)))

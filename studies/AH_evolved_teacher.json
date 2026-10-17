@@ -1,0 +1,24 @@
+{
+  "id": "AH_evolved_teacher",
+  "title": "Can evolution design a better learning reward than the designer?",
+  "question": "Every learning agent so far has been taught by a reward its designer wrote: eating, hazards, social outcomes, plus a shaping term. AF showed that the designer's shaping term (alignment with food) is what made social agents learn badly. Following Singh, Lewis and Barto (2009) and Niv et al. (2002), who evolved reward functions and learning rules for single agents, this study lets the shaping part of the reward evolve in social, evolving populations. Each agent carries four heritable teacher weights on four signals: change in alignment with the nearest food, decrease in distance to it, change in its own energy, and hunger. Does evolution find a teacher that works better than the designer's, and what does it value?",
+  "background": "All conditions use the fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate') on the standard social evolution base (12 founders, viscous, 24 food), learning on. designer: fixed designer teacher (alignment weight 4, others 0; the default reward). evolved: evolve_teacher=True starting from the designer teacher. evolved_scratch: evolve_teacher=True starting from all zeros (no shaping). Teacher weights mutate by N(0, 0.5) at every birth, unbounded. Each agent also carries a neutral teacher gene, mutated the same way and never read, as a within-run drift baseline; teacher_<k>_shift_minus_neutral is the mean change of weight k from its start minus the neutral gene's change. The primary rewards (eating, hazards, social) and the frustration drive are unchanged. Exploratory pilot (tools/probes/evolved_teacher_pilot.py, unregistered seeds 9550-9552, 12000 ticks, no neutral gene): food per agent-tick designer 0.030, evolved 0.031, evolved_scratch 0.039; in evolved, the energy weight moved to -4.8 and the approach weight to -0.9 over about 44 generations, against about 9 generations under the designer teacher. Because drift grows with the number of generations, those shifts may be drift; the neutral gene is added to tell. H56c follows the AF mechanism (approach shaping helps social learners) and the pilot points against it; H56d and H56e follow the pilot. Interpretation rule, fixed in advance: evolution designs a better teacher if H56a or H56b is supported; the teacher evolves under selection rather than drift for each weight whose shift-minus-neutral test is supported. Seeds 3400-3411 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 3400,
+  "ticks": 18000,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate"},
+  "conditions": {
+    "designer":        {"config": {}, "learning": true},
+    "evolved":         {"config": {"evolve_teacher": true}, "learning": true},
+    "evolved_scratch": {"config": {"evolve_teacher": true, "teacher_init": [0.0, 0.0, 0.0, 0.0]}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H56a", "statement": "Populations with an evolving teacher eat more per agent-tick than with the designer teacher", "metric": "food_rate", "a": "evolved", "b": "designer", "direction": "greater"},
+    {"id": "H56b", "statement": "Populations with an evolving teacher survive longer than with the designer teacher", "metric": "survival_ticks", "a": "evolved", "b": "designer", "direction": "greater"},
+    {"id": "H56c", "statement": "The approach weight rises more than the neutral gene (selection toward approach shaping)", "metric": "teacher_approach_shift_minus_neutral", "a": "evolved", "b": 0, "direction": "greater"},
+    {"id": "H56d", "statement": "The energy weight falls more than the neutral gene (selection to value losing energy)", "metric": "teacher_energy_shift_minus_neutral", "a": "evolved", "b": 0, "direction": "less"},
+    {"id": "H56e", "statement": "Populations with an evolving teacher share more than with the designer teacher", "metric": "share_rate", "a": "evolved", "b": "designer", "direction": "greater"},
+    {"id": "H56f", "statement": "A teacher evolved from scratch differs in foraging from the designer teacher", "metric": "food_rate", "a": "evolved_scratch", "b": "designer", "direction": "none"}
+  ]
+}

@@ -51,7 +51,7 @@ import numpy as np
 from neuralmind import __version__
 from neuralmind.research.invasion import QPopulation, invader_share
 from neuralmind.research.stats import g_test_p, mean_ci, mutual_information, paired_diff
-from neuralmind.world import World2D, WorldConfig
+from neuralmind.world import TEACHER_SIGNALS, World2D, WorldConfig
 
 # Ecology chosen in a pilot so populations persist without hitting extinction:
 # richer food, cheaper reproduction. substeps=4 halves compute per tick.
@@ -254,6 +254,12 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
         "share_gene": float(np.mean([share_gene(a) for a in live])) if live else float("nan"),
         "aggr_gene": float(np.mean([a.aggr_gain for a in live])) if live else float("nan"),
         "neutral_gene": float(np.mean([a.neutral_gene for a in live])) if live else float("nan"),
+        **{f"teacher_{k}": float(np.mean([a.teacher[i] for a in live])) if live else float("nan")
+           for i, k in enumerate(TEACHER_SIGNALS)},
+        "teacher_neutral": float(np.mean([a.teacher_neutral for a in live])) if live else float("nan"),
+        **{f"teacher_{k}_shift_minus_neutral": (
+            float(np.mean([a.teacher[i] - w.cfg.teacher_init[i] - a.teacher_neutral for a in live]))
+            if live else float("nan")) for i, k in enumerate(TEACHER_SIGNALS)},
         "aggr_excess": (float(np.mean([a.aggr_gain - a.neutral_gene for a in live]))
                         if live else float("nan")),
         "share_rate": acts["share"] / n if alive_ticks else float("nan"),

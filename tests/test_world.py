@@ -501,3 +501,25 @@ def test_blind_to_parent_hides_the_parent_from_its_offspring_only():
         child.heading = p.heading + math.pi
         assert w.observe(child)[7:10].sum() == 0.0
         assert (w.observe(p)[7:10].sum() > 0) == parent_sees_child
+
+
+def test_designer_teacher_with_no_mutation_reproduces_the_default_reward_exactly():
+    base = dict(seed=3, social=True, evolve=True, n_agents=6, substeps=32, reset_each_decision=True,
+                normalize=True, normalize_to="innate")
+    runs = []
+    for extra in ({}, {"evolve_teacher": True, "teacher_sigma": 0.0}):
+        w = World2D(WorldConfig(**base, **extra))
+        for _ in range(400):
+            w.step(learning=True)
+        runs.append(([(a.id, a.energy, a.total_reward, a.pos.tobytes()) for a in w.agents], w.births))
+    assert runs[0] == runs[1] and runs[0][1] > 0
+
+
+def test_offspring_inherit_a_mutated_teacher():
+    w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, evolve_teacher=True,
+                            teacher_init=(1.0, 2.0, 3.0, 4.0), teacher_sigma=0.5))
+    p = w.agents[0]
+    p.energy = 3.0
+    kids = [w._birth(p) for _ in range(200)]
+    t = np.array([k.teacher for k in kids])
+    assert np.allclose(t.mean(axis=0), [1, 2, 3, 4], atol=0.12) and np.allclose(t.std(axis=0), 0.5, atol=0.08)

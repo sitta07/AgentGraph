@@ -138,6 +138,13 @@ def test_periodic_shift_reports_drop_after_each_flip():
     assert np.isfinite(out["shift_drop"]) and len(out["series"]["food_rate"]) == 20
 
 
+def test_evolved_teacher_reports_shift_against_a_neutral_gene():
+    from neuralmind.research.evolution import run_evolution
+    r = run_evolution({"seed": 1, "n_agents": 8, "max_pop": 16, "max_age": 200, "evolve_teacher": True,
+                       "teacher_init": (1.0, 0.0, 0.0, 0.0)}, ticks=500, learning=True)
+    for k in ("align", "approach", "energy", "hunger"):
+        assert abs(r[f"teacher_{k}_shift_minus_neutral"]
+                   - (r[f"teacher_{k}"] - (1.0 if k == "align" else 0.0) - r["teacher_neutral"])) < 1e-9
 def test_birth_site_metrics_count_the_parent_as_a_neighbour():
     from neuralmind.research.evolution import run_evolution
     r = run_evolution({"seed": 0, "n_agents": 8, "max_pop": 16, "max_age": 200, "viscous": True},

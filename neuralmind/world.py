@@ -42,6 +42,10 @@ from neuralmind.core.plasticity import STDPConfig
 
 ACTIONS = ("left", "forward", "right")
 SOCIAL_ACTIONS = ("attack", "share", "signal")
+# Signals an evolved teacher weighs (WorldConfig.evolve_teacher): change in
+# alignment with the nearest food, decrease in distance to it, energy change
+# (in food units) and hunger.
+TEACHER_SIGNALS = ("align", "approach", "energy", "hunger")
 # Inputs to an evolved affect state (WorldConfig.evolve_affect): pain (in a
 # hazard or hurt by an attacker this tick), food eaten this tick, hunger, the
 # strongest threat-sensor value and the strongest other-agent sensor value.
@@ -137,6 +141,11 @@ class WorldConfig:
     born_near_rich_stranger: bool = False  # with viscous=False and born_near_stranger: born near the living non-relative with the most energy
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
+    # Evolved teacher: the shaping part of the learning reward is a heritable
+    # weighted sum of the TEACHER_SIGNALS, mutated at every birth.
+    evolve_teacher: bool = False
+    teacher_init: tuple = (4.0, 0.0, 0.0, 0.0)
+    teacher_sigma: float = 0.5
     # Evolved affect: each agent carries affect_k internal state variables,
     # s <- decay * s + A @ inputs (AFFECT_INPUTS) every tick, which add
     # B.T @ s to the input current of every action population. A, B and the
@@ -168,6 +177,8 @@ class Agent:
         # heritable trait + genealogy (used by evolution; harmless otherwise)
         self.aggr_gain = float(cfg.aggression_gain)
         self.neutral_gene = float(cfg.aggression_gain)   # drift control; never read by behaviour
+        self.teacher = np.array(cfg.teacher_init, dtype=float)
+        self.teacher_neutral = 0.0   # mutated like a teacher weight, never read: drift baseline
         k, n_in, n_act = cfg.affect_k, len(AFFECT_INPUTS), len(self.actions)
         self.aff_A = np.zeros((k, n_in))
         self.aff_B = np.zeros((k, n_act))
@@ -446,6 +457,8 @@ class World2D:
             self.rng = np.random.default_rng(self.seed)
         elif not hasattr(self, "rng"):
             self.rng = np.random.default_rng(self.seed)
+        # own stream, so teacher mutations never shift the world's random draws
+        self._teacher_rng = np.random.default_rng((self.seed, 104729))
         # own stream, so affect mutations never shift the world's random draws
         self._affect_rng = np.random.default_rng((self.seed, 7907))
         self.t = 0
@@ -597,6 +610,7 @@ class World2D:
         else:
             sensors = ag.sense(self.food, self.hazards)
         ag.last_sensors = sensors
+        energy_before = ag.energy
         if forced is None:
             action, scores, _ = ag.decide(sensors, self.rng)
         else:                        # externally controlled (e.g. an RL policy)
@@ -641,7 +655,13 @@ class World2D:
 
         new_dist = ag.nearest_food_dist(self.food)
         new_align = ag.food_alignment(self.food)
-        if c.reward_mode == "align":
+        if c.evolve_teacher:
+            t = ag.teacher
+            shaped = ((0.0 if eaten else t[0] * (new_align - ag._prev_align)
+                       + t[1] * (ag._prev_food_dist - new_dist))
+                      + t[2] * (ag.energy - energy_before) / c.food_energy
+                      + t[3] * float(np.clip(1.0 - ag.energy / c.e0, 0.0, 1.0)))
+        elif c.reward_mode == "align":
             shaped = 0.0 if eaten else c.r_align * (new_align - ag._prev_align)
         else:
             shaped = 0.0 if eaten else c.r_approach * (ag._prev_food_dist - new_dist)
@@ -857,6 +877,10 @@ class World2D:
                                0.0, c.w_max) for a, w in base.items()}
         child.aggr_gain = float(max(0.0, donor.genome["aggression_gain"]
                                     + rng.normal(0.0, c.trait_sigma)))
+        if c.evolve_teacher:
+            step = self._teacher_rng.normal(0.0, c.teacher_sigma, size=5)
+            child.teacher = parent.teacher + step[:4]
+            child.teacher_neutral = parent.teacher_neutral + step[4]
         if c.evolve_affect:
             g = self._affect_rng
             child.aff_A = parent.aff_A + g.normal(0.0, c.affect_sigma, size=parent.aff_A.shape)

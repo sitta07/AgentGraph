@@ -1,10 +1,13 @@
 # Theory note: potential-based shaping pushes three-factor learning toward depression
 
 **Status:** working note, 2026-10-17. The identity below is elementary and
-was checked numerically. Its relevance to NeuralMind is partly tested:
-[AE](FINDINGS_AE.md) and [AF](FINDINGS_AF.md) are consistent with it, and
-[AM](../../studies/AM_state_critic.json) tests its predicted fix. Whether it
-matters in other systems is untested.
+was checked numerically. Two pre-registered tests bear it out:
+
+- [AM](FINDINGS_AM.md): the predicted fix rescued learning in NeuralMind.
+- [AN](FINDINGS_AN.md): the predicted pattern held in a non-spiking forager
+  that shares no code with NeuralMind.
+
+Broader generality is untested.
 
 ## The identity
 
@@ -87,7 +90,13 @@ becomes nearest, so the process is not stationary.
 A more thorough literature search is needed before calling any of this
 novel.
 
+## Tests so far
+
+1. **AM** (done): with alignment shaping unchanged, the state critic turned the social learning gain from +0.5 to +6.7 and removed most of the learned rise in attacks.
+2. **AN** (done): in a linear-softmax forager, shaping lowered the Hebbian forward food weights by −28.5 [−43.0, −16.9]. A state baseline restored +16.5. Score-function credit was unaffected (+0.3 [−0.9, +1.2]), and shaping helped it 3.6×.
+
 ## Next tests
 
-1. **AM** (registered): the state critic under alignment shaping, in NeuralMind.
-2. A non-spiking replication: a linear-softmax policy with per-step credit on a navigation task, with alignment shaping and a scalar or state baseline. This would show whether the effect is specific to NeuralMind.
+- Several tasks and learning rates.
+- A standard R-STDP implementation from the literature.
+- A thorough literature search.

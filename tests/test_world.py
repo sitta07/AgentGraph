@@ -489,3 +489,15 @@ def test_no_family_interaction_blocks_attacks_and_shares_both_ways():
             before = target.energy
             w._social_effects(actor, actor.actions.index(action), [target])
             assert (target.energy == before) == flag
+
+
+def test_blind_to_parent_hides_the_parent_from_its_offspring_only():
+    for flag, parent_sees_child in (("blind_to_parent", True), ("blind_to_family", False)):
+        w = World2D(WorldConfig(seed=0, n_agents=1, social=True, evolve=True, n_hazard=0, **{flag: True}))
+        p = w.agents[0]
+        p.energy = 3.0
+        child = w._birth(p)
+        child.pos = p.pos + 0.05 * np.array([math.cos(p.heading), math.sin(p.heading)])
+        child.heading = p.heading + math.pi
+        assert w.observe(child)[7:10].sum() == 0.0
+        assert (w.observe(p)[7:10].sum() > 0) == parent_sees_child

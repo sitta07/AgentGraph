@@ -511,3 +511,15 @@ def test_born_near_rich_stranger_places_newborns_beside_the_richest_non_relative
     p.energy = 3.0
     child = w._birth(p)
     assert np.linalg.norm(child.pos - b.pos) < 0.01
+def test_foster_genome_comes_from_an_unrelated_agent_but_the_newborn_stays_beside_its_parent():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True, foster_genome=True,
+                            mut_sigma=0.0, trait_sigma=0.0))
+    p, donor = w.agents
+    p.aggr_gain = p.genome["aggression_gain"] = 0.3
+    donor.aggr_gain = donor.genome["aggression_gain"] = 2.5
+    p.energy = 3.0
+    child = w._birth(p)
+    assert child.parent == p.id and np.linalg.norm(child.pos - p.pos) < 0.2
+    assert child.aggr_gain == 2.5
+    assert all(np.array_equal(child.genome["w"][a], np.clip(donor.genome["w"][a], 0, w.cfg.w_max))
+               for a in donor.genome["w"])

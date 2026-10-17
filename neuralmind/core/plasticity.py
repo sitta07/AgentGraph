@@ -27,6 +27,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from neuralmind.core._bound import Bound
+
 
 @dataclass(frozen=True)
 class STDPConfig:
@@ -53,7 +55,7 @@ class STDPConfig:
             raise ValueError("tau_eligibility must be > 0 when set")
 
 
-class STDPSynapse:
+class STDPSynapse(Bound):
     """Maintains STDP traces for one connection and updates its weights.
 
     Traces decay exponentially and are incremented on each spike:
@@ -72,6 +74,7 @@ class STDPSynapse:
         self.x_pre = np.zeros(n_pre, dtype=np.float64)
         self.x_post = np.zeros(n_post, dtype=np.float64)
         self.eligibility = np.zeros((n_post, n_pre), dtype=np.float64)
+        self._decays: tuple | None = None
 
     def reset(self) -> None:
         self.x_pre[:] = 0.0
@@ -98,26 +101,33 @@ class STDPSynapse:
         weights are left untouched until :meth:`apply_reward` is called.
         """
         c = self.config
+        if self._decays is None or self._decays[0] != dt:
+            self._decays = (dt, np.exp(-dt / c.tau_plus), np.exp(-dt / c.tau_minus),
+                            None if c.tau_eligibility is None else np.exp(-dt / c.tau_eligibility))
+        _, d_plus, d_minus, d_elig = self._decays
         # Decay traces, then register this step's spikes.
-        self.x_pre *= np.exp(-dt / c.tau_plus)
-        self.x_post *= np.exp(-dt / c.tau_minus)
+        self.x_pre *= d_plus
+        self.x_post *= d_minus
         self.x_pre[pre_spikes] += 1.0
         self.x_post[post_spikes] += 1.0
 
-        dw = np.zeros_like(weights)
+        dw = None
         # Potentiation: post spikes paired with recent pre activity.
         if post_spikes.any():
-            dw += c.a_plus * np.outer(post_spikes.astype(np.float64), self.x_pre)
+            dw = c.a_plus * np.outer(post_spikes.astype(np.float64), self.x_pre)
         # Depression: pre spikes paired with recent post activity.
-        if pre_spikes.any():
-            dw -= c.a_minus * np.outer(self.x_post, pre_spikes.astype(np.float64))
+        if c.a_minus != 0.0 and pre_spikes.any():
+            dep = c.a_minus * np.outer(self.x_post, pre_spikes.astype(np.float64))
+            dw = -dep if dw is None else dw - dep
 
         if c.tau_eligibility is None:
-            weights += modulator * dw
+            if dw is not None:
+                weights += modulator * dw
             np.clip(weights, c.w_min, c.w_max, out=weights)
         else:
-            self.eligibility *= np.exp(-dt / c.tau_eligibility)
-            self.eligibility += dw
+            self.eligibility *= d_elig
+            if dw is not None:
+                self.eligibility += dw
         return weights
 
     def apply_reward(self, weights: np.ndarray, modulator: float) -> np.ndarray:

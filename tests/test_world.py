@@ -523,3 +523,14 @@ def test_foster_genome_comes_from_an_unrelated_agent_but_the_newborn_stays_besid
     assert child.aggr_gain == 2.5
     assert all(np.array_equal(child.genome["w"][a], np.clip(donor.genome["w"][a], 0, w.cfg.w_max))
                for a in donor.genome["w"])
+
+
+def test_foster_from_reproducer_takes_the_genome_of_the_latest_unrelated_breeder():
+    w = World2D(WorldConfig(seed=0, n_agents=3, social=True, evolve=True, foster_genome=True,
+                            foster_from_reproducer=True, mut_sigma=0.0, trait_sigma=0.0))
+    p, idle, breeder = w.agents
+    for a, g in ((p, 0.3), (idle, 0.9), (breeder, 2.5)):
+        a.aggr_gain = a.genome["aggression_gain"] = g
+    breeder.last_repro = 5
+    p.energy = 3.0
+    assert w._birth(p).aggr_gain == 2.5 and p.last_repro == w.t

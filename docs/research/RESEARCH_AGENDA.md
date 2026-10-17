@@ -32,6 +32,11 @@ studies complete.
 | 24 | Does the frustration-to-attack drive cancel learning among social peers? | AB; probe: trained agents more frustrated, attack less with the drive off at test. | AC: Z/AB design without hazards, with and without the drive. | ~1.4 h | **done: no** ([AC](FINDINGS_AC.md)); +0.6 without the drive; attacks still rise; a probe points at learning in the movement neurons; next: AE |
 | 25 | Does what the newborn senses explain birth-beside-parent protection? | Q6–Q9 ruled out family attacks and shares. | AD: parent invisible to offspring, and both ways. | ~45 min | **done: no** ([AD](FINDINGS_AD.md)); 5/12 and 6/12 vs 6/12; next: birth-site quality |
 | 26 | Which input weights carry the learned rise in attacks? | AC; frozen-rows probe. | AE: freeze social or movement inputs during learning. | ~40 min | **done: the movement inputs** ([AE](FINDINGS_AE.md)); next: AF, approach vs alignment shaping |
+| 27 | Does alignment shaping cause the learned rise in attacks? | AE; RPE–eligibility probe. | AF: alignment vs approach shaping, social group and solo. | ~25 min | **done: yes** ([AF](FINDINGS_AF.md)); approach +4.9 in groups vs −1.1; next: let evolution choose the shaping |
+| 28 | Does birth-site quality explain birth-beside-parent protection? | AD ruled out sensing. | AG: beside the richest stranger; birth-site crowding and food. | ~20 min | **done: no** ([AG](FINDINGS_AG.md)); 11/12 like a random stranger; next: separate genome from position |
+| 29 | Is the protection carried by genes clustering in space? | Ten studies ruled out ecological accounts. | AI: beside the parent with a random unrelated genome. | ~40 min | **done: protection lost** ([AI](FINDINGS_AI.md)); 10/12 vs 4/12; next: a successful donor's genome |
+| 30 | Selection or clustering behind the foster-genome loss? | AI: random donor removes protection. | AJ: successful donor vs random donor vs own genome. | ~45 min | **done: partial** ([AJ](FINDINGS_AJ.md)); successful donor +4354 ticks, 7/12; clustering unresolved |
+| 31 | Can evolution design a better learning reward? | AF: no shaping is best everywhere; Singh et al. 2009. | AH: heritable teacher weights with a neutral gene. | ~2.3 h | **done: partly** ([AH](FINDINGS_AH.md)); survival +3089; approach weight selected down; next: without hazards |
 
 ## Principles
 

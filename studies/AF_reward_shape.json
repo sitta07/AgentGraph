@@ -1,0 +1,25 @@
+{
+  "id": "AF_reward_shape",
+  "title": "Does the alignment-shaping reward cause social agents' learned rise in attacks?",
+  "question": "AB, AC and the frozen-rows probe found that learning among social peers raises the attack rate through the movement neurons' input weights, which drift from active sensors onto silent ones. A probe (tools/probes/rpe_eligibility_probe.py, solo agents, seeds 11-13) found that under the default alignment-shaping reward the reward-prediction error is negatively correlated with total eligibility (r = -0.07 to -0.16), so active synapses are on average depressed and normalisation moves weight to silent inputs. Under approach shaping or eating reward only, the correlation was positive (+0.07 to +0.13). This study replaces alignment shaping with approach shaping.",
+  "background": "Same design as AC/AE: fixed dynamics (substeps=32, reset_each_decision, normalize with normalize_to='innate'), no hazards, 1500 training ticks, agent 0 tested frozen on 8 held-out worlds against a fresh untrained agent or group with the same config. reward_mode='approach' rewards r_approach * (decrease in distance to the nearest food) instead of r_align * (increase in alignment with it). Exploratory pilot on spent seeds 870-873, 3 test worlds 9800-9802 (tools/probes/reward_shape_pilot.py): learning gain solo_align +11.4, solo_approach -0.3, social12_align +7.5, social12_approach +9.3; trained/untrained attack rate social12_align 0.174/0.052, social12_approach 0.057/0.052. The pilot's social12_align gain disagrees with AC (+0.4), so it is noisy. Interpretation rule, fixed in advance: alignment shaping causes the learned rise in attacks if H52a is supported; approach shaping rescues social learning if H52b and H52c are supported. H52d asks whether approach shaping supports learning at all in a solo agent; the pilot suggests it does not. Seeds 3300-3311 and worlds 9930-9937 have never been run.",
+  "simulator": "single",
+  "seeds": 12,
+  "seed_start": 3300,
+  "ticks": 500,
+  "train_episodes": 3,
+  "test_worlds": 8,
+  "test_seed_start": 9930,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "n_hazard": 0},
+  "conditions": {
+    "social12_align":    {"config": {"social": true, "n_agents": 12, "n_food": 24}, "train_ticks": 1500},
+    "social12_approach": {"config": {"social": true, "n_agents": 12, "n_food": 24, "reward_mode": "approach"}, "train_ticks": 1500},
+    "solo_approach":     {"config": {"reward_mode": "approach"}, "train_ticks": 1500}
+  },
+  "hypotheses": [
+    {"id": "H52a", "statement": "With approach shaping, learning raises the attack rate less than with alignment shaping", "metric": "attack_gain", "a": "social12_approach", "b": "social12_align", "direction": "less"},
+    {"id": "H52b", "statement": "Approach shaping gives social peers a larger learning gain than alignment shaping", "metric": "learning_gain", "a": "social12_approach", "b": "social12_align", "direction": "greater"},
+    {"id": "H52c", "statement": "With approach shaping, learning pays among social peers", "metric": "learning_gain", "a": "social12_approach", "b": 0, "direction": "greater"},
+    {"id": "H52d", "statement": "With approach shaping, learning pays for a solo agent", "metric": "learning_gain", "a": "solo_approach", "b": 0, "direction": "greater"}
+  ]
+}

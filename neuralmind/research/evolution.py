@@ -149,6 +149,13 @@ def run_evolution(cfg_kw: dict, ticks: int, learning: bool, window: float = 0.25
                     dem["kills_logged"] += 1
                 if e["type"] == "birth":
                     dem["births"] += 1
+                    child = by_id.get(e["dst"])
+                    if child is not None:
+                        others = [a.pos for a in live if a is not child]
+                        r = w.cfg.sensor_range
+                        dem["birth_neighbours"] += sum(float(np.linalg.norm(q - child.pos)) <= r for q in others)
+                        dem["birth_food"] += int((np.linalg.norm(w.food - child.pos, axis=1) <= r).sum()) if len(w.food) else 0
+                        dem["births_sited"] += 1
                     parents.add(e["src"])
                     if t < early - w.cfg.max_age:
                         born_early.add(e["dst"])
@@ -330,7 +337,11 @@ def _demography(dem: Counter, born_early: set, parents: set) -> dict:
             "early_frac_kills_offspring": (dem["kills_offspring"] / dem["kills_logged"]
                                            if dem["kills_logged"] else float("nan")),
             "early_offspring_success": (len(born_early & parents) / len(born_early)
-                                        if born_early else float("nan"))}
+                                        if born_early else float("nan")),
+            "early_birth_neighbours": (dem["birth_neighbours"] / dem["births_sited"]
+                                       if dem["births_sited"] else float("nan")),
+            "early_birth_food": (dem["birth_food"] / dem["births_sited"]
+                                 if dem["births_sited"] else float("nan"))}
 
 
 def _job(args):

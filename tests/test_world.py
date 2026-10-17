@@ -523,3 +523,34 @@ def test_offspring_inherit_a_mutated_teacher():
     kids = [w._birth(p) for _ in range(200)]
     t = np.array([k.teacher for k in kids])
     assert np.allclose(t.mean(axis=0), [1, 2, 3, 4], atol=0.12) and np.allclose(t.std(axis=0), 0.5, atol=0.08)
+def test_born_near_rich_stranger_places_newborns_beside_the_richest_non_relative():
+    w = World2D(WorldConfig(seed=0, n_agents=4, social=True, evolve=True, viscous=False,
+                            born_near_stranger=True, born_near_rich_stranger=True, birth_radius=0.001))
+    p, a, b, c = w.agents
+    a.energy, b.energy, c.energy = 0.2, 1.4, 0.9
+    p.energy = 3.0
+    child = w._birth(p)
+    assert np.linalg.norm(child.pos - b.pos) < 0.01
+def test_foster_genome_comes_from_an_unrelated_agent_but_the_newborn_stays_beside_its_parent():
+    w = World2D(WorldConfig(seed=0, n_agents=2, social=True, evolve=True, foster_genome=True,
+                            mut_sigma=0.0, trait_sigma=0.0))
+    p, donor = w.agents
+    p.aggr_gain = p.genome["aggression_gain"] = 0.3
+    donor.aggr_gain = donor.genome["aggression_gain"] = 2.5
+    p.energy = 3.0
+    child = w._birth(p)
+    assert child.parent == p.id and np.linalg.norm(child.pos - p.pos) < 0.2
+    assert child.aggr_gain == 2.5
+    assert all(np.array_equal(child.genome["w"][a], np.clip(donor.genome["w"][a], 0, w.cfg.w_max))
+               for a in donor.genome["w"])
+
+
+def test_foster_from_reproducer_takes_the_genome_of_the_latest_unrelated_breeder():
+    w = World2D(WorldConfig(seed=0, n_agents=3, social=True, evolve=True, foster_genome=True,
+                            foster_from_reproducer=True, mut_sigma=0.0, trait_sigma=0.0))
+    p, idle, breeder = w.agents
+    for a, g in ((p, 0.3), (idle, 0.9), (breeder, 2.5)):
+        a.aggr_gain = a.genome["aggression_gain"] = g
+    breeder.last_repro = 5
+    p.energy = 3.0
+    assert w._birth(p).aggr_gain == 2.5 and p.last_repro == w.t

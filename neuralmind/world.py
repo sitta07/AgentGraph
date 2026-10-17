@@ -132,6 +132,9 @@ class WorldConfig:
     blind_to_family: bool = False  # True: as blind_to_parent, and parents' sensors never respond to their own offspring
     born_near_stranger: bool = False  # with viscous=False: born near a random living non-relative instead
     born_near_relative: bool = False  # with viscous=False: born near a random living relative other than the parent
+    foster_from_reproducer: bool = False  # with foster_genome: the donor is the unrelated agent that reproduced most recently
+    foster_genome: bool = False  # True: the newborn inherits the genome (weights and traits) of a random living non-relative of its parent, not its parent's
+    born_near_rich_stranger: bool = False  # with viscous=False and born_near_stranger: born near the living non-relative with the most energy
     birth_distance: float = 0.0    # >0: born this far from the parent in a random direction (overrides viscous)
     lamarckian: bool = False       # True: inherit LEARNED weights (control)
     # Evolved teacher: the shaping part of the learning reward is a heritable
@@ -170,6 +173,7 @@ class Agent:
         self.age = 0
         self.born = 0
         self.death_tick: int | None = None
+        self.last_repro: int | None = None   # tick of this agent's latest birth as a parent
         self.genome: dict | None = None
         # own stream, so scrambling never shifts the world's random draws
         self._scramble_rng = np.random.default_rng((cfg.seed, aid, 7919))
@@ -813,7 +817,8 @@ class World2D:
         elif c.viscous:
             pos = parent.pos + rng.normal(0.0, c.birth_radius, size=2)
         elif strangers:
-            host = strangers[int(rng.integers(len(strangers)))]
+            host = (max(strangers, key=lambda a: a.energy) if c.born_near_rich_stranger
+                    else strangers[int(rng.integers(len(strangers)))])
             pos = host.pos + rng.normal(0.0, c.birth_radius, size=2)
         elif c.born_near_relative:
             host = relatives[int(rng.integers(len(relatives)))] if relatives else parent
@@ -821,11 +826,21 @@ class World2D:
         else:
             pos = rng.uniform(0.05, c.size - 0.05, size=2)
         child.spawn(np.clip(pos, 0.01, c.size - 0.01), float(rng.uniform(0, 2 * math.pi)))
-        base = ({cn.post: cn.weights for cn in parent._plastic} if c.lamarckian
-                else parent.genome["w"])
+        donor = parent
+        if c.foster_genome:
+            pool = [a for a in self.agents if a.alive and a is not parent
+                    and self.relatedness(parent, a) == 0.0]
+            breeders = [a for a in pool if a.last_repro is not None] if c.foster_from_reproducer else []
+            if breeders:
+                donor = max(breeders, key=lambda a: a.last_repro)
+            else:
+                donor = pool[int(rng.integers(len(pool)))] if pool else parent
+                self.birth_fallbacks += not pool or c.foster_from_reproducer
+        base = ({cn.post: cn.weights for cn in donor._plastic} if c.lamarckian
+                else donor.genome["w"])
         genome_w = {a: np.clip(w + rng.normal(0.0, c.mut_sigma * c.w_init, size=w.shape),
                                0.0, c.w_max) for a, w in base.items()}
-        child.aggr_gain = float(max(0.0, parent.genome["aggression_gain"]
+        child.aggr_gain = float(max(0.0, donor.genome["aggression_gain"]
                                     + rng.normal(0.0, c.trait_sigma)))
         if c.evolve_teacher:
             step = self._teacher_rng.normal(0.0, c.teacher_sigma, size=5)
@@ -837,6 +852,7 @@ class World2D:
         child.build_net(rng, genome={"w": genome_w})
         child.energy = c.repro_cost
         parent.energy -= c.repro_cost
+        parent.last_repro = self.t
         child.generation = parent.generation + 1
         child.parent = parent.id
         child.ancestors = (parent.id,) + parent.ancestors[:7]

@@ -1,0 +1,23 @@
+{
+  "id": "AD_blind_to_parent",
+  "title": "Does what the newborn senses explain why birth beside the parent protects populations?",
+  "question": "Over eight studies, populations whose newborns are placed beside a stranger went extinct in 88/96 runs and those placed beside the parent in 30/96. Q6-Q9 changed which attacks and shares land within the family in four ways and never clearly removed the protection (16/48 extinct with the intervention vs 15/48 without). The remaining candidate is sensory: beside the parent, a newborn's 'other agent' sensors respond to its parent rather than to a stranger. This study makes the parent invisible to its offspring's sensors, and in a second condition also makes offspring invisible to their parent.",
+  "background": "Interventions change sensing only; attacks, shares and placement are unchanged. blind_to_parent=True: an agent's three 'other agent' sensors never respond to its own parent. blind_to_family=True: also, a parent's sensors never respond to its own offspring. Newborns are placed beside the parent in both. stranger is a reference only. Interpretation rule, fixed in advance: what the newborn senses explains the protection if H50a or H50b is supported; sensing between parent and offspring in either direction matters if H50c or H50d is supported; if none is, neither sensing nor the family attacks tested in Q6-Q9 explain it. No pilot was run. Seeds 2700-2711 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 2700,
+  "ticks": 18000,
+  "base": {},
+  "conditions": {
+    "parent":              {"config": {"viscous": true}, "learning": true},
+    "parent_child_blind":  {"config": {"viscous": true, "blind_to_parent": true}, "learning": true},
+    "parent_family_blind": {"config": {"viscous": true, "blind_to_family": true}, "learning": true},
+    "stranger":            {"config": {"viscous": false, "born_near_stranger": true}, "learning": true}
+  },
+  "hypotheses": [
+    {"id": "H50a", "statement": "With offspring blind to their parent, populations beside the parent die out sooner", "metric": "survival_ticks", "a": "parent_child_blind", "b": "parent", "direction": "less"},
+    {"id": "H50b", "statement": "With offspring blind to their parent, populations go extinct more often", "metric": "extinct01", "a": "parent_child_blind", "b": "parent", "direction": "greater"},
+    {"id": "H50c", "statement": "With parent and offspring blind to each other, populations die out sooner", "metric": "survival_ticks", "a": "parent_family_blind", "b": "parent", "direction": "less"},
+    {"id": "H50d", "statement": "With parent and offspring blind to each other, populations go extinct more often", "metric": "extinct01", "a": "parent_family_blind", "b": "parent", "direction": "greater"}
+  ]
+}

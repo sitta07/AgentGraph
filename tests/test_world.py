@@ -580,3 +580,11 @@ def test_offspring_inherit_mutated_affect_genes():
     kids = [w._birth(p) for _ in range(100)]
     assert abs(np.std([k.aff_A[0, 0] for k in kids]) - 0.3) < 0.07
     assert all(k.aff_B.shape == (2, 6) for k in kids)
+
+
+def test_invisible_hazards_leave_the_threat_sensors_silent():
+    for visible in (True, False):
+        w = World2D(WorldConfig(seed=0, hazards_visible=visible))
+        ag = w.agents[0]
+        w.hazards = np.array([ag.pos + 0.05 * np.array([math.cos(ag.heading), math.sin(ag.heading)])])
+        assert (w.observe(ag)[3:6].sum() > 0) == visible

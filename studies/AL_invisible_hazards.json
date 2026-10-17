@@ -1,0 +1,22 @@
+{
+  "id": "AL_invisible_hazards",
+  "title": "When hazards can only be felt, does a fear-like internal state evolve?",
+  "question": "AK found no emotion-like states evolving when nothing was written in, and an acting internal state lowered foraging. One untested reason: in AK's world the decision network already sees hazards through its threat sensors, so an internal state has little to add. Here hazards are invisible (the threat sensors always read 0). The only route by which being hurt can change behaviour is the evolved internal state, whose input includes pain. Does a state that responds to pain evolve, does it outlast the pain (a fear-like, persistent state), and does it help populations?",
+  "background": "Same design as AK (evolve_affect with zero-initialised genes; numb control in which the same genes evolve but never act; learning off; designer frustration drive off; fixed dynamics; standard social evolution base), with two changes fixed in advance: hazards_visible=False in both conditions, and a smaller mutation step (affect_sigma=0.15 instead of 0.3), since AK's 0.3 may have been too large for selection to tune. Assay as in AK (neuralmind/research/affect_assay.py): affect_early = behavioural change in ticks 0-4 after a pain pulse; affect_persistence = change in ticks 5-19. Runs that go extinct drop out of the assay tests. Limit carried over from AK: the two conditions may reach different generation counts, so drifted genes in the numb control may have had fewer mutations. Interpretation rule, fixed in advance: a pain-responsive state evolved under selection if H59c is supported; a fear-like persistent state if H59d is also supported; the state is adaptive if H59a or H59b is supported. No pilot was run. Seeds 3700-3711 have never been run.",
+  "simulator": "evolution",
+  "seeds": 12,
+  "seed_start": 3700,
+  "ticks": 18000,
+  "base": {"substeps": 32, "reset_each_decision": true, "normalize": true, "normalize_to": "innate", "aggression_gain": 0.0, "evolve_affect": true, "affect_sigma": 0.15, "hazards_visible": false},
+  "conditions": {
+    "affect": {"config": {}, "learning": false},
+    "numb":   {"config": {"numb_affect": true}, "learning": false}
+  },
+  "hypotheses": [
+    {"id": "H59a", "statement": "With invisible hazards, populations with an acting affect state survive longer than numb ones", "metric": "survival_ticks", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H59b", "statement": "With invisible hazards, populations with an acting affect state eat more per agent-tick", "metric": "food_rate", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H59c", "statement": "Selected states change behaviour more right after a pain pulse than drifted ones", "metric": "affect_early", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H59d", "statement": "Selected states keep changing behaviour after the pain has passed (ticks 5-19) more than drifted ones", "metric": "affect_persistence", "a": "affect", "b": "numb", "direction": "greater"},
+    {"id": "H59e", "statement": "Selection lengthens the state's memory (decay closer to 1)", "metric": "affect_decay", "a": "affect", "b": "numb", "direction": "greater"}
+  ]
+}

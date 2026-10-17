@@ -309,29 +309,30 @@ class Agent:
             self.net.reset()
         current = c.idle_drive + c.sensor_gain * sensors
         k = len(self.actions)
-        counts = np.zeros(k)
-        spikes_any = {p: np.zeros(self.net.populations[p].n, bool) for p in self._node_order}
+        counts = np.zeros(k, dtype=np.int64)
+        fired = np.zeros(self._n_nodes, bool)
+        acts = slice(self._node_offsets[self.actions[0]], self._n_nodes)
         # Frustration -> aggression coupling (hypothesis, Dollard 1939 /
         # Berkowitz 1989): accumulated negative-RPE "frustration" adds a tonic
         # current to the attack population. It biases, never forces, the choice.
         self.aggression_drive = (self.aggr_gain * self.affect.frustration
                                  if c.social else 0.0)
         for _ in range(c.substeps):
+            noise = rng.normal(0.0, c.action_noise, size=(k, c.n_action))
             ext = {"sensory": current}
-            for a in self.actions:
-                ext[a] = rng.normal(0.0, c.action_noise, size=c.n_action)
+            for i, a in enumerate(self.actions):
+                ext[a] = noise[i]
             if c.social:
                 ext["attack"] = ext["attack"] + self.aggression_drive
             s = self.net.step(external=ext)
-            for p in self._node_order:
-                spikes_any[p] |= s[p]
-            for i, a in enumerate(self.actions):
-                counts[i] += int(s[a].sum())
+            v = np.concatenate([s[p] for p in self._node_order])
+            fired |= v
+            counts += v[acts].reshape(k, c.n_action).sum(axis=1)
+        spikes_any = {p: fired[o:o + self.net.populations[p].n]
+                      for p, o in self._node_offsets.items()}
         self._glow *= 0.55
-        for p in self._node_order:
-            o = self._node_offsets[p]
-            self._glow[o:o + spikes_any[p].size] = np.maximum(
-                self._glow[o:o + spikes_any[p].size], spikes_any[p].astype(float))
+        np.maximum(self._glow, fired.astype(float), out=self._glow)
+        counts = counts.astype(float)
         if counts.max() == counts.min():
             action = int(rng.integers(0, k))
         else:

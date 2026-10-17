@@ -30,6 +30,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from neuralmind.core._bound import Bound
+
 
 @dataclass(frozen=True)
 class LIFParams:
@@ -57,7 +59,7 @@ class LIFParams:
             raise ValueError("v_threshold must be > v_reset")
 
 
-class LIFPopulation:
+class LIFPopulation(Bound):
     """A vectorised population of independent LIF neurons.
 
     State is held in NumPy arrays of shape ``(n,)``. The population is
@@ -133,12 +135,12 @@ class LIFPopulation:
 
         # Forward-Euler update only for non-refractory neurons.
         dv = (self.dt / p.tau_m) * (-(self.v - p.v_rest) + p.r_m * i)
-        self.v = np.where(active, self.v + dv, p.v_reset)
+        self.v[:] = np.where(active, self.v + dv, p.v_reset)
 
         # Detect spikes.
         spiked = active & (self.v >= p.v_threshold)
-        self.v = np.where(spiked, p.v_reset, self.v)
-        self.refractory_left = np.where(
+        self.v[:] = np.where(spiked, p.v_reset, self.v)
+        self.refractory_left[:] = np.where(
             spiked, p.refractory, np.maximum(0.0, self.refractory_left - self.dt)
         )
 
